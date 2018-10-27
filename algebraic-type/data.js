@@ -1,4 +1,5 @@
 const { declaration, fNamed, is, getTypename } = require("./declaration");
+const { inspect } = require("util");
 const { isArray } = Array;
 const NoDefault = { };
 
@@ -58,6 +59,7 @@ exports.data = declaration(function data (type, fieldDefinitions)
                 { value, writable, enumerable, configurable });
         }
     });
+    constructor.prototype.toString = function () { return inspect(this) };
     const create = fNamed(`[create ${typename}]`,
         fields => new constructor(fields));
 

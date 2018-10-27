@@ -28,6 +28,7 @@ function declaration(f)
             type[TypenameSymbol] = scoped;
             type[UnscopedTypenameSymbol] = typename;
             type[InspectSymbol] = () => `[${f.name} ${scoped}]`;
+            type.toString = () => `[${f.name} ${scoped}]`;
 
             const { is, create } = f(type, args);
 
