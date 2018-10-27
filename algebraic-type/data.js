@@ -28,7 +28,26 @@ function define (typename)
 {
     return fNamed(`[define ${typename}]`, function (...fieldDefinitions)
     {
-        const description = { types: false }
+        if (fieldDefinitions.length === 0)
+        {
+            const unary = fNamed(typename, function T()
+            {
+                throw TypeError(
+                    `${typename} is a unary type, use ${typename} instead ` +
+                    `of ${typename}()`);
+            });
+            const prototype = Object.create(Function);
+
+            prototype[IsSymbol] = value => value === unary;
+            prototype[TypenameSymbol] = typename;
+            prototype[InspectSymbol] = () => `${typename}`;
+
+            Object.setPrototypeOf(unary, prototype);
+
+            return unary;
+        }
+
+        const description = { types: false };
 
         return fNamed(typename, function T(fields)
         {
@@ -40,7 +59,7 @@ function define (typename)
 
             for (const [property, [type, defaultValue]] of description.types)
             {
-                const value = hasOwnProperty.call(fields, property) ? 
+                const value = hasOwnProperty.call(fields, property) ?
                     fields[property] : defaultValue;
 
                 if (value === NoDefault)
