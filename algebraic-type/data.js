@@ -1,6 +1,4 @@
-const { is, IsSymbol, TypenameSymbol, typename } = require("@algebraic/type");
-const getTypename = typename;
-const InspectSymbol = require("util").inspect.custom;
+const { declaration, fNamed, is, getTypename } = require("./declaration");
 const { isArray } = Array;
 const NoDefault = { };
 
@@ -10,74 +8,61 @@ const fWithDefault = definition => isArray(definition) ?
     definition : [definition, NoDefault];
 const fParseMap = farray => farray.map(f => [fNameParse(f), fWithDefault(f())]);
 
-const fNamed = (name, f) =>
-    (Object.defineProperty(f, "name", { value: name }), f);
-
-
-module.exports = function data ([typename])
-{
-    return define(typename);
-}
-
 const writable = false;
 const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
 
-function define (typename)
+exports.data = declaration(function data (type, fieldDefinitions)
 {
-    return fNamed(`[define ${typename}]`, function (...fieldDefinitions)
+    const typename = getTypename(type);
+
+    if (fieldDefinitions.length === 0)
     {
-        if (fieldDefinitions.length === 0)
+        const create = fNamed(`[create ${typename}]`, function ()
         {
-            const unary = fNamed(typename, function T()
-            {
-                throw TypeError(
-                    `${typename} is a unary type, use ${typename} instead ` +
-                    `of ${typename}()`);
-            });
-            const prototype = Object.create(Function);
-
-            prototype[IsSymbol] = value => value === unary;
-            prototype[TypenameSymbol] = typename;
-            prototype[InspectSymbol] = () => `${typename}`;
-
-            Object.setPrototypeOf(unary, prototype);
-
-            return unary;
-        }
-
-        const description = { types: false };
-
-        return fNamed(typename, function T(fields)
-        {
-            if (!(this instanceof T))
-                return new T(fields);
-
-            if (!description.types)
-                description.types = fParseMap(fieldDefinitions);
-
-            for (const [property, [type, defaultValue]] of description.types)
-            {
-                const value = hasOwnProperty.call(fields, property) ?
-                    fields[property] : defaultValue;
-
-                if (value === NoDefault)
-                    throw TypeError(
-                        `${typename} constructor requires field "${property}"`);
-
-                if (!is(type, value))
-                    throw TypeError(
-                        `${typename} constructor passed field ` +
-                        `"${property}" of wrong type. Expected type ` +
-                        `${getTypename(type)}.`);
-
-                defineProperty(this, property,
-                    { value, writable, enumerable, configurable });
-            }
+            throw TypeError(
+                `${typename} is a unary type, use ${typename} instead ` +
+                `of ${typename}()`);
         });
+        const is = value => value === type;
+
+        return { is, create };
+    }
+
+    const description = { types: false };
+    const constructor = fNamed(`${typename}`, function (fields)
+    {
+        if (!fields)
+            throw TypeError(`${typename} cannot be created without any fields.`);
+
+        if (!description.types)
+            description.types = fParseMap(fieldDefinitions);
+
+        for (const [property, [child, defaultValue]] of description.types)
+        {
+            const value = hasOwnProperty.call(fields, property) ?
+                fields[property] : defaultValue;
+
+            if (value === NoDefault)
+                throw TypeError(
+                    `${typename} constructor requires field "${property}"`);
+
+            if (!is(child, value))
+                throw TypeError(
+                    `${typename} constructor passed field ` +
+                    `"${property}" of wrong type. Expected type ` +
+                    `${getTypename(child)} but got ${value}.`);
+
+            defineProperty(this, property,
+                { value, writable, enumerable, configurable });
+        }
     });
-};
+    const create = fNamed(`[create ${typename}]`,
+        fields => new constructor(fields));
+
+    return { create, is: value => value instanceof constructor };
+});
 
 /*
 const fCreate = (f, properties) =>

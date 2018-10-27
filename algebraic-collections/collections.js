@@ -1,10 +1,9 @@
-const { typename, IsSymbol, TypenameSymbol } = require("@algebraic/type");
-const InspectSymbol = require("util").inspect.custom;
-const defineProperty = Object.defineProperty;
+const { declare, getTypename } = require("@algebraic/type");
+
 
 function toParamterizedType(constructor, parameters)
 {
-    const basename = typename(constructor);
+    const basename = getTypename(constructor);
     const required = parameters.length;
     const typeConstructor = function (...types)
     {
@@ -14,21 +13,15 @@ function toParamterizedType(constructor, parameters)
             throw TypeError(
                 `${typename} takes ${required} types, but got ${count}`);
 
-        const name = `${basename}<${types.map(typename).join(", ")}>`;
-        const T = function (...args)
-        {
-            return constructor(...args);
-        };
-        
-        defineProperty(T, "name", { value: name });
-        T[IsSymbol] = value => value instanceof constructor;
-        T[TypenameSymbol] = name;
-        T[InspectSymbol] = () => `[type ${name}]`;
+        const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
+        const create = constructor;
+        const is = value => value instanceof constructor;
+        const type = declare({ typename, create, is });
 
         for (const key of Object.keys(constructor))
-            T[key] = constructor[key];            
+            type[key] = constructor[key];
 
-        return T;
+        return type;
     };
 
     return typeConstructor;

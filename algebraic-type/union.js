@@ -1,45 +1,29 @@
-const { is, IsSymbol, TypenameSymbol, typename } = require("@algebraic/type");
-const getTypename = typename;
-const InspectSymbol = require("util").inspect.custom;
-
-
-const fNamed = (name, f) =>
-    (Object.defineProperty(f, "name", { value: name }), f);
-
-
-module.exports = function union ([typename])
-{
-    return define(typename);
-}
+const { fNamed, declaration, getTypename, getUnscopedTypename, is } = require("./declaration");
 
 const writable = false;
 const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
 
-function define (typename)
+exports.union = declaration(function union (type, types)
 {
-    return fNamed(`[define ${typename}]`, function (...types)
+    const description = { types: false };
+    const typename = getTypename(type);
+    const create = fNamed(`[create ${typename}]`, function()
     {
-        const description = { types: false };
-        const T = fNamed(typename, function T()
-        {
-            throw TypeError(
-                `${typename} is a union type and thus cannot be instantiated.`);
-        });
-
-        for (const type of types)
-            defineProperty(T, getTypename(type),
-                { writable, enumerable, configurable, value: type });
-
-        T[IsSymbol] = fNamed(`[is ${typename}]`,
-            value => types.some(type => is(type, value)));
-        T[TypenameSymbol] = typename;
-        T[InspectSymbol] = () => `[union ${typename}]`;
-
-        return T;
+        throw TypeError(
+            `${typename} is a union type and thus cannot be instantiated.`);
     });
-};
+
+    for (const child of types)
+        defineProperty(type, getUnscopedTypename(child),
+            { writable, enumerable, configurable, value: child });
+
+    const unionIs = fNamed(`[is ${typename}]`,
+        value => types.some(type => is(type, value)));
+
+    return { is: unionIs, create };
+});
 
 /*
 const fCreate = (f, properties) =>
