@@ -11,7 +11,7 @@ function toParamterizedType(constructor, parameters)
 
         if (required !== count)
             throw TypeError(
-                `${typename} takes ${required} types, but got ${count}`);
+                `${basename} takes ${required} types, but got ${count}`);
 
         const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
         const create = constructor;

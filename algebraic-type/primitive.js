@@ -17,3 +17,4 @@ exports.boolean = primitive `boolean` ();
 exports.number = primitive `number` ();
 exports.string = primitive `string` ();
 exports.regexp = primitive `regexp` ();
+exports.ftype = primitive `function` ();
