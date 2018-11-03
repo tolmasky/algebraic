@@ -27,9 +27,10 @@ function toParamterizedType(constructor, parameters)
     return typeConstructor;
 }
 
-const { List, Map, Set, OrderedSet, Stack } = require("immutable");
+const { List, OrderedMap, Map, Set, OrderedSet, Stack } = require("immutable");
 
 exports.List = toParamterizedType(List, ["element"]);
+exports.OrderedMap = toParamterizedType(OrderedMap, ["key", "value"]);
 exports.Map = toParamterizedType(Map, ["key", "value"]);
 exports.Set = toParamterizedType(Set, ["element"]);
 exports.OrderedSet = toParamterizedType(OrderedSet, ["element"]);
