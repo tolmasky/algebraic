@@ -21,8 +21,13 @@ exports.union = declaration(function union (type, types)
 
     const unionIs = fNamed(`[is ${typename}]`,
         value => types.some(type => is(type, value)));
+    const serialize = [(value, serialize) =>
+        (index => [index, serialize(types[index], value)])
+        (types.findIndex(type => is(type, value))), false];
+    const deserialize = ([index, serialized], deserialize) =>
+        deserialize(types[index], serialized);
 
-    return { is: unionIs, create };
+    return { is: unionIs, create, serialize, deserialize };
 });
 
 /*

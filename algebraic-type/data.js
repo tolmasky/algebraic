@@ -27,8 +27,10 @@ exports.data = declaration(function data (type, fieldDefinitions)
                 `of ${typename}()`);
         });
         const is = value => value === type;
+        const serialize = [() => 0, true];
+        const deserialize = () => type;
 
-        return { is, create };
+        return { is, create, serialize, deserialize };
     }
 
     let children = false;
