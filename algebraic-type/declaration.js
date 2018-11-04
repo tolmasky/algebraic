@@ -4,6 +4,7 @@ const fNamed = (name, f) =>
     (defineProperty(f, "name", { value: name }), f);
 
 const { hasOwnProperty } = Object.prototype;
+const types = Object.create(null);
 
 const IsSymbol = Symbol("is");
 const TypenameSymbol = Symbol("typename");
@@ -11,6 +12,7 @@ const UnscopedTypenameSymbol = Symbol("unscoped-typename");
 const InspectSymbol = require("util").inspect.custom;
 const SerializeSymbol = Symbol("serialize");
 const DeserializeSymbol = Symbol("deserialize");
+const UUIDSymbol = Symbol("uuid");
 
 
 function declaration(f)
@@ -19,10 +21,14 @@ function declaration(f)
     {
         typenameStack.push(typename);
         const scoped = typenameStack.join(".");
+        const UUID = generateUUID(scoped, 2);
 
         return fNamed(`[declare ${scoped}]`, function (...args)
         {
-            const type = fNamed(scoped, function (...args)
+            if (hasOwnProperty.call(types, UUID))
+                throw TypeError(`Duplicate Type Declaration for ${scoped}`);
+
+            const type = types[UUID] = fNamed(scoped, function (...args)
             {
                 return create.apply(this, args);
             });
@@ -30,6 +36,7 @@ function declaration(f)
             type[TypenameSymbol] = scoped;
             type[UnscopedTypenameSymbol] = typename;
             type[InspectSymbol] = () => `[${f.name} ${scoped}]`;
+            type[UUIDSymbol] = UUID;
             type.toString = () => `[${f.name} ${scoped}]`;
 
             const { is, create, serialize, deserialize } = f(type, args);
@@ -107,4 +114,34 @@ module.exports.getDeserialize = function getDeserialize(type)
     return type[DeserializeSymbol];
 }
 
+module.exports.getUUID = function (type)
+{
+    return type[UUIDSymbol];
+}
+
+module.exports.getTypeWithUUID = function (UUID)
+{
+    return types[UUID];
+}
+
 module.exports.fNamed = fNamed;
+
+const generateUUID = (function ()
+{
+    const ErrorRegExp = /(?:(?:^Error\n\s+)|(?:\n\s+))at\s+/;
+
+    return function generateUUID(typename, index)
+    {
+        const { stackTraceLimit } = Error;
+        Error.stackTraceLimit = index + 1;
+
+        const frames = Error().stack.split("\n");
+
+        Error.stackTraceLimit = stackTraceLimit;
+
+        const frame = frames[frames.length - 1].replace(/^\s*at\s*/, "");
+        const UUID = JSON.stringify({ typename, frame });
+
+        return UUID;
+    }
+})();
