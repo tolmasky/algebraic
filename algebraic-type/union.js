@@ -5,9 +5,19 @@ const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
 
-exports.union = declaration(function union (type, types)
+const fNameRegExp = /([^=\s]+)\s*=>/;
+const fNameParse = f => fNameRegExp.exec(f + "")[1];
+const fParseMap = farray => farray
+    .map(f => f.prototype ?
+        [getUnscopedTypename(f), f] :
+        [fNameParse(f), f()]);
+
+
+exports.union = declaration(function union (type, declarations)
 {
-    const description = { types: false };
+    const named = fParseMap(declarations);
+    const types = named.map(([_, type]) => type);
+
     const typename = getTypename(type);
     const create = fNamed(`[create ${typename}]`, function()
     {
@@ -15,8 +25,8 @@ exports.union = declaration(function union (type, types)
             `${typename} is a union type and thus cannot be instantiated.`);
     });
 
-    for (const child of types)
-        defineProperty(type, getUnscopedTypename(child),
+    for (const [name, child] of named)
+        defineProperty(type, name,
             { writable, enumerable, configurable, value: child });
 
     const unionIs = fNamed(`[is ${typename}]`,
