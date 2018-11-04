@@ -15,7 +15,7 @@ const primitive = declaration(function primitive(type, [serialize, deserialize])
 
 exports.boolean = primitive `boolean` (
     [value => value ? 1 : 0, true],
-    [serialized => !!serialized] );
+    serialized => !!serialized );
 
 const specials = { n: NaN, z: -0, s: -Infinity, b: Infinity };
 

@@ -34,16 +34,13 @@ exports.data = declaration(function data (type, fieldDefinitions)
     }
 
     let children = false;
-    const getChildren = () => children;
+    const getChildren = () => children || (children = fParseMap(fieldDefinitions));
     const constructor = fNamed(`${typename}`, function (fields)
     {
         if (!fields)
             throw TypeError(`${typename} cannot be created without any fields.`);
 
-        if (!children)
-            children = fParseMap(fieldDefinitions);
-
-        for (const [property, [child, defaultValue]] of children)
+        for (const [property, [child, defaultValue]] of getChildren())
         {
             const value = hasOwnProperty.call(fields, property) ?
                 fields[property] : defaultValue;
