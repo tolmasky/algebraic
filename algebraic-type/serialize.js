@@ -1,10 +1,8 @@
-//const { Map, EmptyMap = Map() } = require("immutable");
 const { getSerialize } = require("./declaration");
 const { getPrototypeOf } = Object;
 
 
-
-module.exports = function serialize(type, value)
+function serialize(type, value)
 {
     const state = { references:new Map(), nextUID:0, tail: { } };
     const serialized = [];
@@ -27,6 +25,9 @@ module.exports = function serialize(type, value)
     
     return serialized;
 }
+
+module.exports = serialize;
+module.exports.serialize = serialize;
 
 function getReference(state, type, value)
 {
