@@ -1,3 +1,4 @@
+const Map = global.Map;
 const { getSerialize } = require("./declaration");
 const { getPrototypeOf } = Object;
 

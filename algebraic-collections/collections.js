@@ -16,7 +16,19 @@ function toParamterizedType(constructor, parameters)
         const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
         const create = constructor;
         const is = value => value instanceof constructor;
-        const type = declare({ typename, create, is });
+        const serialize = [parameters.length === 1 ?
+            (value, serialize) =>
+                value.toArray().map(value => serialize(types[0], value)) :
+            (value, serialize) =>
+                value.entrySeq().toArray().map(([key, value]) =>
+                    [serialize(types[0], key), serialize(types[1], value)]),
+            false];
+        const deserialize = parameters.length === 1 ?
+            (serialized, deserialize) => type(serialized.map(serialized =>
+                deserialize(types[0], serialized))) :
+            (serialized, deserialize) => type(serialized.map(([key, value]) =>
+                [deserialize(types[0], key), deserialize(types[1], value)]));
+        const type = declare({ typename, create, is, serialize, deserialize });
 
         for (const key of Object.keys(constructor))
             type[key] = constructor[key];
