@@ -31,16 +31,17 @@ exports.data = declaration(function data (type, fieldDefinitions)
         return { is, create };
     }
 
-    const description = { types: false };
+    let children = false;
+    const getChildren = () => children;
     const constructor = fNamed(`${typename}`, function (fields)
     {
         if (!fields)
             throw TypeError(`${typename} cannot be created without any fields.`);
 
-        if (!description.types)
-            description.types = fParseMap(fieldDefinitions);
+        if (!children)
+            children = fParseMap(fieldDefinitions);
 
-        for (const [property, [child, defaultValue]] of description.types)
+        for (const [property, [child, defaultValue]] of children)
         {
             const value = hasOwnProperty.call(fields, property) ?
                 fields[property] : defaultValue;
@@ -49,7 +50,7 @@ exports.data = declaration(function data (type, fieldDefinitions)
                 throw TypeError(
                     `${typename} constructor requires field "${property}"`);
 
-            if (!is(child, value))
+            if (!declaration.is(child, value))
                 throw TypeError(
                     `${typename} constructor passed field ` +
                     `"${property}" of wrong type. Expected type ` +
@@ -62,9 +63,29 @@ exports.data = declaration(function data (type, fieldDefinitions)
     constructor.prototype.toString = function () { return inspect(this) };
     const create = fNamed(`[create ${typename}]`,
         fields => new constructor(fields));
+    const is = value => value instanceof constructor;
+    const serialize = [toSerialize(typename, getChildren), false];
+    const deserialize = toDeserialize(typename, getChildren, type);
 
-    return { create, is: value => value instanceof constructor };
+    return { create, is, serialize, deserialize };
 });
+
+
+function toSerialize(typename, getChildren)
+{
+    // Should we skip or compress default values?
+    return fNamed(`[serialize ${typename}]`, (value, serialize) =>
+        getChildren().map(([property, [type]]) =>
+            serialize(type, value[property])));
+}
+
+function toDeserialize(typename, getChildren, type)
+{
+    return fNamed(`[deserialize ${typename}]`, (serialized, deserialize) =>
+        type(getChildren().reduce((fields, [property, [type]], index) =>
+            (fields[property] = deserialize(type, serialized[index]), fields),
+            Object.create(null))));
+}
 
 /*
 const fCreate = (f, properties) =>

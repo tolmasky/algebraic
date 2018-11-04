@@ -9,6 +9,8 @@ const IsSymbol = Symbol("is");
 const TypenameSymbol = Symbol("typename");
 const UnscopedTypenameSymbol = Symbol("unscoped-typename");
 const InspectSymbol = require("util").inspect.custom;
+const SerializeSymbol = Symbol("serialize");
+const DeserializeSymbol = Symbol("deserialize");
 
 
 function declaration(f)
@@ -30,9 +32,11 @@ function declaration(f)
             type[InspectSymbol] = () => `[${f.name} ${scoped}]`;
             type.toString = () => `[${f.name} ${scoped}]`;
 
-            const { is, create } = f(type, args);
+            const { is, create, serialize, deserialize } = f(type, args);
 
             type[IsSymbol] = is;
+            type[SerializeSymbol] = serialize;
+            type[DeserializeSymbol] = deserialize;
 
             typenameStack.pop();
 
@@ -45,7 +49,7 @@ module.exports = declaration;
 
 module.exports.declaration = declaration;
 
-function declare({ is, create, typename, unscopedTypename })
+function declare({ is, create, typename, unscopedTypename, serialize, deserialize })
 {
     const type = fNamed(typename, function (...args)
     {
@@ -56,6 +60,8 @@ function declare({ is, create, typename, unscopedTypename })
     type[UnscopedTypenameSymbol] = unscopedTypename || typename;
     type[InspectSymbol] = () => `[javascript ${typename}]`;
     type[IsSymbol] = is;
+    type[SerializeSymbol] = serialize;
+    type[DeserializeSymbol] = deserialize;
 
     return type;
 }
@@ -89,6 +95,16 @@ module.exports.is = function is(...args)
     const value = args[1];
 
     return definedIs ? definedIs(value) : value instanceof args[0];
+}
+
+module.exports.getSerialize = function getSerialize(type)
+{
+    return type[SerializeSymbol];
+}
+
+module.exports.getDeserialize = function getDeserialize(type)
+{
+    return type[DeserializeSymbol];
 }
 
 module.exports.fNamed = fNamed;
