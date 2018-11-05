@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/collections",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "",
   "main": "collections.js",
   "scripts": {
@@ -11,5 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "immutable": "3.8.2"
+  },
+  "peerDependencies": {
+    "@algebraic/type": "1.0.0-alpha.2"
   }
 }
