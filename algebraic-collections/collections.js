@@ -1,8 +1,11 @@
 const { declare, getTypename } = require("@algebraic/type");
 
 
-function toParamterizedType(constructor, parameters)
+function toParamterizedType(constructor, parameters, is)
 {
+    if (!is)
+        throw TypeError(constructor.name + " must provide an is function.");
+
     const basename = getTypename(constructor);
     const required = parameters.length;
     const typeConstructor = function (...types)
@@ -15,7 +18,6 @@ function toParamterizedType(constructor, parameters)
 
         const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
         const create = constructor;
-        const is = value => value instanceof constructor;
         const serialize = [parameters.length === 1 ?
             (value, serialize) =>
                 value.toArray().map(value => serialize(types[0], value)) :
@@ -41,12 +43,12 @@ function toParamterizedType(constructor, parameters)
 
 const { List, OrderedMap, Map, Set, OrderedSet, Stack } = require("immutable");
 
-exports.List = toParamterizedType(List, ["element"]);
-exports.OrderedMap = toParamterizedType(OrderedMap, ["key", "value"]);
-exports.Map = toParamterizedType(Map, ["key", "value"]);
-exports.Set = toParamterizedType(Set, ["element"]);
-exports.OrderedSet = toParamterizedType(OrderedSet, ["element"]);
-exports.Stack = toParamterizedType(Stack, ["element"]);
+exports.List = toParamterizedType(List, ["element"], List.isList);
+exports.OrderedMap = toParamterizedType(OrderedMap, ["key", "value"], OrderedMap.isOrderedMap);
+exports.Map = toParamterizedType(Map, ["key", "value"], Map.isMap);
+exports.Set = toParamterizedType(Set, ["element"], Set.isSet);
+exports.OrderedSet = toParamterizedType(OrderedSet, ["element"], OrderedSet.isOrderedSet);
+exports.Stack = toParamterizedType(Stack, ["element"], Stack.isStack);
 
 
 /*
