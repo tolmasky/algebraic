@@ -35,8 +35,11 @@ exports.data = declaration(function data (type, fieldDefinitions)
 
     let children = false;
     const getChildren = () => children || (children = fParseMap(fieldDefinitions));
-    const constructor = fNamed(`${typename}`, function (fields)
+    const create = fNamed(`[create ${typename}]`, function (fields)
     {
+        if (!(this instanceof type))
+            return new type(fields);
+
         if (!fields)
             throw TypeError(`${typename} cannot be created without any fields.`);
 
@@ -59,10 +62,9 @@ exports.data = declaration(function data (type, fieldDefinitions)
                 { value, writable, enumerable, configurable });
         }
     });
-    constructor.prototype.toString = function () { return inspect(this) };
-    const create = fNamed(`[create ${typename}]`,
-        fields => new constructor(fields));
-    const is = value => value instanceof constructor;
+    type.prototype.toString = function () { return inspect(this) };
+
+    const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
     const deserialize = toDeserialize(typename, getChildren, type);
 
