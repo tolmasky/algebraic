@@ -12,49 +12,68 @@ const UnscopedTypenameSymbol = Symbol("unscoped-typename");
 const InspectSymbol = require("util").inspect.custom;
 const SerializeSymbol = Symbol("serialize");
 const DeserializeSymbol = Symbol("deserialize");
+const KindSymbol = Symbol("kind");
 const UUIDSymbol = Symbol("uuid");
 
 
 function declaration(f)
 {
-    return fNamed(f.name, function ([typename])
+    const kind = fNamed(f.name, function (...args)
     {
+        const typename = toTypename(...args);
+
         typenameStack.push(typename);
+
         const scoped = typenameStack.join(".");
         const UUID = generateUUID(scoped, 2);
-
         return fNamed(`[declare ${scoped}]`, function (...args)
         {
-            if (hasOwnProperty.call(types, UUID))
-                throw TypeError(`Duplicate Type Declaration for ${scoped}`);
-
-            const type = types[UUID] = fNamed(scoped, function (...args)
+            try
             {
-                return create.apply(this, args);
-            });
+                if (hasOwnProperty.call(types, UUID))
+                    throw TypeError(`Duplicate Type Declaration for ${scoped}`);
 
-            type[TypenameSymbol] = scoped;
-            type[UnscopedTypenameSymbol] = typename;
-            type[InspectSymbol] = () => `[${f.name} ${scoped}]`;
-            type[UUIDSymbol] = UUID;
-            type.toString = () => `[${f.name} ${scoped}]`;
+                const type = types[UUID] = fNamed(scoped, function (...args)
+                {
+                    return create.apply(this, args);
+                });
 
-            const { is, create, serialize, deserialize } = f(type, args);
+                type[TypenameSymbol] = scoped;
+                type[UnscopedTypenameSymbol] = typename;
+                type[InspectSymbol] = () => `[${f.name} ${scoped}]`;
+                type[UUIDSymbol] = UUID;
+                type.toString = () => `[${f.name} ${scoped}]`;
 
-            type[IsSymbol] = is;
-            type[SerializeSymbol] = serialize;
-            type[DeserializeSymbol] = deserialize;
+                const { is, create, serialize, deserialize } = f(type, args);
 
-            typenameStack.pop();
+                type[IsSymbol] = is;
+                type[SerializeSymbol] = serialize;
+                type[DeserializeSymbol] = deserialize;
+                type[KindSymbol] = kind;
 
-            return type;
+                return type;
+            }
+            finally
+            {
+                typenameStack.pop();
+            }
         });
     });
+
+    return kind;
 }
 
 module.exports = declaration;
 
 module.exports.declaration = declaration;
+
+function toTypename(strings, ...args)
+{
+    const asTypename = object => !!object ? getTypename(object) : object;
+
+    return args.reduce((typename, arg, index) =>
+        typename + asTypename(arg) + strings[index + 1], strings[0]);
+}
 
 function declare({ is, create, typename, unscopedTypename, serialize, deserialize })
 {
@@ -63,6 +82,7 @@ function declare({ is, create, typename, unscopedTypename, serialize, deserializ
         return create.apply(this, args);
     });
 
+    type[UUIDSymbol] = generateUUID(typename, 2);
     type[TypenameSymbol] = typename;
     type[UnscopedTypenameSymbol] = unscopedTypename || typename;
     type[InspectSymbol] = () => `[javascript ${typename}]`;
@@ -122,6 +142,11 @@ module.exports.getUUID = function (type)
 module.exports.getTypeWithUUID = function (UUID)
 {
     return types[UUID];
+}
+
+module.exports.getKind = function (type)
+{
+    return type[KindSymbol] || false;
 }
 
 module.exports.fNamed = fNamed;

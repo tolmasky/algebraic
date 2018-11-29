@@ -6,5 +6,6 @@ module.exports =
     ...require("./union"),
     ...require("./primitive"),
     ...require("./serialize"),
-    ...require("./deserialize")
+    ...require("./deserialize"),
+    ...require("./parameterized")
 };

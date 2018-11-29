@@ -3,7 +3,7 @@ const { inspect } = require("util");
 const { isArray } = Array;
 const NoDefault = { };
 
-const fNameRegExp = /([^=\s]+)\s*=>/;
+const fNameRegExp = /([^=\s]+)\s*=>/;///(?:^function\s+(?:[^\(\s]*)\(([^\s]+)\))|([^=\s]+)\s*=>/;
 const fNameParse = f => fNameRegExp.exec(f + "")[1];
 const fWithDefault = definition => isArray(definition) ?
     definition : [definition, NoDefault];
@@ -13,6 +13,8 @@ const writable = false;
 const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
+
+const GetFieldsSymbol = Symbol("GetFields");
 
 exports.data = declaration(function data (type, fieldDefinitions)
 {
@@ -29,6 +31,8 @@ exports.data = declaration(function data (type, fieldDefinitions)
         const is = value => value === type;
         const serialize = [() => 0, true];
         const deserialize = () => type;
+
+        type[GetFieldsSymbol] = () => [];
 
         return { is, create, serialize, deserialize };
     }
@@ -63,6 +67,7 @@ exports.data = declaration(function data (type, fieldDefinitions)
         }
     });
     type.prototype.toString = function () { return inspect(this) };
+    type[GetFieldsSymbol] = getChildren;
 
     const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
@@ -71,6 +76,10 @@ exports.data = declaration(function data (type, fieldDefinitions)
     return { create, is, serialize, deserialize };
 });
 
+exports.data.fields = function (type)
+{
+    return type[GetFieldsSymbol]().map(([name, [type]]) => [name, type]);
+}
 
 function toSerialize(typename, getChildren)
 {

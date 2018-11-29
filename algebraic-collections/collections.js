@@ -1,141 +1,47 @@
-const { declare, getTypename } = require("@algebraic/type");
+const { declare, getTypename, parameterized } = require("@algebraic/type");
+const { List, OrderedMap, Map, Set, OrderedSet, Stack, Seq } = require("immutable");
 
 
-function toParamterizedType(constructor, parameters, is)
+exports.List = parameterized (T =>
+    toImmutableBridge(List, List.isList, T));
+exports.OrderedMap = parameterized ((K, V) =>
+    toImmutableBridge(OrderedMap, OrderedMap.isOrderedMap, K, V));
+exports.Map = parameterized ((K, V) =>
+    toImmutableBridge(Map, Map.isMap, K, V));
+exports.Set = parameterized (T =>
+    toImmutableBridge(Set, Set.isSet, T));
+exports.OrderedSet = parameterized (T =>
+    toImmutableBridge(OrderedSet, OrderedSet.isOrderedSet, T));
+exports.Stack = parameterized (T =>
+    toImmutableBridge(Stack, Stack.isStack, T));
+exports.Seq = parameterized (T =>
+    toImmutableBridge(Seq, Seq.isSeq, T));
+
+
+function toImmutableBridge(constructor, is, ...types)
 {
     if (!is)
         throw TypeError(constructor.name + " must provide an is function.");
 
     const basename = getTypename(constructor);
-    const required = parameters.length;
-    const typeConstructor = function (...types)
-    {
-        const count = types.length;
+    const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
+    const create = constructor;
+    const serialize = [types.length === 1 ?
+        (value, serialize) =>
+            value.toArray().map(value => serialize(types[0], value)) :
+        (value, serialize) =>
+            value.entrySeq().toArray().map(([key, value]) =>
+                [serialize(types[0], key), serialize(types[1], value)]),
+        false];
+    const deserialize = types.length === 1 ?
+        (serialized, deserialize) => type(serialized.map(serialized =>
+            deserialize(types[0], serialized))) :
+        (serialized, deserialize) => type(serialized.map(([key, value]) =>
+            [deserialize(types[0], key), deserialize(types[1], value)]));
+    const type = declare({ typename, create, is, serialize, deserialize });
 
-        if (required !== count)
-            throw TypeError(
-                `${basename} takes ${required} types, but got ${count}`);
+    for (const key of Object.keys(constructor))
+        type[key] = constructor[key];
 
-        const typename = `${basename}<${types.map(getTypename).join(", ")}>`;
-        const create = constructor;
-        const serialize = [parameters.length === 1 ?
-            (value, serialize) =>
-                value.toArray().map(value => serialize(types[0], value)) :
-            (value, serialize) =>
-                value.entrySeq().toArray().map(([key, value]) =>
-                    [serialize(types[0], key), serialize(types[1], value)]),
-            false];
-        const deserialize = parameters.length === 1 ?
-            (serialized, deserialize) => type(serialized.map(serialized =>
-                deserialize(types[0], serialized))) :
-            (serialized, deserialize) => type(serialized.map(([key, value]) =>
-                [deserialize(types[0], key), deserialize(types[1], value)]));
-        const type = declare({ typename, create, is, serialize, deserialize });
-
-        for (const key of Object.keys(constructor))
-            type[key] = constructor[key];
-
-        return type;
-    };
-
-    return typeConstructor;
+    return type;
 }
-
-const { List, OrderedMap, Map, Set, OrderedSet, Stack } = require("immutable");
-
-exports.List = toParamterizedType(List, ["element"], List.isList);
-exports.OrderedMap = toParamterizedType(OrderedMap, ["key", "value"], OrderedMap.isOrderedMap);
-exports.Map = toParamterizedType(Map, ["key", "value"], Map.isMap);
-exports.Set = toParamterizedType(Set, ["element"], Set.isSet);
-exports.OrderedSet = toParamterizedType(OrderedSet, ["element"], OrderedSet.isOrderedSet);
-exports.Stack = toParamterizedType(Stack, ["element"], Stack.isStack);
-
-
-/*
-const collection = (function()
-{
-    return I => (...args) => construct(T => forCollection(T, I, args));
-
-    function forCollection(T, I, parameters)
-    {
-        const parameterNames =
-            `<${parameters.map(T => type.description(T).typename)}>`;
-        const typename = `${I.name}${parameterNames}`;
-
-        // We probably want something better than this, we're not checking
-        // the actual contents here.
-        const is = value => value instanceof I;
-        const initializer = I;
-        const call = I;
-        const keyedConstructors = I;
-
-        return { typename, call, initializer, is, keyedConstructors };
-    }
-})();
-
-type.Map = collection(Map);
-type.Set = collection(Set);
-type.OrderedSet = collection(OrderedSet);
-type.List = collection(List);
-type.Stack = collection(Stack);
-
-
-const { is, IsSymbol, TypenameSymbol, typename } = require("@algebraic/type");
-const getTypename = typename;
-const InspectSymbol = require("util").inspect.custom;
-
-const fNameRegExp = /([^=\s]+)\s*=>/;
-const fNameParse = f => fNameRegExp.exec(f + "")[1];
-const fParseMap = farray => farray.map(f => [fNameParse(f), f()]);
-
-const fNamed = (name, f) =>
-    (Object.defineProperty(f, "name", { value: name }), f);
-
-
-module.exports = function data ([typename])
-{
-    return define(typename);
-}
-
-const writable = false;
-const enumerable = true;
-const configurable = false;
-const defineProperty = Object.defineProperty;
-
-function define (typename)
-{
-    return fNamed(`[define ${typename}]`, function (...fieldDefinitions)
-    {
-        const description = { types: false }
-
-        return fNamed(typename, function T(fields)
-        {
-            if (!(this instanceof T))
-                return new T(fields);
-
-            if (!description.types)
-                description.types = fParseMap(fieldDefinitions);
-
-            for (const [property, type] of description.types)
-            {
-                const value = fields[property];
-
-                if (!is(type, value))
-                    throw TypeError(
-                        `${typename} constructor passed field ` +
-                        `"${property}" of wrong type. Expected type ` +
-                        `${getTypename(type)}.`);
-
-                defineProperty(this, property,
-                    { value, writable, enumerable, configurable });
-            }
-        });
-    });
-};
-*/
-/*
-const fCreate = (f, properties) =>
-    (Object.keys(properties)
-        .forEach(key => defineProperty(f, key, { value: properties[key] }), f);
-*/
-

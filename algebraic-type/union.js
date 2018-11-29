@@ -12,6 +12,8 @@ const fParseMap = farray => farray
         [getUnscopedTypename(f), f] :
         [fNameParse(f), f()]);
 
+const ComponentsSymbol = Symbol("Components");
+
 
 exports.union = declaration(function union (type, declarations)
 {
@@ -37,8 +39,15 @@ exports.union = declaration(function union (type, declarations)
     const deserialize = ([index, serialized], deserialize) =>
         deserialize(types[index], serialized);
 
+    type[ComponentsSymbol] = types;
+
     return { is: unionIs, create, serialize, deserialize };
 });
+
+exports.union.components = function (type)
+{
+    return type[ComponentsSymbol];
+}
 
 /*
 const fCreate = (f, properties) =>

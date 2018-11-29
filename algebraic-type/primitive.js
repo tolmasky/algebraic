@@ -13,37 +13,54 @@ const primitive = declaration(function primitive(type, [serialize, deserialize])
     return { is, create, serialize, deserialize };
 });
 
-exports.boolean = primitive `boolean` (
-    [value => value ? 1 : 0, true],
-    serialized => !!serialized );
-
 const specials = { n: NaN, z: -0, s: -Infinity, b: Infinity };
 
-exports.number = primitive `number` (
-    [value =>
-        // NaN
-        value !== value ? "n" :
-        // -0
-        value === 0 && 1 / value === -Infinity ? "z" :
-        // -Infinity
-        value === -Infinity ? "s" :
-        // Infinity
-        value === Infinity ? "b" : value, true],
-    serialized => specials[serialized] || serialized );
+const primitives =
+{
+    boolean: primitive `boolean` (
+        [value => value ? 1 : 0, true],
+        serialized => !!serialized ),
 
-exports.string = primitive `string` (
-    [value => value, false],
-    serialized => serialized);
+    number: primitive `number` (
+        [value =>
+            // NaN
+            value !== value ? "n" :
+            // -0
+            value === 0 && 1 / value === -Infinity ? "z" :
+            // -Infinity
+            value === -Infinity ? "s" :
+            // Infinity
+            value === Infinity ? "b" : value, true],
+        serialized => specials[serialized] || serialized ),
 
-exports.regexp = primitive `regexp` (
-    [value => [value.source,
-        (value.global ? "g" : "") +
-        (value.multiline ? "m" : "") +
-        (value.ignoreCase ? "i" : "") +
-        (value.sticky ? "y" : "") +
-        (value.unicode ? "u" : "")], false],
-    serialized => RegExp(...serialized));
+    string: primitive `string` (
+        [value => value, false],
+        serialized => serialized),
 
-exports.ftype = primitive `function` (
-    [value => { throw TypeError("Cannot serialize function") }, false],
-    serialized => { throw TypeError("Cannot deserialize function") } );
+    regexp: primitive `regexp` (
+        [value => [value.source,
+            (value.global ? "g" : "") +
+            (value.multiline ? "m" : "") +
+            (value.ignoreCase ? "i" : "") +
+            (value.sticky ? "y" : "") +
+            (value.unicode ? "u" : "")], false],
+        serialized => RegExp(...serialized)),
+
+    ftype: primitive `function` (
+        [value => { throw TypeError("Cannot serialize function") }, false],
+        serialized => { throw TypeError("Cannot deserialize function") } )
+}
+
+URL.prototype.equals = function (rhs)
+{
+    return this === rhs || this.hashCode() === rhs.hashCode();
+}
+
+URL.prototype.hashCode = function ()
+{
+    return this.href;
+}
+
+primitives.primitives = { ...primitives };
+
+module.exports = primitives;
