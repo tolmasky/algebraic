@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/collections",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "",
   "main": "collections.js",
   "scripts": {
@@ -13,6 +13,6 @@
     "immutable": "3.8.2"
   },
   "peerDependencies": {
-    "@algebraic/type": "1.0.0-alpha.3"
+    "@algebraic/type": "1.0.0-alpha.4"
   }
 }
