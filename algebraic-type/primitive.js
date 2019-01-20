@@ -61,6 +61,7 @@ URL.prototype.hashCode = function ()
     return this.href;
 }
 
-primitives.primitives = { ...primitives };
+primitives.primitive = primitive;
+primitives.primitives = primitives;
 
 module.exports = primitives;

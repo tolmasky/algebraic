@@ -116,12 +116,12 @@ module.exports.is = function is(...args)
     const type = args[0];
 
     if (args.length === 1)
-        return fNamed(`[is ${getTypename(type)}]`, value => is(args[0], value));
+        return fNamed(`[is ${getTypename(type)}]`, value => is(type, value));
 
     const definedIs = type[IsSymbol];
     const value = args[1];
 
-    return definedIs ? definedIs(value) : value instanceof args[0];
+    return definedIs ? definedIs(value) : value instanceof type;
 }
 
 module.exports.getSerialize = function getSerialize(type)
