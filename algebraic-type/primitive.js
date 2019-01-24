@@ -51,14 +51,17 @@ const primitives =
         serialized => { throw TypeError("Cannot deserialize function") } )
 }
 
-URL.prototype.equals = function (rhs)
+if (global.URL)
 {
-    return this === rhs || this.hashCode() === rhs.hashCode();
-}
+    URL.prototype.equals = function (rhs)
+    {
+        return this === rhs || this.hashCode() === rhs.hashCode();
+    }
 
-URL.prototype.hashCode = function ()
-{
-    return this.href;
+    URL.prototype.hashCode = function ()
+    {
+        return this.href;
+    }
 }
 
 primitives.primitive = primitive;
