@@ -1,4 +1,4 @@
-const { declaration, getTypename, fNamed } = require("./declaration");
+const { declaration, declare, getTypename, fNamed } = require("./declaration");
 
 
 const primitive = declaration(function primitive(type, [serialize, deserialize])
@@ -48,7 +48,19 @@ const primitives =
 
     ftype: primitive `function` (
         [value => { throw TypeError("Cannot serialize function") }, false],
-        serialized => { throw TypeError("Cannot deserialize function") } )
+        serialized => { throw TypeError("Cannot deserialize function") } ),
+
+    tnull: declare(
+    {
+        typename: "[primitive null]",
+        is: fNamed("[is null]", value => value === "null"),
+    }),
+
+    tundefined: declare(
+    {
+        typename: "[primitive undefined]",
+        is: fNamed("[is undefined]", value => value === void(0))
+    })
 }
 
 if (global.URL)
