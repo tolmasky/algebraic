@@ -7,5 +7,6 @@ module.exports =
     ...require("./primitive"),
     ...require("./serialize"),
     ...require("./deserialize"),
-    ...require("./parameterized")
+    ...require("./parameterized"),
+    ...require("./maybe")
 };
