@@ -60,7 +60,11 @@ const primitives =
     {
         typename: "[primitive undefined]",
         is: fNamed("[is undefined]", value => value === void(0))
-    })
+    }),
+
+    object: primitive `object` (
+        [JSON.stringify, true],
+        JSON.parse),
 }
 
 if (global.URL)
