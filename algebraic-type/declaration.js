@@ -69,7 +69,7 @@ module.exports.declaration = declaration;
 
 function toTypename(strings, ...args)
 {
-    const asTypename = object => !!object ? getTypename(object) : object;
+    const asTypename = object => !!object ? getTypename(object) || object + "" : object;
 
     return args.reduce((typename, arg, index) =>
         typename + asTypename(arg) + strings[index + 1], strings[0]);
@@ -121,7 +121,7 @@ module.exports.is = function is(...args)
     const definedIs = type[IsSymbol];
     const value = args[1];
 
-    return definedIs ? definedIs(value) : value instanceof type;
+    return definedIs ? definedIs(value) : value && value instanceof type;
 }
 
 module.exports.getSerialize = function getSerialize(type)

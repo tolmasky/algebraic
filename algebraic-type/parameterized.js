@@ -17,10 +17,10 @@ function parameterized (internalTypeConstructor)
 
     return function typeConstructor(...types)
     {
-        if (types.length !== length)
+        if (length !== 0 && types.length !== length)
             throw TypeError(
                 `Type constructor takes ${length} types ` +
-                `but got only ${types.length}` + internalTypeConstructor);
+                `but got only ${types.length}`);
 
         const UUID = stringify(types.map(type => getUUID(type)));
         const existing = cache[UUID];

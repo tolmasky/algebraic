@@ -53,7 +53,7 @@ const primitives =
     tnull: declare(
     {
         typename: "[primitive null]",
-        is: fNamed("[is null]", value => value === "null"),
+        is: fNamed("[is null]", value => value === null),
     }),
 
     tundefined: declare(

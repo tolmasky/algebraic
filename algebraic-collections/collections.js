@@ -1,5 +1,6 @@
 const { declare, getTypename, parameterized } = require("@algebraic/type");
 const { List, OrderedMap, Map, Set, OrderedSet, Stack, Seq } = require("immutable");
+const inspect = Symbol.for("nodejs.util.inspect.custom");
 
 
 exports.List = parameterized (T =>
@@ -22,6 +23,9 @@ function toImmutableBridge(constructor, is, ...types)
 {
     if (!is)
         throw TypeError(constructor.name + " must provide an is function.");
+
+    if (!constructor.prototype[inspect])
+        constructor.prototype[inspect] = constructor.prototype.toString;
 
     const basename = getTypename(constructor);
     const typename = `${basename}<${types.map(getTypename).join(", ")}>`;

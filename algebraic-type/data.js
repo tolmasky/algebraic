@@ -7,7 +7,12 @@ const fNameRegExp = /([^=\s]+)\s*=>/;///(?:^function\s+(?:[^\(\s]*)\(([^\s]+)\))
 const fNameParse = f => fNameRegExp.exec(f + "")[1];
 const fWithDefault = definition => isArray(definition) ?
     definition : [definition, NoDefault];
-const fParseMap = farray => farray.map(f => [fNameParse(f), fWithDefault(f())]);
+const fParseMap = farray => farray.map(f =>
+    is(data.Field, f) ?
+        [f.name, [f.type(),
+            f.defaultValue === data.Field.NoDefault ?
+                NoDefault : f.defaultValue]] :
+        [fNameParse(f), fWithDefault(f())]);
 
 const writable = false;
 const enumerable = true;
@@ -16,7 +21,7 @@ const defineProperty = Object.defineProperty;
 
 const GetFieldsSymbol = Symbol("GetFields");
 
-exports.data = declaration(function data (type, fieldDefinitions)
+const data = declaration(function data (type, fieldDefinitions)
 {
     const typename = getTypename(type);
 
@@ -76,7 +81,15 @@ exports.data = declaration(function data (type, fieldDefinitions)
     return { create, is, serialize, deserialize };
 });
 
-exports.data.fields = function (type)
+module.exports.data = data;
+
+data.Field = data `Field` (
+    name => require("./primitive").string,
+    type => require("./primitive").ftype,
+    defaultValue => [require("./type").any, data.Field.NoDefault] );
+data.Field.NoDefault = data `Field.NoDefault` ();
+
+data.fields = function (type)
 {
     return type[GetFieldsSymbol]().map(([name, [type]]) => [name, type]);
 }
