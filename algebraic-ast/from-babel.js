@@ -1,8 +1,10 @@
 const Comment = require("./comment");
 const { Position, SourceLocation } = require("./source-location");
 
+const isNullOrUndefined =
+    object => object === null || object === void(0);
 const mapNullable = map => object =>
-    object === null || object === void(0) ? null : map(object);
+    isNullOrUndefined(object) ? null : map(object);
 const mapSourceLocation = mapNullable(({ start, end }) =>
     SourceLocation({ start: Position(start), end: Position(end) }));
 const mapComment = ({ type, loc, ...rest }) =>
@@ -20,21 +22,32 @@ const mapCommonNodeFields = node =>
     loc: mapSourceLocation(node.loc)
 });
 
-const Node = require("./node");
-const { NODE_FIELDS } = require("@babel/types");
-const undeprecated = require("./babel/undeprecated-types");
+const mapNode = (function()
+{
+    const Node = require("./node");
+    const { VISITOR_KEYS } = require("@babel/types");
+    const undeprecated = require("./babel/undeprecated-types");
+    const mapNodeFields = (fields, node) => Object
+        .fromEntries(fields.map(field =>
+            [field, mapNullableNode(node[field])]));
+    const toMapTrivialNode = (name, fields) => node =>
+        Node[name]({
+            ...node,
+            ...mapNodeFields(fields, node),
+            ...mapCommonNodeFields(node) });
+    const trivialNodeMappings = Object.fromEntries(
+        undeprecated.map(name =>
+            [name, toMapTrivialNode(name, VISITOR_KEYS[name])]));
+    const mapNode = node => trivialNodeMappings[node.type](node);
+    const mapNullableNode = mapNullable(mapNode);
 
-const toMapTrivialNode = name => (fields =>
-    node => Node[name]({ ...node, ...mapCommonNodeFields(node) }))
-    (NODE_FIELDS[name])
-const trivialMappings = Object.fromEntries(
-    undeprecated
-        .map(name => [name, toMapTrivialNode(name)]))
+    return mapNode;
+})();
 
 
 module.exports = function map(node)
-{console.log(trivialMappings);
-    return trivialMappings[node.type](node);
+{
+    return mapNode(node);
 }
 
 /*
