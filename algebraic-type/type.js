@@ -17,7 +17,9 @@ const type =
     ...require("./serialize"),
     ...require("./deserialize"),
     ...require("./parameterized"),
-    ...require("./maybe")
+    ...require("./maybe"),
+    nullable: require("./nullable"),
+    or: require("./or")
 };
 
 module.exports = type;

@@ -11,7 +11,7 @@ const fParseMap = farray => farray.map(f =>
     is(data.Field, f) ?
         [f.name, [f.type(),
             f.defaultValue === data.Field.NoDefault ?
-                NoDefault : f.defaultValue]] :
+                NoDefault : f.defaultValue()]] :
         [fNameParse(f), fWithDefault(f())]);
 
 const writable = false;
