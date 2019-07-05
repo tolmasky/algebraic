@@ -1,6 +1,3 @@
-//const map = require("./map");
-//const fail = require("@algebraic/type/fail");
-const Node = require("./node");
 const Comment = require("./comment");
 const { Position, SourceLocation } = require("./source-location");
 
@@ -23,9 +20,21 @@ const mapCommonNodeFields = node =>
     loc: mapSourceLocation(node.loc)
 });
 
+const Node = require("./node");
+const { NODE_FIELDS } = require("@babel/types");
+const undeprecated = require("./babel/undeprecated-types");
+
+const toMapTrivialNode = name => (fields =>
+    node => Node[name]({ ...node, ...mapCommonNodeFields(node) }))
+    (NODE_FIELDS[name])
+const trivialMappings = Object.fromEntries(
+    undeprecated
+        .map(name => [name, toMapTrivialNode(name)]))
+
+
 module.exports = function map(node)
-{
-    return Node[node.type]({ ...node, ...mapCommonNodeFields(node) });
+{console.log(trivialMappings);
+    return trivialMappings[node.type](node);
 }
 
 /*
