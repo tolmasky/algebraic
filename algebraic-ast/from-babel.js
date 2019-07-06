@@ -56,10 +56,16 @@ const mapNode = (function ()
     const toIdentifierPattern = identifier =>
         Node.IdentifierPattern({ ...identifier,
             bindings: toBindings(identifier.name) });
+    const toObjectPropertyPattern = ({ value, ...rest }) =>
+        (value =>  Node.ObjectPropertyPattern
+            ({ ...rest, value, bindings: value.bindings }))
+        (toPattern(value));
     const toPattern = pattern =>
         is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             toIdentifierPattern(pattern) :
+        is(Node.ObjectProperty, pattern) ?
+            toObjectPropertyPattern(pattern) :
             pattern;
     const mapToPatterns = (key, fields) => (patterns =>
     ({
@@ -83,6 +89,9 @@ const mapNode = (function ()
 
         ArrayPattern: mappedFields =>
             Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
+
+        ObjectPattern: mappedFields =>
+            Node.ObjectPattern(mapToPatterns("properties", mappedFields)),
 
         RestElement: mappedFields =>
             (argument => Node.RestElement
