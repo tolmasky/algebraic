@@ -86,7 +86,7 @@ const mapNode = (function ()
 
         RestElement: mappedFields =>
             (argument => Node.RestElement
-                ({ ...mappedFields, argument, bindings: bindings.argument }))
+                ({ ...mappedFields, argument, bindings: argument.bindings }))
             (toPattern(mappedFields.argument))
     });
 })();
