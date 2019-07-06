@@ -37,11 +37,13 @@ const toMapNode = function (mappings)
     const nodeFieldMaps = Object.fromEntries(
         undeprecated.map(name =>
             [name, toMapNodeFields(name, VISITOR_KEYS[name])]));
-    const mapNode = node => ((name, fields) =>
-        (mappings[name] ?
-            mappings[name](fields, node) :
-            Node[name](fields)))
-        (node.type, nodeFieldMaps[node.type](node));
+    const mapNode = node => Array.isArray(node) ?
+        node.map(mapNode) :
+        ((name, fields) =>
+            (mappings[name] ?
+                mappings[name](fields, node) :
+                Node[name](fields)))
+            (node.type, nodeFieldMaps[node.type](node));
     const mapNullableNode = mapNullable(mapNode);
 
     return mapNode;
@@ -59,6 +61,13 @@ const mapNode = (function ()
         is(Node.IdentifierExpression, pattern) ?
             toIdentifierPattern(pattern) :
             pattern;
+    const mapToPatterns = (key, fields) => (patterns =>
+    ({
+        ...fields,
+        [key]: patterns,
+        bindings: patterns.reduce((lhs, rhs) =>
+            lhs.concat(rhs.bindings), Set(string)())
+    }))(fields[key].map(toPattern));
 
     return toMapNode(
     {
@@ -72,7 +81,10 @@ const mapNode = (function ()
 
         Identifier: Node.IdentifierExpression,
 
-        RestElement: (mappedFields, babel) =>
+        ArrayPattern: mappedFields =>
+            Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
+
+        RestElement: mappedFields =>
             (argument => Node.RestElement
                 ({ ...mappedFields, argument, bindings: bindings.argument }))
             (toPattern(mappedFields.argument))
