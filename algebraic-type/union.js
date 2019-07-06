@@ -15,7 +15,7 @@ const fParseMap = farray => farray
 const ComponentsSymbol = Symbol("Components");
 
 
-exports.union = declaration(function union (type, declarations)
+const union = declaration(function union (type, declarations)
 {
     const named = fParseMap(declarations);
     const types = named.map(([_, type]) => type);
@@ -44,7 +44,11 @@ exports.union = declaration(function union (type, declarations)
     return { is: unionIs, create, serialize, deserialize };
 });
 
-exports.union.components = function (type)
+module.exports = union;
+
+module.exports.union = union;
+
+module.exports.union.components = function (type)
 {
     return type[ComponentsSymbol];
 }

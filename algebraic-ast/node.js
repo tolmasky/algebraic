@@ -27,7 +27,7 @@ module.exports.Node = Node;
 
 const IdentifierPattern = Node `IdentifierPattern{ESTree = Identifier}` (
     name        => string,
-    bindings    => Set(string));
+    ([names])   => [Set(string), name => Set(string)([name])]);
 
 const IdentifierExpression = Node `IdentifierExpression{ESTree = Identifier}` (
     name => string );

@@ -8,7 +8,7 @@ const type =
     of,
     ...require("./declaration"),
     ...require("./data"),
-    ...require("./union"),
+    union: require("./union"),
     ...require("./primitive"),
     ...require("./serialize"),
     ...require("./deserialize"),
