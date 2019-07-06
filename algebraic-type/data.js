@@ -1,18 +1,34 @@
+const any = require("./any");
+const fail = require("./fail");
+
 const { declaration, fNamed, is, getTypename } = require("./declaration");
 const { inspect } = require("util");
 const { isArray } = Array;
 const NoDefault = { };
+const has = hasOwnProperty.call.bind(hasOwnProperty);
+const { string, ftype } = require("./primitive");
+const { union } = require("./union");
+const EmptyArguments = Object.create(null);
 
-const fNameRegExp = /([^=\s]+)\s*=>/;///(?:^function\s+(?:[^\(\s]*)\(([^\s]+)\))|([^=\s]+)\s*=>/;
-const fNameParse = f => fNameRegExp.exec(f + "")[1];
-const fWithDefault = definition => isArray(definition) ?
-    definition : [definition, NoDefault];
-const fParseMap = farray => farray.map(f =>
-    is(data.Field, f) ?
-        [f.name, [f.type(),
-            f.defaultValue === data.Field.NoDefault ?
-                NoDefault : f.defaultValue()]] :
-        [fNameParse(f), fWithDefault(f())]);
+
+const fieldFromDeclaration = (function ()
+{
+    const fNameRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
+    const fNameParse = f => fNameRegExp.exec(f + "");
+    const fWithDefault = definition => Array.isArray(definition) ?
+        (([T, value]) => [T, field.init.default({ value })])(definition) :
+        [definition, field.init.none];
+    const fFromArrowFunction = (f, [, computed, set] = fNameParse(f)) =>
+        set ?
+            ((name, [type, init]) => field({ type, name, init }))
+            (set, fWithDefault(f())) :
+        ((name, [type, compute]) =>
+            field({ type, name, init: field.init.compute({ compute }) }))
+        (computed, f());
+
+    return declaration => is(field.declare, declaration) ?
+        declaration.create() : fFromArrowFunction(declaration);
+})();
 
 const writable = false;
 const enumerable = true;
@@ -42,32 +58,39 @@ const data = declaration(function data (type, fieldDefinitions)
         return { is, create, serialize, deserialize };
     }
 
+    let fields = false;
+    const getFields = () => fields ||
+        (fields = fieldDefinitions.map(fieldFromDeclaration));
+
+    // Legacy
     let children = false;
-    const getChildren = () => children || (children = fParseMap(fieldDefinitions));
-    const create = fNamed(`[create ${typename}]`, function (fields)
+    const getChildren = () => children || (children = getFields()
+        .map(field => [field.name, [field.type, field.init]]));
+
+    const create = fNamed(`[create ${typename}]`, function (...args)
     {
+        const values = args.length <= 0 ? EmptyArguments : args[0];
+
+        if (values instanceof type)
+            return values;
+
         if (!(this instanceof type))
-            return new type(fields);
+            return new type(values);
 
-        if (!fields)
-            throw TypeError(`${typename} cannot be created without any fields.`);
-
-        for (const [property, [child, defaultValue]] of getChildren())
+        for (const { type, name, init } of getFields())
         {
-            const value = hasOwnProperty.call(fields, property) ?
-                fields[property] : defaultValue;
+            const value =
+                has(values, name) ? values[name] :
+                init !== field.init.none ? init.value :
+                fail.type(`${typename} constructor requires field "${name}"`);
 
-            if (value === NoDefault)
-                throw TypeError(
-                    `${typename} constructor requires field "${property}"`);
-
-            if (!declaration.is(child, value))
+            if (!declaration.is(type, value))
                 throw TypeError(
                     `${typename} constructor passed field ` +
-                    `"${property}" of wrong type. Expected type ` +
-                    `${getTypename(child)} but got ${value}.`);
+                    `"${name}" of wrong type. Expected type ` +
+                    `${getTypename(type)} but got ${value}.`);
 
-            defineProperty(this, property,
+            defineProperty(this, name,
                 { value, writable, enumerable, configurable });
         }
     });
@@ -83,11 +106,28 @@ const data = declaration(function data (type, fieldDefinitions)
 
 module.exports.data = data;
 
-data.Field = data `Field` (
-    name => require("./primitive").string,
-    type => require("./primitive").ftype,
-    defaultValue => [require("./type").any, data.Field.NoDefault] );
-data.Field.NoDefault = data `Field.NoDefault` ();
+const field = function field (values)
+{
+    if (!(this instanceof field))
+        return new field(values);
+
+    this.type = values.type;
+    this.name = values.name;
+    this.init = has(values, "init") ?
+        values.init : field.init.none;
+
+    return this;
+}
+
+data.field = field;
+
+data.field.init = union `data.field.init` (
+    data `none` (),
+    data `default` ( value => any ),
+    data `compute` ( compute => ftype ) );
+
+data.field.declare = data `field.declare` (
+    create => ftype );
 
 data.fields = function (type)
 {
@@ -115,4 +155,5 @@ const fCreate = (f, properties) =>
     (Object.keys(properties)
         .forEach(key => defineProperty(f, key, { value: properties[key] }), f);
 */
+
 

@@ -1,14 +1,10 @@
 const { primitives } = require("./primitive");
 const { union } = require("./union");
-const any = union `any` (
-    Object,
-    ...Object.values(primitives)
-        .filter(x => x !== primitives.primitive && x !== primitives) );
 
 
 const type =
 {
-    any,
+    any: require("./any"),
     of,
     ...require("./declaration"),
     ...require("./data"),

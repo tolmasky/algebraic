@@ -1,4 +1,5 @@
 const { data, parameterized, any, primitives, nullable, or } = require("@algebraic/type");
+const { field } = data;
 const fail = require("@algebraic/type/fail");
 const valueTypes = { ...primitives, "null": primitives.tnull };
 
@@ -13,17 +14,13 @@ module.exports = function fieldFromBabelDefinition(Node, name, definition)
 
     // By default every definition is assigned a default of null, so we can't
     // just blindly use that.
-    const hasTrueDefaultValue = definition.default !== null;
-    const defaultValue = definition.optional ?
-        () => definition.default :
-        hasTrueDefaultValue ?
-            deferredType :
-            data.Field.NoDefault;
+    const { optional, default: value } = definition;
+    const create = () =>
+        ((type, init) => field({ name, type, init }))
+        (wrappedDeferredType(), optional || value !== null ?
+            field.init.default({ value }) : field.init.none);
 
-//     () => (type => parameterized.is(List, type) ?
-//        type(data.default) : data.default)(deferredType()) :
-
-    return data.Field({ name, type: wrappedDeferredType, defaultValue });
+    return field.declare({ create });
 }
 
 function deferredTypeFromValidate(Node, validate)
