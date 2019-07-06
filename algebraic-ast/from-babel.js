@@ -67,6 +67,10 @@ const mapNode = (function ()
         is(Node.ObjectProperty, pattern) ?
             toObjectPropertyPattern(pattern) :
             pattern;
+//    const toPatternAndBindings = (key, fields) =>
+//        (pattern => ({ [key]: pattern, bindings: pattern.bindings }))
+//        (toPattern(fields[key]))
+
     const mapToPatterns = (key, fields) => (patterns =>
     ({
         ...fields,
@@ -74,12 +78,15 @@ const mapNode = (function ()
         bindings: patterns.reduce((lhs, rhs) =>
             lhs.concat(rhs.bindings), Set(string)())
     }))(fields[key].map(toPattern));
+    const Assignment = (type, inheritBindings) =>
+        ({ left, ...mappedFields }) =>
+            (left => type({ ...mappedFields, left,
+                ...(inheritBindings && { bindings: left.bindings }) }))
+        (toPattern(left));
 
     return toMapNode(
     {
-        AssignmentExpression: ({ left, ...mappedFields }) =>
-            Node.AssignmentExpression({ ...mappedFields,
-                left: toPattern(left) }),
+        AssignmentExpression: Assignment(Node.AssignmentExpression, false),
 
         MemberExpression: (mappedFields, { computed, property }) =>
             Node.MemberExpression(computed ?
@@ -87,9 +94,22 @@ const mapNode = (function ()
 
         Identifier: Node.IdentifierExpression,
 
+        AssignmentPattern: Assignment(Node.AssignmentPattern, true),
+
         ArrayPattern: mappedFields =>
             Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
 
+        // ObjectPropertyPatterns are tricky. We can discover them here in the
+        // actual property conversion phase since if they own a pattern, they
+        // definitely can't resolve to an ObjectProperty.
+        ObjectProperty: mappedFields => is(Node.Pattern, mappedFields.value) ?
+            toObjectPropertyPattern(mappedFields) :
+            Node.ObjectProperty(mappedFields),
+
+        // Or we could discover them later on here, if the ObjectPattern looked
+        // syntactically equivalent to an ObjectExpression thus far (e.g. {x}).
+        // At this point we will be sure that this is an ObjectPattern, and thus
+        // it's children must be ObjectPropertyPatterns.
         ObjectPattern: mappedFields =>
             Node.ObjectPattern(mapToPatterns("properties", mappedFields)),
 
