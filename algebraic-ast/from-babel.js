@@ -22,9 +22,9 @@ const mapCommonNodeFields = node =>
     loc: mapSourceLocation(node.loc)
 });
 
-const mapNode = (function()
+const Node = require("./node");
+const toMapNode = function (mappings)
 {
-    const Node = require("./node");
     const { VISITOR_KEYS } = require("@babel/types");
     const undeprecated = require("./babel/undeprecated-types");
     const mapNodeFields = (fields, node) => Object
@@ -38,11 +38,17 @@ const mapNode = (function()
     const trivialNodeMappings = Object.fromEntries(
         undeprecated.map(name =>
             [name, toMapTrivialNode(name, VISITOR_KEYS[name])]));
-    const mapNode = node => trivialNodeMappings[node.type](node);
+    const mapNode = node => ((type, trivial) =>
+        (mappings[type] ? mappings[type](trivial) : trivial))
+        (node.type, trivialNodeMappings[node.type](node));
     const mapNullableNode = mapNullable(mapNode);
 
     return mapNode;
-})();
+}
+const mapNode = toMapNode(
+{
+    Identifier: Node.IdentifierExpression,
+});
 
 
 module.exports = function map(node)
