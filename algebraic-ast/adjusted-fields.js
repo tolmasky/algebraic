@@ -17,6 +17,8 @@ module.exports = fromJS(require("@babel/types").NODE_FIELDS)
     // CatchClause's is a binding.
     .setIn(["CatchClause", "param", "validate"], nullable("IdentifierPattern"))
 
+    .setIn(["AssignmentExpression", "left", "validate"], nullable("RootPattern"))
+
     // This needs to be nullable because it can be null in export default
     // function () { } case.
     .setIn(["FunctionDeclaration", "id", "validate"], nullable("IdentifierPattern"))

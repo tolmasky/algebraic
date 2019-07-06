@@ -27,28 +27,57 @@ const toMapNode = function (mappings)
 {
     const { VISITOR_KEYS } = require("@babel/types");
     const undeprecated = require("./babel/undeprecated-types");
-    const mapNodeFields = (fields, node) => Object
+    const mapVisitorFields = (fields, node) => Object
         .fromEntries(fields.map(field =>
             [field, mapNullableNode(node[field])]));
-    const toMapTrivialNode = (name, fields) => node =>
-        Node[name]({
-            ...node,
-            ...mapNodeFields(fields, node),
+    const toMapNodeFields = (name, fields) => node =>
+        ({  ...node,
+            ...mapVisitorFields(fields, node),
             ...mapCommonNodeFields(node) });
-    const trivialNodeMappings = Object.fromEntries(
+    const nodeFieldMaps = Object.fromEntries(
         undeprecated.map(name =>
-            [name, toMapTrivialNode(name, VISITOR_KEYS[name])]));
-    const mapNode = node => ((type, trivial) =>
-        (mappings[type] ? mappings[type](trivial) : trivial))
-        (node.type, trivialNodeMappings[node.type](node));
+            [name, toMapNodeFields(name, VISITOR_KEYS[name])]));
+    const mapNode = node => ((name, fields) =>
+        (mappings[name] ?
+            mappings[name](fields, node) :
+            Node[name](fields)))
+        (node.type, nodeFieldMaps[node.type](node));
     const mapNullableNode = mapNullable(mapNode);
 
     return mapNode;
 }
-const mapNode = toMapNode(
+const mapNode = (function ()
 {
-    Identifier: Node.IdentifierExpression,
-});
+    const { is, string } = require("@algebraic/type");
+    const { Set } = require("@algebraic/collections");
+    const toBindings = name => Set(string)([name]);
+    const toIdentifierPattern = identifier =>
+        Node.IdentifierPattern({ ...identifier,
+            bindings: toBindings(identifier.name) });
+    const toPattern = pattern =>
+        is(Node.Identifier, pattern) ||
+        is(Node.IdentifierExpression, pattern) ?
+            toIdentifierPattern(pattern) :
+            pattern;
+
+    return toMapNode(
+    {
+        AssignmentExpression: ({ left, ...mappedFields }) =>
+            Node.AssignmentExpression({ ...mappedFields,
+                left: toPattern(left) }),
+
+        MemberExpression: (mappedFields, { computed, property }) =>
+            Node.MemberExpression(computed ?
+                mappedFields : { ...mappedFields, property }),
+
+        Identifier: Node.IdentifierExpression,
+
+        RestElement: (mappedFields, babel) =>
+            (argument => Node.RestElement
+                ({ ...mappedFields, argument, bindings: bindings.argument }))
+            (toPattern(mappedFields.argument))
+    });
+})();
 
 
 module.exports = function map(node)
