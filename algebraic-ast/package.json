@@ -8,5 +8,8 @@
   },
   "keywords": [],
   "author": "Francisco Ryan Tolmasky I",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@babel/types": "^7.5.0"
+  }
 }

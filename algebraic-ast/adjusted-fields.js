@@ -1,6 +1,6 @@
 const { string } = require("@algebraic/type");
 const { Set } = require("@algebraic/collections");
-const { fromJS } = require("immutable");
+const { fromJS } = require("@algebraic/collections/node_modules/immutable");
 const nullable = (...oneOfNodeTypes) => ({ oneOfNodeTypes, optional: true }); 
 const types = (...oneOfNodeTypes) => ({ oneOfNodeTypes });
 const direct = type => ({ validate: { direct: type } });

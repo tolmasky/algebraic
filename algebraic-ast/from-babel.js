@@ -83,6 +83,12 @@ const mapNode = (function ()
             (left => type({ ...mappedFields, left,
                 ...(inheritBindings && { bindings: left.bindings }) }))
         (toPattern(left));
+    const toPatternFields = (keys, type) => mappedFields =>
+        type({ ...mappedFields, ...Object.fromEntries(keys
+            .map(key => [key, mappedFields[key]])
+            .map(([key, value]) => [key,
+                Array.isArray(value) ?
+                    value.map(toPattern) : toPattern(value)])) });
 
     return toMapNode(
     {
@@ -91,6 +97,18 @@ const mapNode = (function ()
         MemberExpression: (mappedFields, { computed, property }) =>
             Node.MemberExpression(computed ?
                 mappedFields : { ...mappedFields, property }),
+
+        CatchClause: toPatternFields(["param"], Node.CatchClause),
+        VariableDeclarator: toPatternFields(["id"], Node.VariableDeclarator),
+
+        ArrowFunctionExpression: toPatternFields(["params"],
+            Node.ArrowFunctionExpression),
+
+        FunctionExpression: toPatternFields(["id", "params"],
+            Node.FunctionExpression),
+
+        FunctionDeclaration: toPatternFields(["id", "params"],
+            Node.FunctionDeclaration),
 
         Identifier: Node.IdentifierExpression,
 
