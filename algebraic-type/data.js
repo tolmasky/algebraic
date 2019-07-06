@@ -1,5 +1,6 @@
 const any = require("./any");
 const fail = require("./fail");
+const partition = require("@climb/partition");
 
 const { declaration, fNamed, is, getTypename } = require("./declaration");
 const { inspect } = require("util");
@@ -23,8 +24,8 @@ const fieldFromDeclaration = (function ()
             ((name, [type, init]) => field({ type, name, init }))
             (set, fWithDefault(f())) :
         ((name, [type, compute]) =>
-            field({ type, name, init: field.init.compute({ compute }) }))
-        (computed, f());
+            field({ type, name, init: field.init.computed({ compute }) }))
+        (computed, f([]));
 
     return declaration => is(field.declare, declaration) ?
         declaration.create() : fFromArrowFunction(declaration);
@@ -58,14 +59,15 @@ const data = declaration(function data (type, fieldDefinitions)
         return { is, create, serialize, deserialize };
     }
 
-    let fields = false;
-    const getFields = () => fields ||
-        (fields = fieldDefinitions.map(fieldFromDeclaration));
-
     // Legacy
     let children = false;
-    const getChildren = () => children || (children = getFields()
+    const getChildren = () => children || (children =
+        fieldDefinitions.map(fieldFromDeclaration)
         .map(field => [field.name, [field.type, field.init]]));
+
+    let initializers = () =>
+        (created => (initializers = () => created, created))
+        (toFieldInitializers(typename, fieldDefinitions));
 
     const create = fNamed(`[create ${typename}]`, function (...args)
     {
@@ -77,22 +79,19 @@ const data = declaration(function data (type, fieldDefinitions)
         if (!(this instanceof type))
             return new type(values);
 
-        for (const { type, name, init } of getFields())
-        {
-            const value =
-                has(values, name) ? values[name] :
-                init !== field.init.none ? init.value :
-                fail.type(`${typename} constructor requires field "${name}"`);
+        const inits = initializers();
+        const uncomputed = inits.uncomputed
+            .map(([name, init]) => [name, init(values)]);
+        const computed = inits.computed.length <= 0 ?
+            [] :
+            (intermediate => inits.computed
+                .map(([name, init]) => [name, init(intermediate)]))
+            (Object.fromEntries(uncomputed));
 
-            if (!declaration.is(type, value))
-                throw TypeError(
-                    `${typename} constructor passed field ` +
-                    `"${name}" of wrong type. Expected type ` +
-                    `${getTypename(type)} but got ${value}.`);
-
-            defineProperty(this, name,
-                { value, writable, enumerable, configurable });
-        }
+        uncomputed.map(([name, value]) => defineProperty(this, name,
+            { value, writable, enumerable, configurable }));
+        computed.map(([name, value]) => defineProperty(this, name,
+            { value, writable, enumerable, configurable }));
     });
     type.prototype.toString = function () { return inspect(this) };
     type[GetFieldsSymbol] = getChildren;
@@ -103,6 +102,31 @@ const data = declaration(function data (type, fieldDefinitions)
 
     return { create, is, serialize, deserialize };
 });
+
+function toFieldInitializers(typename, fieldDefinitions)
+{
+    const typecheck = require("./typecheck");
+    const mismatch = (type, value) =>
+        `${typename} constructor passed value for field "${name}" of wrong"` +
+        `type. Expected type ${getTypename(type)} but got ${value}.`;
+    const missing = name =>
+        fail.type(`${typename} constructor requires field "${name}"`);
+
+    const fields = fieldDefinitions.map(fieldFromDeclaration);
+    const [computed, uncomputed] = partition(
+        ({ init }) => is(field.init.computed, init), fields);
+    const fComputed = computed.map(({ type, name, init }) =>
+        [name, typecheck.function(type, mismatch, init.compute)]);
+    const fUncomputed = uncomputed.map(({ type, name, init }) =>
+        [name, typecheck.function(type, mismatch,
+            values => has(values, name) ?
+                values[name] :
+                is (field.init.default, init) ?
+                    init.value :
+                    missing(name))]);
+
+    return { uncomputed: fUncomputed, computed: fComputed };
+}
 
 module.exports.data = data;
 
@@ -124,7 +148,7 @@ data.field = field;
 data.field.init = union `data.field.init` (
     data `none` (),
     data `default` ( value => any ),
-    data `compute` ( compute => ftype ) );
+    data `computed` ( compute => ftype ) );
 
 data.field.declare = data `field.declare` (
     create => ftype );
