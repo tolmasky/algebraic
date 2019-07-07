@@ -1,4 +1,4 @@
-const { data, parameterized, any, primitives, nullable, or } = require("@algebraic/type");
+const { is, data, parameterized, any, primitives, nullable, or } = require("@algebraic/type");
 const { field } = data;
 const fail = require("@algebraic/type/fail");
 const valueTypes = { ...primitives, "null": primitives.tnull };
@@ -6,6 +6,9 @@ const valueTypes = { ...primitives, "null": primitives.tnull };
 
 module.exports = function fieldFromBabelDefinition(Node, name, definition)
 {
+    if (is (data.field.declare, definition))
+        return definition;
+
     const deferredType =
         deferredTypeFromValidate(Node, definition.validate) || (() => any);
     const wrappedDeferredType = definition.optional ?

@@ -68,7 +68,7 @@ const data = declaration(function data (type, fieldDefinitions)
     let fields = () =>
         (created => (fields = () => created, created))
         (field.compile(typename, fieldDefinitions));
-
+type.fields = () => fields();
     const create = fNamed(`[create ${typename}]`, function (...args)
     {
         const values = args.length <= 0 ? EmptyArguments : args[0];

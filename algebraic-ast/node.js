@@ -38,7 +38,7 @@ const ObjectPropertyPattern =
         value       => or (Node.RootPattern, Node.AssignmentPattern),
         computed    => [boolean, false],
         shorthand   => [boolean, false],
-        bindings    => Set(string) );
+        ([names])   => [Set(string), value => value.names] );
 
 const types = Object.fromEntries(
 [

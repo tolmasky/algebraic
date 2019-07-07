@@ -52,37 +52,24 @@ const mapNode = (function ()
 {
     const { is, string } = require("@algebraic/type");
     const { Set } = require("@algebraic/collections");
-    const toBindings = name => Set(string)([name]);
-    const toIdentifierPattern = identifier =>
-        Node.IdentifierPattern({ ...identifier,
-            bindings: toBindings(identifier.name) });
     const toObjectPropertyPattern = ({ value, ...rest }) =>
-        (value =>  Node.ObjectPropertyPattern
-            ({ ...rest, value, bindings: value.bindings }))
-        (toPattern(value));
+        Node.ObjectPropertyPattern({ value: toPattern(value), ...rest });
     const toPattern = pattern =>
         is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
-            toIdentifierPattern(pattern) :
+            Node.IdentifierPattern(pattern) :
         is(Node.ObjectProperty, pattern) ?
             toObjectPropertyPattern(pattern) :
             pattern;
-//    const toPatternAndBindings = (key, fields) =>
-//        (pattern => ({ [key]: pattern, bindings: pattern.bindings }))
-//        (toPattern(fields[key]))
 
     const mapToPatterns = (key, fields) => (patterns =>
     ({
         ...fields,
-        [key]: patterns,
-        bindings: patterns.reduce((lhs, rhs) =>
-            lhs.concat(rhs.bindings), Set(string)())
-    }))(fields[key].map(toPattern));
-    const Assignment = (type, inheritBindings) =>
+        [key]: fields[key].map(toPattern)
+    }))();
+    const Assignment = type =>
         ({ left, ...mappedFields }) =>
-            (left => type({ ...mappedFields, left,
-                ...(inheritBindings && { bindings: left.bindings }) }))
-        (toPattern(left));
+            type({ left: toPattern(left), ...mappedFields });
     const toPatternFields = (keys, type) => mappedFields =>
         type({ ...mappedFields, ...Object.fromEntries(keys
             .map(key => [key, mappedFields[key]])
@@ -131,10 +118,8 @@ const mapNode = (function ()
         ObjectPattern: mappedFields =>
             Node.ObjectPattern(mapToPatterns("properties", mappedFields)),
 
-        RestElement: mappedFields =>
-            (argument => Node.RestElement
-                ({ ...mappedFields, argument, bindings: argument.bindings }))
-            (toPattern(mappedFields.argument))
+        RestElement: ({ argument, ...mappedFields }) =>
+            Node.RestElement({ ...mappedFields, argument: toPattern(argument) })
     });
 })();
 

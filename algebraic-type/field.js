@@ -127,7 +127,8 @@ const fromManualDeclaration = (function ()
     
         return  initEnum === 0 ? toRequiredField(...common) :
                 initEnum === 1 ? toDefaultField(...common, init.value) :
-                /*initEnum === 2 ?*/ toComputedField(...common, init.compute);
+                /*initEnum === 2 ?*/
+                toComputedField(typename, name, [type, init.compute]);
     }
 })();
 
@@ -136,7 +137,7 @@ const fromFieldDeclaration = (function ()
     const { getTypename, is } = require("./declaration");
     const typecheck = require("./typecheck");
     const mismatch = (typename, name) => (type, value) =>
-        `${typename} constructor passed value for field "${name}" of wrong" ` +
+        `${typename} constructor passed value for field "${name}" of wrong ` +
         `type. Expected type ${getTypename(type)} but got ${value}.`;
 
     return function fromFieldDeclaration(typename, declaration)

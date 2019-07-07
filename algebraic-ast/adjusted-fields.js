@@ -1,10 +1,31 @@
 const { string } = require("@algebraic/type");
-const { Set } = require("@algebraic/collections");
 const { fromJS } = require("@algebraic/collections/node_modules/immutable");
 const nullable = (...oneOfNodeTypes) => ({ oneOfNodeTypes, optional: true }); 
 const types = (...oneOfNodeTypes) => ({ oneOfNodeTypes });
-const direct = type => ({ validate: { direct: type } });
 
+const names = (function ()
+{
+    const { Set } = require("@algebraic/collections");
+    const empty = Set(string)();
+    const fromScalar = node => node.names;
+    const fromVector = nodes => nodes.reduce(
+        (names, node) => names.concat(node.names),
+        empty);
+    const toReducer = (f, key) =>
+        Function("f", `return ${key} => f(${key})`)(f);
+
+    const { field } = require("@algebraic/type").data;
+    const name = "names";
+    const fieldT = field(Set(string));
+
+    const toDeclare = compute => field.declare({
+        create: () =>
+            fieldT({ name, init: fieldT.init.compute({ compute }) }) });
+    const scalar = key => toDeclare(toReducer(fromScalar, key));
+    const vector = key => toDeclare(toReducer(fromVector, key));
+
+    return { scalar, vector }
+})();
 
 module.exports = fromJS(require("@babel/types").NODE_FIELDS)
 
@@ -18,6 +39,7 @@ module.exports = fromJS(require("@babel/types").NODE_FIELDS)
     .setIn(["CatchClause", "param", "validate"], nullable("IdentifierPattern"))
 
     .setIn(["AssignmentExpression", "left", "validate"], nullable("RootPattern"))
+    .setIn(["AssignmentExpression", "names", "validate"], names.scalar("left"))
 
     // This needs to be nullable because it can be null in export default
     // function () { } case.
@@ -26,11 +48,12 @@ module.exports = fromJS(require("@babel/types").NODE_FIELDS)
     .setIn(["FunctionExpression", "id", "validate"], nullable("IdentifierPattern"))
 
     .setIn(["AssignmentPattern", "left", "validate"], types("RootPattern"))
-    .setIn(["AssignmentPattern", "bindings"], direct(Set(string)))
+    .setIn(["AssignmentPattern", "names"], names.scalar("left"))
 
-    .setIn(["ArrayPattern", "bindings"], direct(Set(string)))
-    .setIn(["RestElement", "bindings"], direct(Set(string)))
-    .setIn(["ObjectPattern", "bindings"], direct(Set(string)))
+    .setIn(["ArrayPattern", "names"], names.vector("elements"))
+
+    .setIn(["RestElement", "names"], names.scalar("argument"))
+    .setIn(["ObjectPattern", "names"], names.vector("properties"))
 
 
     // We currently don't parameterize Arrays, so don't do anything to this yet.
@@ -52,3 +75,5 @@ module.exports = fromJS(require("@babel/types").NODE_FIELDS)
     // ImportSpecifier ?
 
     .toJS();
+
+
