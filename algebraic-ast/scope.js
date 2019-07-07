@@ -14,6 +14,10 @@ Scope.concat = (lhs, rhs) =>
             Scope({ bound, free: lhs.free.union(rhs.free).subtract(bound) })))
         (lhs.bound.union(rhs.bound));
 
+Scope.reduce = nodes => nodes
+    .map(node => node.scope)
+    .reduce(Scope.concat, Scope.identity);
+
 
 
 Scope.justFree = scope => Scope({ free: scope.free });
