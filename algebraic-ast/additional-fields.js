@@ -2,23 +2,32 @@ const { data, string } = require("@algebraic/type");
 const { Set } = require("@algebraic/collections");
 const Scope = require("./scope");
 const NameSet = Set(string);
+
 const unionBinaryScope =
     [Scope, (left, right) => Scope.concat(left.scope, right.scope)];
 
-
+const NameSetMonoid =
+    { concat: (lhs, rhs) => lhs.concat(rhs), identity: NameSet() };
+const toMonoid = M => M === Scope ? Scope : NameSetMonoid;
+const concat = (M_, key, items, M = toMonoid(M_)) =>
+    items.map(item => item[key]).reduce(M.concat, M.identity);
 
 module.exports =
 {
     VariableDeclaration: data `VariableDeclaration` (
-        ([scope]) => [Scope, declarations => Scope.reduce(declarations)] ),
+        ([scope]) => [Scope, declarations =>
+            concat(Scope, "scope", declarations)] ),
 
     VariableDeclarator: data `VariableDeclarator` (
-        ([scope]) => [Scope, (id, init) =>
-            Scope.concat(Scope({ bound: id.names }), init.scope)] ),
+        ([scope]) => [Scope, (id, init) => concat(Scope, "scope", [id, init])]),
+
+    ArrayPattern: data `ArrayPattern` (
+        ([names]) => [NameSet, elements => concat(NameSet, "names", elements)],
+        ([scope]) => [Scope, elements => concat(Scope, "scope", elements)] ),
 
     AssignmentPattern: data `AssignmentPattern` (
         ([names]) => [NameSet, left => left.names],
-        ([scope]) => [Scope, right => right.scope] ),
+        ([scope]) => [Scope, right => (console.log(right), right.scope)] ),
 
     BigIntLiteral: data `BigIntLiteral` (
         ([scope]) => [Scope, () => Scope.identity] ),
