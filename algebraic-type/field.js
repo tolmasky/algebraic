@@ -138,7 +138,8 @@ const fromFieldDeclaration = (function ()
     const typecheck = require("./typecheck");
     const mismatch = (typename, name) => (type, value) =>
         `${typename} constructor passed value for field "${name}" of wrong ` +
-        `type. Expected type ${getTypename(type)} but got ${value}.`;
+        `type. Expected type ${getTypename(type)} but got ` +
+        `${JSON.stringify(value)}.`;
 
     return function fromFieldDeclaration(typename, declaration)
     {
@@ -171,7 +172,7 @@ const empty = Object.create(null);
 
 module.exports.fromCompiled = function ([initEnum, name, type, initializer])
 {
-    const fieldT = data.field(type);
+    const fieldT = field(type);
     const init =
         initEnum === 0 ? fieldT.init.none :
         initEnum === 1 ? fieldT.init.default({ value: initializer(empty) }) :

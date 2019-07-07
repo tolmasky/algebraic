@@ -8,6 +8,9 @@ module.exports = function fieldFromBabelDefinition(Node, name, definition)
 {
     if (is (data.field.declare, definition))
         return definition;
+//if (name === "scope") console.log(definition);
+    if (parameterized.belongs (data.field, definition))
+        return definition;
 
     const deferredType =
         deferredTypeFromValidate(Node, definition.validate) || (() => any);

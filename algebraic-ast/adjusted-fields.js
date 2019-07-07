@@ -1,4 +1,4 @@
-const { string } = require("@algebraic/type");
+const { data, string } = require("@algebraic/type");
 const { fromJS } = require("@algebraic/collections/node_modules/immutable");
 const nullable = (...oneOfNodeTypes) => ({ oneOfNodeTypes, optional: true }); 
 const types = (...oneOfNodeTypes) => ({ oneOfNodeTypes });
@@ -27,7 +27,7 @@ const names = (function ()
     return { scalar, vector }
 })();
 
-module.exports = fromJS(require("@babel/types").NODE_FIELDS)
+const changed = fromJS(require("@babel/types").NODE_FIELDS)
 
     // ObjectProperty's value is Expression | PatternLike to allow it to do
     // double-duty as a member of an ObjectExpression and ObjectPattern.
@@ -74,6 +74,11 @@ module.exports = fromJS(require("@babel/types").NODE_FIELDS)
     // ImportNamespaceSpecifier ?
     // ImportSpecifier ?
 
-    .toJS();
-
-
+module.exports = Object
+    .entries(require("./additional-fields"))
+    .reduce((fields, [typename, type]) =>
+        data.fields(type).reduce((fields, field) =>
+            fields.setIn([typename, field.name],
+                data.field.declare({ create: () => field })),
+            fields),
+        changed).toJS();

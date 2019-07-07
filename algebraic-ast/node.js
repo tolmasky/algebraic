@@ -1,6 +1,7 @@
 const { data, nullable, union, or, getTypename } = require("@algebraic/type");
 const { number, string, boolean } = require("@algebraic/type");
 const { OrderedSet, Set } = require("@algebraic/collections");
+const Scope = require("./scope");
 
 const t = require("@babel/types");
 
@@ -30,7 +31,8 @@ const IdentifierPattern = Node `IdentifierPattern{ESTree = Identifier}` (
     ([names])   => [Set(string), name => Set(string)([name])]);
 
 const IdentifierExpression = Node `IdentifierExpression{ESTree = Identifier}` (
-    name => string );
+    name        => string,
+    ([scope])   => [Scope, name => Scope.fromFree(name)] );
 
 const ObjectPropertyPattern =
     Node `ObjectPropertyPattern {ESTree = ObjectProperty}` (
