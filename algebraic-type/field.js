@@ -146,8 +146,9 @@ const fromFieldDeclaration = (function ()
         const compile = manual ? fromManualDeclaration : fromArrowFunction;
         const [initEnum, name, type, initializer] =
             compile(typename, declaration);
-        const typechecked =
-            typecheck.function(type, mismatch(typename, name), initializer);
+        const typechecked = Object.assign(
+            typecheck.function(type, mismatch(typename, name), initializer),
+            initializer);
 
         return [initEnum, name, type, typechecked];
     }
@@ -164,4 +165,18 @@ module.exports.compile = function (typename, fieldDeclarations)
         compiled);
 
     return Object.assign(compiled, { computed, uncomputed });
+}
+
+const empty = Object.create(null);
+
+module.exports.fromCompiled = function ([initEnum, name, type, initializer])
+{
+    const fieldT = data.field(type);
+    const init =
+        initEnum === 0 ? fieldT.init.none :
+        initEnum === 1 ? fieldT.init.default({ value: initializer(empty) }) :
+        /*initEnum === 2 ? */
+        fieldT.init.compute({ compute: initializer.original });
+
+    return fieldT({ name, init });
 }

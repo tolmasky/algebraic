@@ -36,7 +36,8 @@ const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
 
-const GetFieldsSymbol = Symbol("GetFields");
+const GetCompiledFieldsSymbol = Symbol("GetCompiledFields");
+const FieldsSymbol = Symbol("Fields");
 
 const data = declaration(function data (type, fieldDefinitions)
 {
@@ -54,7 +55,7 @@ const data = declaration(function data (type, fieldDefinitions)
         const serialize = [() => 0, true];
         const deserialize = () => type;
 
-        type[GetFieldsSymbol] = () => [];
+        type[GetCompiledFieldsSymbol] = () => [];
 
         return { is, create, serialize, deserialize };
     }
@@ -93,7 +94,8 @@ type.fields = () => fields();
             { value, writable, enumerable, configurable }));
     });
     type.prototype.toString = function () { return inspect(this) };
-    type[GetFieldsSymbol] = getChildren;
+    type[GetCompiledFieldsSymbol] = () => fields();
+    type[FieldsSymbol] = null;
 
     const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
@@ -110,7 +112,8 @@ data.field = field;
 
 data.fields = function (type)
 {
-    return type[GetFieldsSymbol]().map(([name, [type]]) => [name, type]);
+    return  type[FieldsSymbol] || (type[FieldsSymbol] =
+            type[GetCompiledFieldsSymbol]().map(data.field.fromCompiled));
 }
 
 function toSerialize(typename, getChildren)
