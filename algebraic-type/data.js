@@ -65,9 +65,9 @@ const data = declaration(function data (type, fieldDefinitions)
         fieldDefinitions.map(fieldFromDeclaration)
         .map(field => [field.name, [field.type, field.init]]));
 
-    let initializers = () =>
-        (created => (initializers = () => created, created))
-        (toFieldInitializers(typename, fieldDefinitions));
+    let fields = () =>
+        (created => (fields = () => created, created))
+        (field.compile(typename, fieldDefinitions));
 
     const create = fNamed(`[create ${typename}]`, function (...args)
     {
@@ -79,13 +79,12 @@ const data = declaration(function data (type, fieldDefinitions)
         if (!(this instanceof type))
             return new type(values);
 
-        const inits = initializers();
-        const uncomputed = inits.uncomputed
-            .map(([name, init]) => [name, init(values)]);
-        const computed = inits.computed.length <= 0 ?
+        const uncomputed = fields().uncomputed
+            .map(([_, name, __, init]) => [name, init(values)]);
+        const computed = fields().computed.length <= 0 ?
             [] :
-            (intermediate => inits.computed
-                .map(([name, init]) => [name, init(intermediate)]))
+            (intermediate => fields().computed
+                .map(([_, name, __, init]) => [name, init(intermediate)]))
             (Object.fromEntries(uncomputed));
 
         uncomputed.map(([name, value]) => defineProperty(this, name,
@@ -103,55 +102,11 @@ const data = declaration(function data (type, fieldDefinitions)
     return { create, is, serialize, deserialize };
 });
 
-function toFieldInitializers(typename, fieldDefinitions)
-{
-    const typecheck = require("./typecheck");
-    const mismatch = (type, value) =>
-        `${typename} constructor passed value for field "${name}" of wrong"` +
-        `type. Expected type ${getTypename(type)} but got ${value}.`;
-    const missing = name =>
-        fail.type(`${typename} constructor requires field "${name}"`);
-
-    const fields = fieldDefinitions.map(fieldFromDeclaration);
-    const [computed, uncomputed] = partition(
-        ({ init }) => is(field.init.computed, init), fields);
-    const fComputed = computed.map(({ type, name, init }) =>
-        [name, typecheck.function(type, mismatch, init.compute)]);
-    const fUncomputed = uncomputed.map(({ type, name, init }) =>
-        [name, typecheck.function(type, mismatch,
-            values => has(values, name) ?
-                values[name] :
-                is (field.init.default, init) ?
-                    init.value :
-                    missing(name))]);
-
-    return { uncomputed: fUncomputed, computed: fComputed };
-}
-
 module.exports.data = data;
 
-const field = function field (values)
-{
-    if (!(this instanceof field))
-        return new field(values);
-
-    this.type = values.type;
-    this.name = values.name;
-    this.init = has(values, "init") ?
-        values.init : field.init.none;
-
-    return this;
-}
+const field = require("./field");
 
 data.field = field;
-
-data.field.init = union `data.field.init` (
-    data `none` (),
-    data `default` ( value => any ),
-    data `computed` ( compute => ftype ) );
-
-data.field.declare = data `field.declare` (
-    create => ftype );
 
 data.fields = function (type)
 {

@@ -10,10 +10,11 @@
 // data.field <data.field <data.field <T>.init >.init>, etc.
 const field = (function ()
 {
+    const { is } = require("./declaration");
     const union = require("./union");
     const { parameterized } = require("./parameterized");
     const { data } = require("./data");
-    const { ftype } = require("./primitive");
+    const { ftype, string } = require("./primitive");
     const field = parameterized(T => 
     {
         const fieldT = data `data.field <${T}>` (
@@ -34,7 +35,7 @@ const field = (function ()
 
 
 
-module.exports.field = field;
+module.exports = field;
 
 // Our internal "compiled" representation is an array with the following
 // elements:
@@ -99,8 +100,6 @@ const fromArrowFunction = (function ()
     return function fromArrowFunction(typename, f)
     {
         const [, compute, set] = fNameRegExp.exec(f + "");
-        console.log(compute);
-        console.log(set);
         const toField = (set ? toUncomputedField : toComputedField);
         const name = set || compute;
 
@@ -110,16 +109,22 @@ const fromArrowFunction = (function ()
 
 const fromManualDeclaration = (function ()
 {
+    const { is } = require("./declaration");
+    const { parameterized } = require("./parameterized");
     const toInitEnum = init =>
         is(init, field.init.none) ? 0 :
         is(init, field.init.default) ? 1 : 2;
 
-    return function fromManualDeclaration(declare)
+    return function fromManualDeclaration(typename, declare)
     {
-        const { name, type, init } = declare.create();
-        const initEnum = toInitEnum(init);
+        const dataField = declare.create();
+        const { name, init } = dataField;
+        const type = parameterized.parameters(dataField)[0];
+        const initEnum =
+            is(field(type).init.none, init) ? 0 :
+            is(field(type).init.default, init) ? 1 : 2;
         const common = [typename, name, type];
-
+    
         return  initEnum === 0 ? toRequiredField(...common) :
                 initEnum === 1 ? toDefaultField(...common, init.value) :
                 /*initEnum === 2 ?*/ toComputedField(...common, init.compute);

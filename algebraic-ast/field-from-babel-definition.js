@@ -15,10 +15,16 @@ module.exports = function fieldFromBabelDefinition(Node, name, definition)
     // By default every definition is assigned a default of null, so we can't
     // just blindly use that.
     const { optional, default: value } = definition;
-    const create = () =>
-        ((type, init) => field({ name, type, init }))
-        (wrappedDeferredType(), optional || value !== null ?
-            field.init.default({ value }) : field.init.none);
+    const create = function ()
+    {
+        const type = wrappedDeferredType();
+        const hasDefault = optional || value !== null;
+        const init = hasDefault ?
+            field(type).init.default({ value }) :
+            field(type).init.none;
+
+        return field(type)({ name, init });
+    }
 
     return field.declare({ create });
 }
