@@ -9,7 +9,8 @@ const undeprecated = require("./babel/undeprecated-types");
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
-const adjustedFields = require("./adjusted-fields");
+
+const definitions = require("./node-definitions");
 const fieldFromBabelDefinition = require("./field-from-babel-definition");
 
 
@@ -47,7 +48,7 @@ const types = Object.fromEntries(
 [
     ...undeprecated.map(name => [name, Node([name])
         (...Object
-            .entries(adjustedFields[name])
+            .entries(definitions[name])
             .map(([name, definition]) =>
                 fieldFromBabelDefinition(Node, name, definition)))]),
     ...[IdentifierPattern, ObjectPropertyPattern, IdentifierExpression]

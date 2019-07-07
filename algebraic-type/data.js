@@ -38,6 +38,8 @@ const defineProperty = Object.defineProperty;
 
 const GetCompiledFieldsSymbol = Symbol("GetCompiledFields");
 const FieldsSymbol = Symbol("Fields");
+const FieldDeclarationsUnstandardized = Symbol("FieldDeclarationsUnstandardized");
+const FieldDeclarations = Symbol("FieldDecalrations");
 
 const data = declaration(function data (type, fieldDefinitions)
 {
@@ -96,6 +98,8 @@ type.fields = () => fields();
     type.prototype.toString = function () { return inspect(this) };
     type[GetCompiledFieldsSymbol] = () => fields();
     type[FieldsSymbol] = null;
+    type[FieldDeclarationsUnstandardized] = fieldDefinitions;
+    type[FieldDeclarations] = null;
 
     const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
@@ -114,6 +118,13 @@ data.fields = function (type)
 {
     return  type[FieldsSymbol] || (type[FieldsSymbol] =
             type[GetCompiledFieldsSymbol]().map(data.field.fromCompiled));
+}
+
+data.fieldDeclarations = function (type)
+{
+    return  type[FieldDeclarations] || (type[FieldDeclarations] =
+            type[FieldDeclarationsUnstandardized]
+                .map(data.field.declaration.concretize));
 }
 
 function toSerialize(typename, getChildren)

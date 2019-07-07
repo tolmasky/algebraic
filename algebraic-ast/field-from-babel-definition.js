@@ -6,7 +6,7 @@ const valueTypes = { ...primitives, "null": primitives.tnull };
 
 module.exports = function fieldFromBabelDefinition(Node, name, definition)
 {
-    if (is (data.field.declare, definition))
+    if (is (data.field.declaration, definition))
         return definition;
 //if (name === "scope") console.log(definition);
     if (parameterized.belongs (data.field, definition))
@@ -21,7 +21,7 @@ module.exports = function fieldFromBabelDefinition(Node, name, definition)
     // By default every definition is assigned a default of null, so we can't
     // just blindly use that.
     const { optional, default: value } = definition;
-    const create = function ()
+    const λfield = function ()
     {
         const type = wrappedDeferredType();
         const hasDefault = optional || value !== null;
@@ -32,7 +32,7 @@ module.exports = function fieldFromBabelDefinition(Node, name, definition)
         return field(type)({ name, init });
     }
 
-    return field.declare({ create });
+    return field.declaration({ name, λfield });
 }
 
 function deferredTypeFromValidate(Node, validate)

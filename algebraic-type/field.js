@@ -1,3 +1,5 @@
+const { is } = require("./declaration");
+
 // data.fields are datas themselves, so creating them is a little tricky. You
 // can quickly get into infinite recursion as data.fields have data.fields
 // which have data.fields, etc. The solution is to have an internal non-data
@@ -10,7 +12,6 @@
 // data.field <data.field <data.field <T>.init >.init>, etc.
 const field = (function ()
 {
-    const { is } = require("./declaration");
     const union = require("./union");
     const { parameterized } = require("./parameterized");
     const { data } = require("./data");
@@ -24,13 +25,28 @@ const field = (function ()
         fieldT.init = union `data.field <${T}>.init` (
             data `none` (),
             data `default` ( value => T ),
-            data `compute` ( compute => ftype ) );
+            data `compute` (
+                initializer     => ftype,
+                dependencies    => Array ) );
     
         return fieldT;
     });
-    field.declare = data `field.declare` ( create => ftype );
+
+    field.declaration = data `field.declaration` (
+        name    => string,
+        λfield  => ftype );
 
     return field;
+})();
+
+const fromShorthandDeclaration = (function ()
+{
+    const fNameRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
+
+    return f =>
+        (([, compute, set]) =>
+            ({ compute: !!compute, name: compute || set }))
+        (fNameRegExp.exec(f + ""));
 })();
 
 
@@ -56,12 +72,13 @@ const toRequiredInitializer = (typename, name, type) =>
 
 const toDefaultField = (typename, name, type, value) =>
     [1, name, type, toDefaultInitializer(name, type, value)];
-const toDefaultInitializer = (name, type, value) =>
-    provided => has(provided, name) ? provided[name] : value;
+const toDefaultInitializer = (name, type, value) => Object.assign(
+    provided => has(provided, name) ? provided[name] : value,
+    { value })
 
-const toComputedField = (typename, name, [type, definition]) =>
-    [2, name, type, toComputeInitializer(typename, definition)];
-const toComputeInitializer = (function ()
+const toComputedField = (typename, name, [type, shorthand]) =>
+    [2, name, type, fromShorthandCompute(shorthand)];
+const fromShorthandCompute = (function ()
 {
     const  templateRegExp = require("./templated-regular-expression");
     const regexps = templateRegExp(
@@ -72,19 +89,21 @@ const toComputeInitializer = (function ()
         list: /^\(?\s*(${names})\s*\)?/,
     });
 
-    return function toComputeInitializer(typename, declaration)
+    return function fromShorthandCompute(shorthand)
     {
-        const fString = declaration + "";
+        const fString = shorthand + "";
         const object = regexps.object.exec(fString);
-        const extracted = object ? object[1] : regexps.list.exec(fString)[1];
+        const destructured = !!object;
+        const extracted = destructured ?
+            object[1] : regexps.list.exec(fString)[1];
         const dependencies = extracted.split(/\s*,\s*/);
         const deduped = Array.from(new Set(dependencies));
-        const initializer = !!object ?
-            values => declaration(values) :
-            values => declaration(...dependencies.map(name => values[name]));
-        const original = declaration;
+        const initializer = destructured ?
+            values => shorthand(values) :
+            values => shorthand(...dependencies.map(name => values[name]));
+        const initProperties = { dependencies, initializer };
 
-        return Object.assign(initializer, { original, dependencies });
+        return Object.assign(initializer, initProperties);
     }
 })();
 
@@ -109,26 +128,26 @@ const fromArrowFunction = (function ()
 
 const fromManualDeclaration = (function ()
 {
-    const { is } = require("./declaration");
     const { parameterized } = require("./parameterized");
     const toInitEnum = init =>
         is(init, field.init.none) ? 0 :
         is(init, field.init.default) ? 1 : 2;
+    const toComputeWrap = f => Object.assign(x => f.initializer(x), f);
 
-    return function fromManualDeclaration(typename, declare)
+    return function fromManualDeclaration(typename, decalaration)
     {
-        const dataField = declare.create();
-        const { name, init } = dataField;
-        const type = parameterized.parameters(dataField)[0];
+        const instantiated = decalaration.λfield();
+        const type = parameterized.parameters(instantiated)[0];
+        const { name, init } = instantiated;
         const initEnum =
             is(field(type).init.none, init) ? 0 :
             is(field(type).init.default, init) ? 1 : 2;
         const common = [typename, name, type];
-    
+
         return  initEnum === 0 ? toRequiredField(...common) :
                 initEnum === 1 ? toDefaultField(...common, init.value) :
                 /*initEnum === 2 ?*/
-                toComputedField(typename, name, [type, init.compute]);
+                [2, name, type, toComputeWrap(init)];
     }
 })();
 
@@ -143,8 +162,8 @@ const fromFieldDeclaration = (function ()
 
     return function fromFieldDeclaration(typename, declaration)
     {
-        const manual = is (field.declare, declaration);
-        const compile = manual ? fromManualDeclaration : fromArrowFunction;
+        const shorthand = !is(field.declaration, declaration);
+        const compile = shorthand ? fromArrowFunction : fromManualDeclaration;
         const [initEnum, name, type, initializer] =
             compile(typename, declaration);
         const typechecked = Object.assign(
@@ -168,16 +187,46 @@ module.exports.compile = function (typename, fieldDeclarations)
     return Object.assign(compiled, { computed, uncomputed });
 }
 
-const empty = Object.create(null);
-
 module.exports.fromCompiled = function ([initEnum, name, type, initializer])
 {
     const fieldT = field(type);
     const init =
         initEnum === 0 ? fieldT.init.none :
-        initEnum === 1 ? fieldT.init.default({ value: initializer(empty) }) :
+        initEnum === 1 ? fieldT.init.default(initializer) :
         /*initEnum === 2 ? */
-        fieldT.init.compute({ compute: initializer.original });
+        fieldT.init.compute(initializer)
 
     return fieldT({ name, init });
 }
+
+field.declaration.concretize = function concretize (declaration)
+{
+    if (is(field.declaration, declaration))
+        return declaration;
+
+    const { compute, name } = fromShorthandDeclaration(declaration);
+    const λfield = () => field.fromCompiled(fromFieldDeclaration("", declaration));
+
+    return field.declaration({ name, λfield });
+}
+
+
+// Users can supply:
+// field.declaration || shorthand
+// We can only use field, but have to store it as compiled
+// So, (field.declaration || shorthand) => lazy[compiled]
+// (field.declaration || shorthand) => field.declaration
+// 
+
+
+
+
+
+
+
+
+
+
+
+
+
