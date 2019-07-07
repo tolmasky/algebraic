@@ -48,12 +48,7 @@ const changed = fromJS(require("@babel/types").NODE_FIELDS)
     .setIn(["FunctionExpression", "id", "validate"], nullable("IdentifierPattern"))
 
     .setIn(["AssignmentPattern", "left", "validate"], types("RootPattern"))
-    .setIn(["AssignmentPattern", "names"], names.scalar("left"))
-
-    .setIn(["ArrayPattern", "names"], names.vector("elements"))
-
     .setIn(["RestElement", "names"], names.scalar("argument"))
-    .setIn(["ObjectPattern", "names"], names.vector("properties"))
 
 
     // We currently don't parameterize Arrays, so don't do anything to this yet.

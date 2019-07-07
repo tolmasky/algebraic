@@ -27,7 +27,17 @@ module.exports =
 
     AssignmentPattern: data `AssignmentPattern` (
         ([names]) => [NameSet, left => left.names],
-        ([scope]) => [Scope, right => (console.log(right), right.scope)] ),
+        ([scope]) => [Scope, right => right.scope] ),
+
+    ObjectPattern: data `ObjectPattern` (
+        ([names]) => [NameSet, properties =>
+            concat(NameSet, "names", properties)],
+        ([scope]) => [Scope, properties =>
+            concat(Scope, "scope", properties)] ),
+
+    RestElement: data `RestElement` (
+        ([names]) => [NameSet, argument => argument.names],
+        ([scope]) => [Scope, argument => argument.scope] ),
 
     BigIntLiteral: data `BigIntLiteral` (
         ([scope]) => [Scope, () => Scope.identity] ),
