@@ -5,6 +5,21 @@ const Scope = require("./scope");
 
 module.exports =
 {
+    BigIntLiteral: data `BigIntLiteral` (
+        ([scope]) => [Scope, () => Scope.identity] ),
+
+    BooleanLiteral: data `BooleanLiteral` (
+        ([scope]) => [Scope, () => Scope.identity] ),
+
+    NumericLiteral: data `NumericLiteral` (
+        ([scope]) => [Scope, () => Scope.identity] ),
+
+    NullLiteral: data `NullLiteral` (
+        ([scope]) => [Scope, () => Scope.identity] ),
+
+    RegExpLiteral: data `RegExpLiteral` (
+        ([scope]) => [Scope, () => Scope.identity] ),
+
     StringLiteral: data `StringLiteral` (
         ([scope]) => [Scope, () => Scope.identity] ),
 
