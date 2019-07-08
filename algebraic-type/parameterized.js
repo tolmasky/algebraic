@@ -51,7 +51,7 @@ module.exports.parameterized = parameterized;
 // type.of(value) is of P[type.of(value).parameters]
 // The second case is for example:
 // P = paramaterized(T => union (X<T>, Y<T>))
-// X<T> should intuitively return true for P.
+// X<T> should intuitively return true for P, since X<T> will for P<T>.
 function valueIs(typeConstructor, value)
 {
     const type = of(value);
