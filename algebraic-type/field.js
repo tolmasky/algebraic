@@ -5,7 +5,7 @@ const union = require("./union");
 const maybe = require("./maybe");
 const or = require("./or");
 const { data } = require("./data");
-const { ftype, string } = require("./primitive");
+const { ftype, string, boolean } = require("./primitive");
 const { isArray } = Array;
 const has = hasOwnProperty.call.bind(hasOwnProperty);
 const any = require("./any");
@@ -50,6 +50,7 @@ field.definition.computed = parameterized(T =>
 
 field.deferred = data `field.deferred` (
     name                => string,
+    computed            => [boolean, false],
     λdefinition         => ftype );
 
 field.declaration = union `field.declaration` (
@@ -81,29 +82,34 @@ field.compile = function (fieldDeclarations)
 // property { name, definition: supplied }
 // property { name, definition: computed }
 
-const fromDeclaration = (function fromDeclaration()
+const parseShorthand = (function ()
 {
     const fShorthandRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
-    const parseShorthand = f =>
+
+    return f =>
         (([, computed, supplied]) => [!!computed, computed || supplied])
         (fShorthandRegExp.exec(f + ""));
-
-    return function fromDeclaration(declaration)
-    {
-        const isShorthand = !is (field.declaration, declaration);
-        const [computed, name, definition] = isShorthand ?
-            [...parseShorthand(declaration), declaration([])] :
-            [false, declaration.name,
-                is (field.deferred, declaration) ?
-                    declaration.λdefinition() :
-                    declaration.definition];
-        const compiled = is (field.definition, definition) ?
-            fromDefinition(definition) :
-            fromShorthandDefinition(computed, definition);
-
-        return [name, compiled];
-    }
 })();
+
+function fromDeclaration(declaration)
+{
+    const isShorthand = !is (field.declaration, declaration);
+    const [computed, name, definition] =
+        isShorthand ?
+            [...parseShorthand(declaration), declaration([])] :
+        is (field.deferred, declaration) ?
+            [declaration.computed,
+                declaration.name,
+                declaration.λdefinition([])] :
+        [is (field.definition.computed, declaration.definition),
+            declaration.name,
+            declaration.definition];
+    const compiled = is (field.definition, definition) ?
+        fromDefinition(definition) :
+        fromShorthandDefinition(computed, definition);
+
+    return [name, compiled];
+}
 
 function fromDefinition(definition)
 {
@@ -200,4 +206,15 @@ module.exports.fromCompiled = function ([name, [_, computed, type, values]])
         definitionT.supplied(values);
 
     return field(type)({ name, definition });
+}
+
+module.exports.toFieldDeclaration = function toFieldDeclaration (declaration)
+{
+    if (is (field.declaration, declaration))
+        return declaration;
+
+    const [computed, name] = parseShorthand(declaration);
+    const λdefinition = declaration;
+
+    return field.deferred({ name, computed, λdefinition });
 }

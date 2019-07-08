@@ -72,6 +72,8 @@ const data = declaration(function data (type, fieldDeclarations)
 
     const fields = cached(() => fieldsCompiled().map(field.fromCompiled));
     const fieldsCompiled = cached(() => field.compile(fieldDeclarations));
+    const toFieldDeclarations = cached(() =>
+        fieldDeclarations.map(field.toFieldDeclaration));
     const create = fNamed(`[create ${typename}]`, function (...args)
     {
         const values = args.length <= 0 ? EmptyArguments : args[0];
@@ -97,7 +99,7 @@ const data = declaration(function data (type, fieldDeclarations)
     });
 
     type.prototype.toString = function () { return inspect(this) };
-    type[DataMetadata] = { fields, fieldsCompiled, fieldDeclarations };
+    type[DataMetadata] = { fields, fieldsCompiled, toFieldDeclarations };
 
     const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
@@ -108,10 +110,14 @@ const data = declaration(function data (type, fieldDeclarations)
 
 const initialize = (function ()
 {
+    const toString = value =>
+        typeof value === "function" ?
+            value + "" :
+            JSON.stringify(value);
     const typecheck = (owner, name, { expected, value }) =>
         `${owner} constructor passed value for field "${name}" of wrong ` +
         `type. Expected type ${getTypename(expected)} but got ` +
-        `${JSON.stringify(value)}.`;
+        `${toString(value)}.`;
     const missing = (owner, name) =>
         `${owner} constructor requires field "${name}"`;
     const message = (owner, name, error) =>
@@ -132,7 +138,7 @@ const field = require("./field");
 
 data.field = field;
 data.fields = type => (console.log(type[DataMetadata]),type[DataMetadata].fields());
-data.fieldDeclarations = type => type[DataMetadata].fieldDeclarations;
+data.fieldDeclarations = type => type[DataMetadata].toFieldDeclarations();
 
 function toSerialize(typename, getChildren)
 {

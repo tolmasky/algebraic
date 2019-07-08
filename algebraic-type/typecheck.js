@@ -1,9 +1,14 @@
 const { fNamed, is } = require("./declaration");
-const fail = require("./fail");
+const result = require("./result");
+
+const error = parameterized((E, R) =>
+    data `typecheck.error <${E, R}>` (
+        value => R ) );
 
 const value = (type, message, value) =>
     is(type, value) ?
-        value :
+        result.success(value) :
+        result.failure()
         fail.type(message(type, value));
 
 module.exports = value;

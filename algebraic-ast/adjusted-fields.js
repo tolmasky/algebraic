@@ -29,26 +29,8 @@ const names = (function ()
 
 const changed = fromJS(require("@babel/types").NODE_FIELDS)
 
-    // ObjectProperty's value is Expression | PatternLike to allow it to do
-    // double-duty as a member of an ObjectExpression and ObjectPattern.
-    // However, since we have a separate ObjectPatternProperty, we don't need
-    // PatternLike anymore.
-    .setIn(["ObjectProperty", "value", "validate"], types("Expression"))
 
-    // CatchClause's is a binding.
-    .setIn(["CatchClause", "param", "validate"], nullable("IdentifierPattern"))
 
-    .setIn(["AssignmentExpression", "left", "validate"], nullable("RootPattern"))
-    .setIn(["AssignmentExpression", "names", "validate"], names.scalar("left"))
-
-    // This needs to be nullable because it can be null in export default
-    // function () { } case.
-    .setIn(["FunctionDeclaration", "id", "validate"], nullable("IdentifierPattern"))
-
-    .setIn(["FunctionExpression", "id", "validate"], nullable("IdentifierPattern"))
-
-    .setIn(["AssignmentPattern", "left", "validate"], types("RootPattern"))
-    .setIn(["RestElement", "names"], names.scalar("argument"))
 
 
     // We currently don't parameterize Arrays, so don't do anything to this yet.

@@ -92,6 +92,7 @@ const aliases = Object.fromEntries(Object
 
 Object.assign(Node, types, aliases);
 
+
 // for (const type of Object.values(types))
 // {
 //     console.log(getTypename(type));

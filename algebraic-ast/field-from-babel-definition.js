@@ -2,43 +2,39 @@ const { is, data, parameterized, any, primitives, nullable, or } = require("@alg
 const { field } = data;
 const fail = require("@algebraic/type/fail");
 const valueTypes = { ...primitives, "null": primitives.tnull };
+const maybe = require("@algebraic/type/maybe");
+const Node = (Node => name => (Node || (Node = require("./node")))[name])();
 
 
-module.exports = function fieldFromBabelDefinition(Node, name, definition)
+module.exports = function fieldFromBabelDefinition(Node, name, declaration)
 {
-    if (is (data.field.declaration, definition))
-        return definition;
-//if (name === "scope") console.log(definition);
-    if (parameterized.belongs (data.field, definition))
-        return definition;
+    if (is (field.declaration, declaration))
+        return declaration;
 
+    const { optional, validate, default: value } = declaration;
     const deferredType =
-        deferredTypeFromValidate(Node, definition.validate) || (() => any);
-    const wrappedDeferredType = definition.optional ?
+        deferredTypeFromValidate(Node, validate) || (() => any);
+    const wrappedDeferredType = optional ?
         () => nullable(deferredType()) :
         deferredType;
-
-    // By default every definition is assigned a default of null, so we can't
-    // just blindly use that.
-    const { optional, default: value } = definition;
-    const λfield = function ()
+    const λdefinition = function ()
     {
-        const type = wrappedDeferredType();
+        // By default every definition is assigned a default of null, so we
+        // can't just blindly use that.
         const hasDefault = optional || value !== null;
-        const init = hasDefault ?
-            field(type).init.default({ value }) :
-            field(type).init.none;
+        const type = wrappedDeferredType();
+        const fallback = hasDefault ?
+            maybe(type).just({ value }) :
+            maybe(type).nothing;
 
-        return field(type)({ name, init });
+        return field.definition(type).supplied({ fallback });
     }
 
-    return field.declaration({ name, λfield });
+    return field.deferred({ name, λdefinition });
 }
 
 function deferredTypeFromValidate(Node, validate)
 {
-    const { aliases } = Node;
-
     // There are only 10 fields that don't define a proper validation
     // function, and they all appear to be bugs.
     return !validate ? () => any :

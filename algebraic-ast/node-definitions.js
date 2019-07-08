@@ -14,8 +14,15 @@ const concat = (M_, key, items, M = toMonoid(M_)) =>
 
 const Node = (Node => name => (Node || (Node = require("./node")))[name])();
 
+//const union = [["names", NameSet], ["scope", Scope]]
+//    .map(([key, ])
+//const adopt = [["names", NameSet], ["scope", Scope]]
+//    .map(([key, type]) => [type, data.field.declaration({ name: "names", type: })
 
 Error.stackTraceLimit = 1000;
+
+
+//adopt.names.from `left`
 
 module.exports = withBabelDefinitions(
 {
@@ -140,9 +147,19 @@ function withBabelDefinitions(overrides)
 
     return Object
         .entries(overrides)
-        .reduce((fields, [typename, type]) =>
-            data.fieldDeclarations(type).reduce((fields, field) =>
-                fields.setIn([typename, field.name], field),
-                fields),
+        .reduce((declarations, [typename, type]) =>
+            data.fieldDeclarations(type).reduce((declarations, declaration) =>
+                declarations.setIn([typename, declaration.name], declaration),
+                declarations),
             babelDefinitions).toJS();
 }
+
+/*
+const extension = data `extension` (
+    name => string,
+    declarations => Array );
+
+const extend = ([name]) =>
+    (...declarations) => extension({ name, declarations });
+
+*/
