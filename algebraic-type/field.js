@@ -9,6 +9,7 @@ const { ftype, string } = require("./primitive");
 const { isArray } = Array;
 const has = hasOwnProperty.call.bind(hasOwnProperty);
 const any = require("./any");
+const fail = require("./fail");
 
 
 // data.fields are datas themselves, so creating them is a little tricky. You
@@ -67,7 +68,7 @@ field.compile = function (fieldDeclarations)
     const partition = require("@climb/partition");
     const compiled = fieldDeclarations.map(fromDeclaration);
     const [computed, uncomputed] =
-        partition(([, [computed]]) => computed, compiled);
+        partition(([, [, computed]]) => computed, compiled);
 
     return Object.assign(compiled, { computed, uncomputed });
 }
@@ -109,22 +110,26 @@ function fromDefinition(definition)
     const type = parameters(definition)[0];
 
     return is (field.definition.supplied, definition) ?
-        toSuppliedIC(type, definition.fallback) :
-        toComputedIC(type,
-            definition.initializer,
-            definition.dependencies);
+        toSuppliedIC(type, definition) :
+        toComputedIC(type, definition);
 }
 
 function fromShorthandDefinition(computed, definition)
 {
-    const isTuple = isArray(definition);
-    const type = isTuple ? definition[0] : definition;
+    const tuple = isArray(definition);
 
-    return  computed ?
-            fromComputedShorthand(type, definition[1]) :
-            toSuppliedIC(type, isTuple ?
-                maybe(type).just({ value: definition[1] }) :
-                maybe(type).nothing);
+    if (computed && tuple)
+        return fromComputedShorthand(...definition);
+
+    if (computed && !tuple)
+        return fail("Failed to parse computed property, you must pass an array");
+
+    const type = tuple ? definition[0] : definition;
+    const fallback = tuple ?
+        maybe(type).just({ value: definition[1] }) :
+        maybe(type).nothing;
+
+    return  toSuppliedIC(type, { fallback });
 }
 
 const fromComputedShorthand = (function ()
@@ -145,62 +150,54 @@ const fromComputedShorthand = (function ()
         const extracted = (object || listRegExp.exec(fString))[1];
         const dependencies = extracted.split(/\s*,\s*/);
         const deduped = Array.from(new Set(dependencies));
-        const initializer = object ?
+        const compute = object ?
             values => [true, shorthand(values)] :
             values => [true, shorthand(...dependencies
                 .map(name => values[name]))];
 
-        return toComputedIC(type, initializer, dependencies);
+        return toComputedIC(type, { compute, dependencies });
     }
 })();
 
-function toSuppliedIC(type, fallback)
+function toSuppliedIC(type, definition)
 {
+    const { fallback } = definition;
     const initializer = fallback === maybe(type).none ?
-        (provided, name) =>
+        (provided, name) => has(provided, name) ?
             [true, provided[name]] :
             [false, field.error.missing({ name })] :
         (provided, name) => has(provided, name) ?
             [true, provided[name]] :
             [true, fallback.value];
 
-    return [false, typechecked(type, initializer), type, fallback];
+    return toIC(false, initializer, type, definition);
 }
 
-function toComputedIC(type, initializer, dependencies)
+function toComputedIC(type, definition)
 {
-    return [true, typechecked(type, initializer), type, initializer, dependencies];
+    return toIC(true, definition.compute, type, definition);
+}
+
+function toIC(computed, initializer, type, definition)
+{
+    return [typechecked(type, initializer), computed, type, definition];
 }
 
 function typechecked(expected, initializer)
 {
     return (...args) => (([success, value]) =>
-        return !success ? [success, value] :
+        !success ? [success, value] :
         is (expected, value) ? [true, value] :
         [false, field.error.type({ expected, value })])
         (initializer(...args));
 }
 
-module.exports.fromCompiled = function ([name, [computed, initializer, type, ...rest]])
+module.exports.fromCompiled = function ([name, [_, computed, type, values]])
 {
     const definitionT = field.definition(type);
     const definition = computed ?
-        definitionT.computed({ initializer: rest[0], dependencies: rest[1] }) :
-        definitionT.supplied({ fallback: rest[0] });
+        definitionT.computed(values) :
+        definitionT.supplied(values);
 
     return field(type)({ name, definition });
-}
-
-field.declaration.concretize = function concretize (declaration)
-{
-    if (is (field.declaration, declaration))
-        return declaration;
-
-    const [name, [computed, _, type, ...rest]] = fromDeclaration(declaration);
-    const definitionT = field.definition(type);
-    const definition = computed ?
-        definitionT.computed({ initializer: rest[0], dependencies: rest[1] }) :
-        definitionT.supplied({ fallback: rest[0] });
-
-    return field.declaration({ name, definition });
 }

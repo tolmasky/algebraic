@@ -120,7 +120,7 @@ const initialize = (function ()
             typecheck(owner, name, error);
 
     return (typename, fields, values) => fields
-        .map(([name, [,initialize]]) => [name, initialize(values, name)])
+        .map(([name, [initialize]]) => [name, initialize(values, name)])
         .map(([name, [success, value]]) => success ?
             [name, value] : (console.log([success, value]),
             fail.type(message(typename, name, value))));
@@ -131,7 +131,6 @@ module.exports.data = data;
 const field = require("./field");
 
 data.field = field;
-
 data.fields = type => (console.log(type[DataMetadata]),type[DataMetadata].fields());
 data.fieldDeclarations = type => type[DataMetadata].fieldDeclarations;
 
@@ -150,11 +149,3 @@ function toDeserialize(typename, getChildren, type)
             (fields[property] = deserialize(type, serialized[index]), fields),
             Object.create(null))));
 }
-
-/*
-const fCreate = (f, properties) =>
-    (Object.keys(properties)
-        .forEach(key => defineProperty(f, key, { value: properties[key] }), f);
-*/
-
-
