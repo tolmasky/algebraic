@@ -36,16 +36,16 @@ const enumerable = true;
 const configurable = false;
 const defineProperty = Object.defineProperty;
 
-const GetCompiledFieldsSymbol = Symbol("GetCompiledFields");
-const FieldsSymbol = Symbol("Fields");
-const FieldDeclarationsUnstandardized = Symbol("FieldDeclarationsUnstandardized");
-const FieldDeclarations = Symbol("FieldDecalrations");
+const DataMetadata = Symbol("data.metadata");
+const cached = f => (cached => () => cached ?
+    cached.value : (cached = { value: f() }).value)
+    (false);
 
-const data = declaration(function data (type, fieldDefinitions)
+const data = declaration(function data (type, fieldDeclarations)
 {
     const typename = getTypename(type);
 
-    if (fieldDefinitions.length === 0)
+    if (fieldDeclarations.length === 0)
     {
         const create = fNamed(`[create ${typename}]`, function ()
         {
@@ -56,22 +56,22 @@ const data = declaration(function data (type, fieldDefinitions)
         const is = value => value === type;
         const serialize = [() => 0, true];
         const deserialize = () => type;
+        const empty = () => [];
 
-        type[GetCompiledFieldsSymbol] = () => [];
+        type[DataMetadata] =
+            { fields: empty, fieldsCompiled: empty, fieldDeclarations };
 
         return { is, create, serialize, deserialize };
     }
 
     // Legacy
     let children = false;
-    const getChildren = () => children || (children =
-        fieldDefinitions.map(fieldFromDeclaration)
-        .map(field => [field.name, [field.type, field.init]]));
+    const getChildren = () => []/*children || (children =
+        fieldDefinitions.map(field.compile)
+        .map(field => [field.name, [field.type, field.init]]));*/
 
-    let fields = () =>
-        (created => (fields = () => created, created))
-        (field.compile(typename, fieldDefinitions));
-type.fields = () => fields();
+    const fields = cached(() => fieldsCompiled().map(field.fromCompiled));
+    const fieldsCompiled = cached(() => field.compile(fieldDeclarations));
     const create = fNamed(`[create ${typename}]`, function (...args)
     {
         const values = args.length <= 0 ? EmptyArguments : args[0];
@@ -82,24 +82,22 @@ type.fields = () => fields();
         if (!(this instanceof type))
             return new type(values);
 
-        const uncomputed = fields().uncomputed
-            .map(([_, name, __, init]) => [name, init(values)]);
-        const computed = fields().computed.length <= 0 ?
+        const compiled = fieldsCompiled();
+        const uncomputed = initialize(typename, compiled.uncomputed, values);
+        const computed = compiled.computed.length <= 0 ?
             [] :
-            (intermediate => fields().computed
-                .map(([_, name, __, init]) => [name, init(intermediate)]))
-            (Object.fromEntries(uncomputed));
+            initialize(typename,
+                compiled.computed,
+                Object.fromEntries(uncomputed));
 
         uncomputed.map(([name, value]) => defineProperty(this, name,
             { value, writable, enumerable, configurable }));
         computed.map(([name, value]) => defineProperty(this, name,
             { value, writable, enumerable, configurable }));
     });
+
     type.prototype.toString = function () { return inspect(this) };
-    type[GetCompiledFieldsSymbol] = () => fields();
-    type[FieldsSymbol] = null;
-    type[FieldDeclarationsUnstandardized] = fieldDefinitions;
-    type[FieldDeclarations] = null;
+    type[DataMetadata] = { fields, fieldsCompiled, fieldDeclarations };
 
     const is = value => value instanceof type;
     const serialize = [toSerialize(typename, getChildren), false];
@@ -108,24 +106,34 @@ type.fields = () => fields();
     return { create, is, serialize, deserialize };
 });
 
+const initialize = (function ()
+{
+    const typecheck = (owner, name, { expected, value }) =>
+        `${owner} constructor passed value for field "${name}" of wrong ` +
+        `type. Expected type ${getTypename(expected)} but got ` +
+        `${JSON.stringify(value)}.`;
+    const missing = (owner, name) =>
+        `${owner} constructor requires field "${name}"`;
+    const message = (owner, name, error) =>
+        is (field.error.missing, error) ?
+            missing(owner, name, error) :
+            typecheck(owner, name, error);
+
+    return (typename, fields, values) => fields
+        .map(([name, [,initialize]]) => [name, initialize(values, name)])
+        .map(([name, [success, value]]) => success ?
+            [name, value] : (console.log([success, value]),
+            fail.type(message(typename, name, value))));
+})();
+
 module.exports.data = data;
 
 const field = require("./field");
 
 data.field = field;
 
-data.fields = function (type)
-{
-    return  type[FieldsSymbol] || (type[FieldsSymbol] =
-            type[GetCompiledFieldsSymbol]().map(data.field.fromCompiled));
-}
-
-data.fieldDeclarations = function (type)
-{
-    return  type[FieldDeclarations] || (type[FieldDeclarations] =
-            type[FieldDeclarationsUnstandardized]
-                .map(data.field.declaration.concretize));
-}
+data.fields = type => (console.log(type[DataMetadata]),type[DataMetadata].fields());
+data.fieldDeclarations = type => type[DataMetadata].fieldDeclarations;
 
 function toSerialize(typename, getChildren)
 {

@@ -1,4 +1,15 @@
-const { is } = require("./declaration");
+const { is, fNamed } = require("./declaration");
+const { parameterized } = require("./parameterized");
+const { belongs, parameters } = parameterized;
+const union = require("./union");
+const maybe = require("./maybe");
+const or = require("./or");
+const { data } = require("./data");
+const { ftype, string } = require("./primitive");
+const { isArray } = Array;
+const has = hasOwnProperty.call.bind(hasOwnProperty);
+const any = require("./any");
+
 
 // data.fields are datas themselves, so creating them is a little tricky. You
 // can quickly get into infinite recursion as data.fields have data.fields
@@ -10,223 +21,186 @@ const { is } = require("./declaration");
 // as data.field<T>'s init property is a data.field <data.field <T>.init>,
 // which itself has an init field that is a
 // data.field <data.field <data.field <T>.init >.init>, etc.
-const field = (function ()
-{
-    const union = require("./union");
-    const { parameterized } = require("./parameterized");
-    const { data } = require("./data");
-    const { ftype, string } = require("./primitive");
-    const field = parameterized(T => 
-    {
-        const fieldT = data `data.field <${T}>` (
-            name    => string,
-            init    => [fieldT.init, fieldT.init.none] );
-    
-        fieldT.init = union `data.field <${T}>.init` (
-            data `none` (),
-            data `default` ( value => T ),
-            data `compute` (
-                initializer     => ftype,
-                dependencies    => Array ) );
-    
-        return fieldT;
-    });
-
-    field.declaration = data `field.declaration` (
-        name    => string,
-        λfield  => ftype );
-
-    return field;
-})();
-
-const fromShorthandDeclaration = (function ()
-{
-    const fNameRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
-
-    return f =>
-        (([, compute, set]) =>
-            ({ compute: !!compute, name: compute || set }))
-        (fNameRegExp.exec(f + ""));
-})();
-
-
+const field = parameterized(T =>
+    data `data.field <${T}>` (
+        name        => string,
+        definition  => field.definition(T) ) );
 
 module.exports = field;
 
-// Our internal "compiled" representation is an array with the following
-// elements:
-//
-// [0] string - This is the name of the field.
-// [1] any - This is the type of the field.
-// [2] 0 | 1 | 2 - These correspond to whether it is a non, default or compute.
-// [3] any -> T - This is the generated initializer.
-// [4] nullable<data.field> - This is present if the user manually gives us one.
-const has = hasOwnProperty.call.bind(hasOwnProperty);
-const fail = require("./fail");
-
-const toRequiredField = (typename, name, type) =>
-    [0, name, type, toRequiredInitializer(typename, name, type)];
-const toRequiredInitializer = (typename, name, type) =>
-    provided => has(provided, name) ? provided[name] : 
-        fail.type(`${typename} constructor requires field "${name}"`);
-
-const toDefaultField = (typename, name, type, value) =>
-    [1, name, type, toDefaultInitializer(name, type, value)];
-const toDefaultInitializer = (name, type, value) => Object.assign(
-    provided => has(provided, name) ? provided[name] : value,
-    { value })
-
-const toComputedField = (typename, name, [type, shorthand]) =>
-    [2, name, type, fromShorthandCompute(shorthand)];
-const fromShorthandCompute = (function ()
+field.definition = parameterized(function (T)
 {
-    const  templateRegExp = require("./templated-regular-expression");
-    const regexps = templateRegExp(
-    {
-        name: /[^,\}\s\)]+/g,
-        names: /${name}(?:\s*,\s*${name})*/,
-        object: /^\(\s*\{\s*${names}\s*\}\)/,
-        list: /^\(?\s*(${names})\s*\)?/,
-    });
+    const suppliedT = field.definition.supplied(T);
+    const computedT = field.definition.computed(T);
 
-    return function fromShorthandCompute(shorthand)
-    {
-        const fString = shorthand + "";
-        const object = regexps.object.exec(fString);
-        const destructured = !!object;
-        const extracted = destructured ?
-            object[1] : regexps.list.exec(fString)[1];
-        const dependencies = extracted.split(/\s*,\s*/);
-        const deduped = Array.from(new Set(dependencies));
-        const initializer = destructured ?
-            values => shorthand(values) :
-            values => shorthand(...dependencies.map(name => values[name]));
-        const initProperties = { dependencies, initializer };
+    return union `data.definition<${T}>` (
+        supplied => suppliedT,
+        computed => computedT );
+});
 
-        return Object.assign(initializer, initProperties);
-    }
-})();
+field.definition.supplied = parameterized(T =>
+    data `field.definition<${T}>.supplied` (
+        fallback        => maybe (T) ) );
 
-const fromArrowFunction = (function ()
-{
-    const { isArray } = Array;
-    const fNameRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
-    const toUncomputedField = (typename, name, definition) =>
-        isArray(definition) ?
-            toDefaultField(typename, name, ...definition) :
-            toRequiredField(typename, name, definition);
+field.definition.computed = parameterized(T =>
+    data `field.definition<${T}>.computed` (
+        compute         => ftype,
+        dependencies    => Array ) );
 
-    return function fromArrowFunction(typename, f)
-    {
-        const [, compute, set] = fNameRegExp.exec(f + "");
-        const toField = (set ? toUncomputedField : toComputedField);
-        const name = set || compute;
+field.deferred = data `field.deferred` (
+    name                => string,
+    λdefinition         => ftype );
 
-        return toField(typename, name, f([]));
-    }
-})();
+field.declaration = union `field.declaration` (
+    field,
+    field.deferred );
 
-const fromManualDeclaration = (function ()
-{
-    const { parameterized } = require("./parameterized");
-    const toInitEnum = init =>
-        is(init, field.init.none) ? 0 :
-        is(init, field.init.default) ? 1 : 2;
-    const toComputeWrap = f => Object.assign(x => f.initializer(x), f);
+field.error = union `field.error` (
+    data `missing` (
+        name        => string ),
+    data `type` (
+        expected    => any,
+        value       => any ) );
 
-    return function fromManualDeclaration(typename, decalaration)
-    {
-        const instantiated = decalaration.λfield();
-        const type = parameterized.parameters(instantiated)[0];
-        const { name, init } = instantiated;
-        const initEnum =
-            is(field(type).init.none, init) ? 0 :
-            is(field(type).init.default, init) ? 1 : 2;
-        const common = [typename, name, type];
-
-        return  initEnum === 0 ? toRequiredField(...common) :
-                initEnum === 1 ? toDefaultField(...common, init.value) :
-                /*initEnum === 2 ?*/
-                [2, name, type, toComputeWrap(init)];
-    }
-})();
-
-const fromFieldDeclaration = (function ()
-{
-    const { getTypename, is } = require("./declaration");
-    const typecheck = require("./typecheck");
-    const mismatch = (typename, name) => (type, value) =>
-        `${typename} constructor passed value for field "${name}" of wrong ` +
-        `type. Expected type ${getTypename(type)} but got ` +
-        `${JSON.stringify(value)}.`;
-
-    return function fromFieldDeclaration(typename, declaration)
-    {
-        const shorthand = !is(field.declaration, declaration);
-        const compile = shorthand ? fromArrowFunction : fromManualDeclaration;
-        const [initEnum, name, type, initializer] =
-            compile(typename, declaration);
-        const typechecked = Object.assign(
-            typecheck.function(type, mismatch(typename, name), initializer),
-            initializer);
-
-        return [initEnum, name, type, typechecked];
-    }
-})();
-
-module.exports.compile = function (typename, fieldDeclarations)
+field.compile = function (fieldDeclarations)
 {
     const partition = require("@climb/partition");
-    const compiled = fieldDeclarations.map(
-        fieldDeclaration =>
-            fromFieldDeclaration(typename, fieldDeclaration));
-    const [computed, uncomputed] = partition(
-        ([initEnum]) => initEnum === 2,
-        compiled);
+    const compiled = fieldDeclarations.map(fromDeclaration);
+    const [computed, uncomputed] =
+        partition(([, [computed]]) => computed, compiled);
 
     return Object.assign(compiled, { computed, uncomputed });
 }
 
-module.exports.fromCompiled = function ([initEnum, name, type, initializer])
-{
-    const fieldT = field(type);
-    const init =
-        initEnum === 0 ? fieldT.init.none :
-        initEnum === 1 ? fieldT.init.default(initializer) :
-        /*initEnum === 2 ? */
-        fieldT.init.compute(initializer)
+// field.declaration
+//  field.declaration.direct
+//  field.declaration.shorthand
+//
+// field.declaration { name, definition }
+// property { name, definition: supplied }
+// property { name, definition: computed }
 
-    return fieldT({ name, init });
+const fromDeclaration = (function fromDeclaration()
+{
+    const fShorthandRegExp = /(?:^\(\[([^\]]+)\]\))|([^=\s]+)\s*=>/;
+    const parseShorthand = f =>
+        (([, computed, supplied]) => [!!computed, computed || supplied])
+        (fShorthandRegExp.exec(f + ""));
+
+    return function fromDeclaration(declaration)
+    {
+        const isShorthand = !is (field.declaration, declaration);
+        const [computed, name, definition] = isShorthand ?
+            [...parseShorthand(declaration), declaration([])] :
+            [false, declaration.name,
+                is (field.deferred, declaration) ?
+                    declaration.λdefinition() :
+                    declaration.definition];
+        const compiled = is (field.definition, definition) ?
+            fromDefinition(definition) :
+            fromShorthandDefinition(computed, definition);
+
+        return [name, compiled];
+    }
+})();
+
+function fromDefinition(definition)
+{
+    const type = parameters(definition)[0];
+
+    return is (field.definition.supplied, definition) ?
+        toSuppliedIC(type, definition.fallback) :
+        toComputedIC(type,
+            definition.initializer,
+            definition.dependencies);
+}
+
+function fromShorthandDefinition(computed, definition)
+{
+    const isTuple = isArray(definition);
+    const type = isTuple ? definition[0] : definition;
+
+    return  computed ?
+            fromComputedShorthand(type, definition[1]) :
+            toSuppliedIC(type, isTuple ?
+                maybe(type).just({ value: definition[1] }) :
+                maybe(type).nothing);
+}
+
+const fromComputedShorthand = (function ()
+{
+    const templateRegExp = require("./templated-regular-expression");
+    const { objectRegExp, listRegExp } = templateRegExp(
+    {
+        name: /[^,\}\s\)]+/g,
+        names: /${name}(?:\s*,\s*${name})*/,
+        objectRegExp: /^\(\s*\{\s*${names}\s*\}\)/,
+        listRegExp: /^\(?\s*(${names})\s*\)?/,
+    });
+
+    return function fromComputedShorthand(type, shorthand)
+    {
+        const fString = shorthand + "";
+        const object = objectRegExp.exec(fString);
+        const extracted = (object || listRegExp.exec(fString))[1];
+        const dependencies = extracted.split(/\s*,\s*/);
+        const deduped = Array.from(new Set(dependencies));
+        const initializer = object ?
+            values => [true, shorthand(values)] :
+            values => [true, shorthand(...dependencies
+                .map(name => values[name]))];
+
+        return toComputedIC(type, initializer, dependencies);
+    }
+})();
+
+function toSuppliedIC(type, fallback)
+{
+    const initializer = fallback === maybe(type).none ?
+        (provided, name) =>
+            [true, provided[name]] :
+            [false, field.error.missing({ name })] :
+        (provided, name) => has(provided, name) ?
+            [true, provided[name]] :
+            [true, fallback.value];
+
+    return [false, typechecked(type, initializer), type, fallback];
+}
+
+function toComputedIC(type, initializer, dependencies)
+{
+    return [true, typechecked(type, initializer), type, initializer, dependencies];
+}
+
+function typechecked(expected, initializer)
+{
+    return (...args) => (([success, value]) =>
+        return !success ? [success, value] :
+        is (expected, value) ? [true, value] :
+        [false, field.error.type({ expected, value })])
+        (initializer(...args));
+}
+
+module.exports.fromCompiled = function ([name, [computed, initializer, type, ...rest]])
+{
+    const definitionT = field.definition(type);
+    const definition = computed ?
+        definitionT.computed({ initializer: rest[0], dependencies: rest[1] }) :
+        definitionT.supplied({ fallback: rest[0] });
+
+    return field(type)({ name, definition });
 }
 
 field.declaration.concretize = function concretize (declaration)
 {
-    if (is(field.declaration, declaration))
+    if (is (field.declaration, declaration))
         return declaration;
 
-    const { compute, name } = fromShorthandDeclaration(declaration);
-    const λfield = () => field.fromCompiled(fromFieldDeclaration("", declaration));
+    const [name, [computed, _, type, ...rest]] = fromDeclaration(declaration);
+    const definitionT = field.definition(type);
+    const definition = computed ?
+        definitionT.computed({ initializer: rest[0], dependencies: rest[1] }) :
+        definitionT.supplied({ fallback: rest[0] });
 
-    return field.declaration({ name, λfield });
+    return field.declaration({ name, definition });
 }
-
-
-// Users can supply:
-// field.declaration || shorthand
-// We can only use field, but have to store it as compiled
-// So, (field.declaration || shorthand) => lazy[compiled]
-// (field.declaration || shorthand) => field.declaration
-// 
-
-
-
-
-
-
-
-
-
-
-
-
-
