@@ -1,8 +1,8 @@
 const { parameterized } = require("./parameterized");
 const { data } = require("./data");
-const { union } = require("./union");
+const union = require("./union");
 
-exports.Maybe = parameterized (T =>
-    union `Maybe<${T}>` (
-        T,
-        data `Nothing` () ) );
+module.exports = parameterized (T =>
+    union `maybe <${T}>` (
+        data `just` (value => T),
+        data `nothing` () ) );

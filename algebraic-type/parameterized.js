@@ -1,4 +1,8 @@
-const { getUUID, getTypename } = require("./declaration");
+const of = require("./of");
+const fail = require("./fail");
+const has = hasOwnProperty.call.bind(hasOwnProperty);
+
+const { getUUID, getTypename, IsSymbol, is } = require("./declaration");
 const { stringify } = JSON;
 
 const TypeConstructorSymbol = Symbol("TypeConstructor");
@@ -14,8 +18,7 @@ function parameterized (internalTypeConstructor)
 
     const cache = Object.create(null);
     const length = internalTypeConstructor.length;
-
-    return function typeConstructor(...types)
+    const typeConstructor = function typeConstructor(...types)
     {
         if (length !== 0 && types.length !== length)
             throw TypeError(
@@ -35,9 +38,40 @@ function parameterized (internalTypeConstructor)
 
         return type;
     };
+
+    typeConstructor[IsSymbol] = value => valueIs(typeConstructor, value);
+
+    return typeConstructor;
 };
 
 module.exports.parameterized = parameterized;
+
+// This returns true if, given P<T1,T2,...,TN>:
+// type.of(value) is of *some* P
+// type.of(value) is of P[type.of(value).parameters]
+// The second case is for example:
+// P = paramaterized(T => union (X<T>, Y<T>))
+// X<T> should intuitively return true for P.
+function valueIs(typeConstructor, value)
+{
+    const type = of(value);
+    const isParameterized = has(type, ParametersSymbol);
+
+    if (!isParameterized)
+        return false;
+
+    if (type[TypeConstructorSymbol] === typeConstructor)
+        return true;
+
+    const length = typeConstructor.length;
+    const parameters = type[ParametersSymbol];
+
+    // Can we parameterize with these?
+    if (length !== 0 && length !== parameters.length)
+        return false;
+
+    return is (typeConstructor(...parameters), value)
+}
 
 parameterized.is = function (typeConstructor, type)
 {
@@ -46,23 +80,13 @@ parameterized.is = function (typeConstructor, type)
 
 parameterized.belongs = function (typeConstructor, value)
 {
-    if (!value)
-        return false;
-
-    const type = Object.getPrototypeOf(value).constructor;
-
-    return parameterized.is(typeConstructor, type);
+    return !value && parameterized.is(typeConstructor, of(value));
 }
 
-parameterized.parameters = function (type)
+parameterized.parameters = function (valueOrType)
 {
-    const parameters = type &&
-        (type[ParametersSymbol] ||
-        Object.getPrototypeOf(type).constructor[ParametersSymbol]);
-
-    if (parameters)
-        return parameters;
-
-    throw TypeError(`parameters was passed ${type}.`);
+    return valueOrType ?
+        (valueOrType[ParametersSymbol] || of(valueOrType)[ParametersSymbol]) :
+        fail.type(`Parameters was passed ${type}.`);
 }
 

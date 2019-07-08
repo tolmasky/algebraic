@@ -94,6 +94,7 @@ function declare({ is, create, typename, unscopedTypename, serialize, deserializ
 }
 
 module.exports.declare = declare;
+module.exports.IsSymbol = IsSymbol;
 
 function getTypename(type)
 {
