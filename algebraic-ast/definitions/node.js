@@ -4,8 +4,8 @@ const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
 
 
-module.exports = ([name]) =>
-    (...fields) => ESTreeBridge ([name]) (
+const Node = ([name]) => (...fields) =>
+    Node[name] = ESTreeBridge ([name]) (
         ...fields,
         leadingComments     => [nullable(array(Comment)), null],
         innerComments       => [nullable(array(Comment)), null],
@@ -13,3 +13,5 @@ module.exports = ([name]) =>
         start               => [nullable(number), null],
         end                 => [nullable(number), null],
         loc                 => [nullable(SourceLocation), null] );
+
+module.exports = Node;

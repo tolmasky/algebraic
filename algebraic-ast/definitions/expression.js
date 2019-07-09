@@ -149,10 +149,12 @@ function Expression ([name])
     }
 }
 
-Expression[IsSymbol] = value => value && of(value[IsExpression]);
+Expression[IsSymbol] = value => !!value && !!of(value)[IsExpression];
 
 module.exports = Expression;
 
+
+require("./self-contained");
 /*
 const Expression = union `Expression` (
     ...union.components(SelfContained),

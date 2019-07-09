@@ -1,46 +1,30 @@
 const { data, parameterized, nullable, union } = require("@algebraic/type");
 const { boolean, number, string, tundefined } = require("@algebraic/type/primitive");
 
-const Node = require("./node");
-const References = require("./references");
+const Expression = require("./expression");
 
 const Extra = parameterized (T =>
     data `Extra<${T}>` (
         raw         => string,
         rawValue    => T ) );
 
-const BigIntLiteral     = Node `BigIntLiteral` (
+Expression `BigIntLiteral` (
     value               => string,
-    extra               => [nullable(Extra(string)), null],
-    ([references])      => References.Never );
+    extra               => [nullable(Extra(string)), null] );
 
-const BooleanLiteral    = Node `BooleanLiteral` (
-    value               => boolean,
-    ([references])      => References.Never );
+Expression `BooleanLiteral` (
+    value               => boolean );
 
-const NumericLiteral    = Node `NumericLiteral` (
-    value               => number,
-    extra               => [nullable(Extra(number)), null],
-    ([references])      => References.Never );
+Expression `NumericLiteral` (
+    value               => number );
 
-const NullLiteral       = Node `NullLiteral` (
-    ([references])      => References.Never );
+Expression `NullLiteral` ();
 
-const RegExpLiteral     = Node `RegExpLiteral` (
+Expression `RegExpLiteral` (
     flags               => string,
     pattern             => string,
-    extra               => [nullable(Extra(tundefined)), null],
-    ([references])      => References.Never );
+    extra               => [nullable(Extra(tundefined)), null] );
 
-const StringLiteral     = Node `StringLiteral` (
+Expression `StringLiteral` (
     value               => string,
-    extra               => [nullable(Extra(string)), null],
-    ([references])      => References.Never );
-
-module.exports = union `SelfContained` (
-    BigIntLiteral,
-    BooleanLiteral,
-    NumericLiteral,
-    NullLiteral,
-    RegExpLiteral,
-    StringLiteral );
+    extra               => [nullable(Extra(string)), null] );
