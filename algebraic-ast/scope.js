@@ -27,14 +27,21 @@ Scope.concat = function (lhs, rhs)
 }
 
 Scope.fromLetBindings = letBound => Scope({ letBound });
-Scope.fromVarBindings = letBound => Scope({ letBound });
+Scope.fromVarBindings = varBound => Scope({ varBound });
 
+const toBindingKey = kind => kind === "var" ? "varBound" : "letBound";
 
-
-Scope.reduce = nodes => nodes
-    .map(node => node.scope)
+Scope.fromBindings = (kind, names) => Scope({ [toBindingKey(kind)]: names });
+Scope.reduce = (items, key) =>
+    (key ? items.map(item => item[key]) : items)
     .reduce(Scope.concat, Scope.identity);
 
+
+
+/*Scope.reduce = nodes => nodes
+    .map(node => node.scope)
+    .reduce(Scope.concat, Scope.identity);
+*/
 
 
 Scope.justFree = scope => Scope({ free: scope.free });

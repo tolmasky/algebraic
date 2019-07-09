@@ -52,7 +52,7 @@ module.exports = withBabelDefinitions(
         ([scope])   => set `scope` .by (adopting `expression.scope`) ),
 
     BlockStatement: data `BlockStatement` (
-        ([scope])   => [Scope, body => Scope.reduce(body)] ),
+        ([scope])   => [Scope, body => Scope.reduce(body, "scope")] ),
 
     CatchClause: data `CatchClause` (
         param       => nullable(Node("IdentifierPattern")),
@@ -62,11 +62,14 @@ module.exports = withBabelDefinitions(
                 letBinding `param.names`)),
 
     VariableDeclaration: data `VariableDeclaration` (
-        ([scope]) => [Scope, declarations => Scope.reduce(declarations)] ),
+        ([scope])   =>  [Scope, (kind, declarations) => declarations
+            .map(({ id, scope }) => Scope
+            .concat(scope, Scope.fromBindings(kind, id.names)))
+            .reduce(Scope.concat)] ),
 
     VariableDeclarator: data `VariableDeclarator` (
-        ([scope])   =>  set `scope` .by
-            (adopting `init.scope`, letBinding `id.names`) ),
+        ([scope])   =>  [Scope, (id, init) =>
+            Scope.concat(init ? init.scope : Scope.identity, id.scope) ]),
 
     ArrayPattern: data `ArrayPattern` (
         ([names]) => [NameSet, elements => concat(NameSet, "names", elements)],
