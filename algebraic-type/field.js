@@ -141,17 +141,23 @@ function fromShorthandDefinition(computed, definition)
 const fromComputedShorthand = (function ()
 {
     const templateRegExp = require("./templated-regular-expression");
-    const { objectRegExp, listRegExp } = templateRegExp(
+    const { objectRegExp, listRegExp, emptyRegExp } = templateRegExp(
     {
         name: /[^,\}\s\)]+/g,
         names: /${name}(?:\s*,\s*${name})*/,
         objectRegExp: /^\(\s*\{\s*${names}\s*\}\)/,
         listRegExp: /^\(?\s*(${names})\s*\)?/,
+        emptyRegExp: /^\(\s*(\{\s*\})?\s*\)/,
     });
 
     return function fromComputedShorthand(type, shorthand)
     {
         const fString = shorthand + "";
+
+        if (emptyRegExp.exec(fString))
+            return toComputedIC(type,
+                { compute: () => shorthand(), dependencies:[] });
+
         const object = objectRegExp.exec(fString);
         const extracted = (object || listRegExp.exec(fString))[1];
         const dependencies = extracted.split(/\s*,\s*/);
@@ -210,7 +216,7 @@ module.exports.fromCompiled = function ([name, [_, computed, type, values]])
 }
 
 module.exports.toFieldDeclaration = function toFieldDeclaration (declaration)
-{
+{console.log(declaration);
     if (is (field.declaration, declaration))
         return declaration;
 

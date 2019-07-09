@@ -64,7 +64,8 @@ const primitives =
 
     object: primitive `object` (
         [JSON.stringify, true],
-        JSON.parse),
+        JSON.parse)
+//    λ: parameterized (...Ts => primitives.ftype)
 }
 
 if (global.URL)

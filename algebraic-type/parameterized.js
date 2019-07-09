@@ -7,6 +7,7 @@ const { stringify } = JSON;
 
 const TypeConstructorSymbol = Symbol("TypeConstructor");
 const ParametersSymbol = Symbol("ParametersSymbol");
+const Length = Symbol("Length");
 
 
 function parameterized (internalTypeConstructor)
@@ -39,6 +40,7 @@ function parameterized (internalTypeConstructor)
         return type;
     };
 
+    typeConstructor[Length] = length;
     typeConstructor[IsSymbol] = value => valueIs(typeConstructor, value);
 
     return typeConstructor;
@@ -63,7 +65,7 @@ function valueIs(typeConstructor, value)
     if (type[TypeConstructorSymbol] === typeConstructor)
         return true;
 
-    const length = typeConstructor.length;
+    const length = typeConstructor[Length];
     const parameters = type[ParametersSymbol];
 
     // Can we parameterize with these?

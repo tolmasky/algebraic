@@ -128,8 +128,8 @@ const initialize = (function ()
     return (typename, fields, values) => fields
         .map(([name, [initialize]]) => [name, initialize(values, name)])
         .map(([name, [success, value]]) => success ?
-            [name, value] : (console.log([success, value]),
-            fail.type(message(typename, name, value))));
+            [name, value] :
+            fail.type(message(typename, name, value)));
 })();
 
 module.exports.data = data;
@@ -137,7 +137,7 @@ module.exports.data = data;
 const field = require("./field");
 
 data.field = field;
-data.fields = type => (console.log(type[DataMetadata]),type[DataMetadata].fields());
+data.fields = type => type[DataMetadata].fields();
 data.fieldDeclarations = type => type[DataMetadata].toFieldDeclarations();
 
 function toSerialize(typename, getChildren)
