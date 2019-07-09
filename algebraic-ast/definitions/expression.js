@@ -65,6 +65,16 @@ const UnaryExpression = Node `UnaryExpression` (
     prefix          => [boolean, true],
     ([references])  => References.from("argument") );
 
+const YieldExpression = Node `YieldExpression` (
+    argument        => Expression,
+    ([references])  => References.from("argument") );
+
+const AwaitExpression = Node `AwaitExpression` (
+    argument        => Expression,
+    delegate        => [boolean, false],
+    ([references])  => References.from("argument") );
+
+
 /*
 const AssignmentExpression = Node `AssignmentExpression` (
     left            => Node.RootPattern,
