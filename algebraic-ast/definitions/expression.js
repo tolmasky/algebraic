@@ -37,6 +37,28 @@ const LogicalExpression = Node `LogicalExpression` (
     operator        => string,
     ([references])  => References.union("left", "right") );
 
+const StaticMemberExpression = Node `StaticMemberExpression` (
+    object          => Expression,
+    property        => string,
+    ([references])  => References.adopt("object") );
+
+const ComputedMemberExpression = Node `ComputedMemberExpression` (
+    object          => Expression,
+    property        => Expression,
+    ([references])  => References.union("object", "property") );
+
+const NewExpression = Node `NewExpression` (
+    callee          => Expression,
+    arguments       => array(Expression),
+    ([references])  => References.union("callee", "arguments") );
+
+const ThisExpression = Node `ThisExpression` (
+    ([references])  => References.Never );
+
+const SequenceExpression = Node `SequenceExpression` (
+    expressions     => array(Expression),
+    ([references])  => References.union("expressions") );
+
 const UnaryExpression = Node `UnaryExpression` (
     argument        => Expression,
     operator        => string,
@@ -83,6 +105,11 @@ const Expression = union `Expression` (
     IdentifierExpression,
     BinaryExpression,
     LogicalExpression,
+    ComputedMemberExpression,
+    StaticMemberExpression,
+    NewExpression,
+    ThisExpression,
+    SequenceExpression,
     UnaryExpression );
 
 module.exports = Expression;

@@ -114,6 +114,12 @@ const mapNode = (function ()
             toObjectPropertyPattern(mappedFields) :
             Node.ObjectProperty(mappedFields),
 
+        MemberExpression: ({ computed, property, ...mappedFields }) =>
+            computed ?
+                Node.ComputedMemberExpression({ ...mappedFields, property }) :
+                Node.StaticMemberExpression(
+                    { ...mappedFields, property: property.name }),
+
         // Or we could discover them later on here, if the ObjectPattern looked
         // syntactically equivalent to an ObjectExpression thus far (e.g. {x}).
         // At this point we will be sure that this is an ObjectPattern, and thus
