@@ -1,97 +1,84 @@
-const { data, nullable, union, array } = require("@algebraic/type");
+const { of, data, nullable, union, array, parameterized } = require("@algebraic/type");
 const { boolean, string, tundefined } = require("@algebraic/type/primitive");
+const { IsSymbol } = require("@algebraic/type/declaration");
 const Node = require("./node");
+const IsExpression = Symbol("IsExpression");
 const References = require("./references");
-const SelfContained = require("./self-contained");
-//const Pattern = 
+Error.stackTraceLimit = 1000;
 
+Expression `ArrayExpression` (
+    elements        =>  array(Expression) );
 
-const ArrayExpression = Node `ArrayExpression` (
-    elements        =>  array(Expression),
-    ([references])  =>  References.from("elements") );
-
-const CallExpression = Node `CallExpression` (
+Expression `CallExpression` (
     callee          =>  Expression,
-    arguments       =>  array(Expression),
-    ([references])  =>  References.from("callee", "arguments") );
+    arguments       =>  array(Expression) );
 
-const ConditionalExpression = Node `ConditionalExpression` (
+Expression `ConditionalExpression` (
     test            =>  Expression,
     consequent      =>  Expression,
-    alternate       =>  Expression,
-    ([references])  =>  References.from("test", "consequent", "alternate") );
+    alternate       =>  Expression );
 
-const IdentifierExpression = Node `IdentifierExpression {ESTree = Identifier}` (
+Expression `IdentifierExpression` (
+    ({ESTree})      =>  "Identifier",
     name            =>  string,
     ([references])  =>  [References, name => References([name])] );
 
-const BinaryExpression = Node `BinaryExpression` (
+Expression `BinaryExpression` (
     left            =>  Expression,
     right           =>  Expression,
-    operator        =>  string,
-    ([references])  =>  References.from("left", "right") );
+    operator        =>  string );
 
-const LogicalExpression = Node `LogicalExpression` (
+Expression `LogicalExpression` (
     left            =>  Expression,
     right           =>  Expression,
-    operator        =>  string,
-    ([references])  =>  References.from("left", "right") );
+    operator        =>  string );
 
-const StaticMemberExpression = Node `StaticMemberExpression` (
+Expression `StaticMemberExpression` (
+    ({ESTree})      =>  "MemberExpression",
     object          =>  Expression,
-    property        =>  string,
-    ([references])  =>  References.from("object") );
+    property        =>  string );
 
-const ComputedMemberExpression = Node `ComputedMemberExpression` (
+Expression `ComputedMemberExpression` (
+    ({ESTree})      =>  "MemberExpression",
     object          =>  Expression,
-    property        =>  Expression,
-    ([references])  =>  References.from("object", "property") );
+    property        =>  Expression );
 
-const NewExpression = Node `NewExpression` (
+Expression `NewExpression` (
     callee          =>  Expression,
-    arguments       =>  array(Expression),
-    ([references])  =>  References.from("callee", "arguments") );
+    arguments       =>  array(Expression) );
 
-const ThisExpression = Node `ThisExpression` (
-    ([references])  =>  References.Never );
+Expression `ThisExpression` ( );
 
-const SequenceExpression = Node `SequenceExpression` (
-    expressions     =>  array(Expression),
-    ([references])  =>  References.from("expressions") );
+Expression `SequenceExpression` (
+    expressions     =>  array(Expression) );
 
-const TaggedTemplateExpression = Node `TaggedTemplateExpression` (
+Expression `TaggedTemplateExpression` (
     tag             =>  Expression,
-    quasi           =>  TemplateLiteral,
-    ([references])  =>  References.from("tag", "quasi") );
+    quasi           =>  TemplateLiteral );
 
-const TemplateElement = Node `TemplateElement` (
+const TemplateElement = Expression `TemplateElement` (
     value           =>  TemplateElement.Value,
-    tail            =>  [boolean, false],
-    ([references])  =>  References.Never );
+    tail            =>  [boolean, false] );
 
 TemplateElement.Value = data `TemplateElement.Value` (
     raw             =>  string,
     cooked          =>  string );
 
-const TemplateLiteral = Node `TemplateLiteral` (
+const TemplateLiteral = Expression `TemplateLiteral` (
     expressions     =>  array(Expression),
-    quasis          =>  array(TemplateElement),
-    ([references])  =>  References.from("expressions") );
+    quasis          =>  array(TemplateElement) );
 
 const UnaryExpression = Node `UnaryExpression` (
     argument        =>  Expression,
     operator        =>  string,
-    prefix          =>  [boolean, true],
-    ([references])  =>  References.from("argument") );
+    prefix          =>  [boolean, true] );
 
 const YieldExpression = Node `YieldExpression` (
-    argument        =>  Expression,
-    ([references])  =>  References.from("argument") );
+    argument        =>  Expression );
 
 const AwaitExpression = Node `AwaitExpression` (
     argument        =>  Expression,
-    delegate        =>  [boolean, false],
-    ([references])  =>  References.from("argument") );
+    delegate        =>  [boolean, false] );
 
 /*
 const AssignmentExpression = Node `AssignmentExpression` (
@@ -124,7 +111,49 @@ module.exports = union `SelfContained` (
     NullLiteral,
     RegExpLiteral,
     StringLiteral );*/
-    
+
+function Expression ([name])
+{
+    const fieldsof = type => data
+        .fields(type)
+        .filter(field =>
+            parameterized.parameters(field)[0] === Expression ||
+            parameterized.parameters(field)[0][IsExpression] ||
+            parameterized.parameters(field)[0] === array(Expression));
+
+    return function (...fields)
+    {
+        const names = fields
+            .map(data.field.toFieldDeclaration)
+            .map(declaration => declaration.name);
+        const hasCustomReferencesDefinition =
+            names.indexOf("references") >= 0;
+
+        const dummy = data `dummy-${name}` (...fields);
+        const withReferencesField =
+            hasCustomReferencesDefinition ?
+                fields :
+                [...fields, ([references]) =>
+                    (dependencies => dependencies.length === 0 ?
+                        References.Never :
+                        References.from(...dependencies))
+                    (fieldsof(dummy).map(field => field.name))];
+
+        const type = Node ([name]) (
+            ...withReferencesField );
+
+        type[IsExpression] = true;
+        Expression[name] = type;
+
+        return type;
+    }
+}
+
+Expression[IsSymbol] = value => value && of(value[IsExpression]);
+
+module.exports = Expression;
+
+/*
 const Expression = union `Expression` (
     ...union.components(SelfContained),
     ArrayExpression,
@@ -144,4 +173,4 @@ const Expression = union `Expression` (
     TemplateLiteral,
     UnaryExpression );
 
-module.exports = Expression;
+module.exports = Expression;*/
