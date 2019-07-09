@@ -10,6 +10,18 @@ module.exports = Set(string);
 module.exports.Empty = Empty;
 module.exports.Never = [References, () => Empty];
 
+module.exports.from = (...owners) =>
+    field.definition(References).computed(
+    {
+        dependencies: owners,
+        compute: values => Empty
+            .union(...owners
+                .map(key => values[key])
+                .flatMap(value => isArray(value) ?
+                    value.map(item => item.references) :
+                    [value.references]) )
+    });
+
 module.exports.union = (...owners) =>
     field.definition(References).computed(
     {

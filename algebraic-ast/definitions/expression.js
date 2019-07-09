@@ -8,18 +8,18 @@ const SelfContained = require("./self-contained");
 
 const ArrayExpression = Node `ArrayExpression` (
     elements        => array(Expression),
-    ([references])  => References.union("elements") );
+    ([references])  => References.from("elements") );
 
 const CallExpression = Node `CallExpression` (
     callee          => Expression,
     arguments       => array(Expression),
-    ([references])  => References.union("callee", "arguments") );
+    ([references])  => References.from("callee", "arguments") );
 
 const ConditionalExpression = Node `ConditionalExpression` (
     test            => Expression,
     consequent      => Expression,
     alternate       => Expression,
-    ([references])  => References.union("test", "consequent", "alternate") );
+    ([references])  => References.from("test", "consequent", "alternate") );
 
 const IdentifierExpression = Node `IdentifierExpression {ESTree = Identifier}` (
     name            => string,
@@ -29,41 +29,41 @@ const BinaryExpression = Node `BinaryExpression` (
     left            => Expression,
     right           => Expression,
     operator        => string,
-    ([references])  => References.union("left", "right") );
+    ([references])  => References.from("left", "right") );
 
 const LogicalExpression = Node `LogicalExpression` (
     left            => Expression,
     right           => Expression,
     operator        => string,
-    ([references])  => References.union("left", "right") );
+    ([references])  => References.from("left", "right") );
 
 const StaticMemberExpression = Node `StaticMemberExpression` (
     object          => Expression,
     property        => string,
-    ([references])  => References.adopt("object") );
+    ([references])  => References.from("object") );
 
 const ComputedMemberExpression = Node `ComputedMemberExpression` (
     object          => Expression,
     property        => Expression,
-    ([references])  => References.union("object", "property") );
+    ([references])  => References.from("object", "property") );
 
 const NewExpression = Node `NewExpression` (
     callee          => Expression,
     arguments       => array(Expression),
-    ([references])  => References.union("callee", "arguments") );
+    ([references])  => References.from("callee", "arguments") );
 
 const ThisExpression = Node `ThisExpression` (
     ([references])  => References.Never );
 
 const SequenceExpression = Node `SequenceExpression` (
     expressions     => array(Expression),
-    ([references])  => References.union("expressions") );
+    ([references])  => References.from("expressions") );
 
 const UnaryExpression = Node `UnaryExpression` (
     argument        => Expression,
     operator        => string,
     prefix          => [boolean, true],
-    ([references])  => References.adopt("argument") );
+    ([references])  => References.from("argument") );
 
 /*
 const AssignmentExpression = Node `AssignmentExpression` (
