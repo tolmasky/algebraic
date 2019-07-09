@@ -157,9 +157,8 @@ const fromComputedShorthand = (function ()
         const dependencies = extracted.split(/\s*,\s*/);
         const deduped = Array.from(new Set(dependencies));
         const compute = object ?
-            values => [true, shorthand(values)] :
-            values => [true, shorthand(...dependencies
-                .map(name => values[name]))];
+            values => shorthand(values) :
+            values => shorthand(...dependencies.map(name => values[name]));
 
         return toComputedIC(type, { compute, dependencies });
     }
@@ -181,7 +180,9 @@ function toSuppliedIC(type, definition)
 
 function toComputedIC(type, definition)
 {
-    return toIC(true, definition.compute, type, definition);
+    const resulted = values => [true, definition.compute(values)];
+
+    return toIC(true, resulted, type, definition);
 }
 
 function toIC(computed, initializer, type, definition)

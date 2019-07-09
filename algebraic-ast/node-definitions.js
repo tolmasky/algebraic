@@ -21,21 +21,52 @@ const Node = (Node => name => (Node || (Node = require("./node")))[name])();
 
 Error.stackTraceLimit = 1000;
 
+const get = (keyPath, value) =>
+    keyPath.reduce((value, key) => value[key], value);
+const reduce = compute => ([keyPath]) =>
+    (keyPath => [keyPath[0], (accum, value) => compute(accum, get(keyPath, value))])
+    (keyPath.split("."));
+const transpose = (count, array) => array.reduce((transposed, tuple) =>
+    (tuple.map((item, index) => transposed[index].push(item)), transposed),
+    Array.from({ length: count }, () => []));
+const identity = key => key === "scope" ? {}: 10;
+const compose = (key, reductions) => ((dependencies, computes) =>
+({
+    dependencies,
+    compute: value => computes.reduce((accum, compute) =>
+        compute(accum, value), identity(key))
+}))(...transpose(2, reductions));
+const adopting = reduce ((_, value) => value);
+const letBinding = reduce ((scope, names) => Scope.concat(scope, Scope.fromLetBindings(names)))
 
-//adopt.names.from `left`
+
+const set = ([key]) =>
+    ({ by: (...reductions) => data.field.definition(Scope).computed(compose(key, reductions)) });
+
+//Scope.adopt("expression").letBind("param")
+
 
 module.exports = withBabelDefinitions(
 {
+    ExpressionStatement: data `ExpressionStatement` (
+        ([scope])   => set `scope` .by (adopting `expression.scope`) ),
+
+    BlockStatement: data `BlockStatement` (
+        ([scope])   => [Scope, body => Scope.reduce(body)] ),
+
     CatchClause: data `CatchClause` (
         param       => nullable(Node("IdentifierPattern")),
-        ([scope])   => [Scope, param => Scope.identity /*FIXME*/] ),
+        ([scope])   =>
+            set `scope` .by (
+                adopting `body.scope`,
+                letBinding `param.names`)),
 
     VariableDeclaration: data `VariableDeclaration` (
-        ([scope]) => [Scope, declarations =>
-            concat(Scope, "scope", declarations)] ),
+        ([scope]) => [Scope, declarations => Scope.reduce(declarations)] ),
 
     VariableDeclarator: data `VariableDeclarator` (
-        ([scope]) => [Scope, (id, init) => concat(Scope, "scope", [id, init])]),
+        ([scope])   =>  set `scope` .by
+            (adopting `init.scope`, letBinding `id.names`) ),
 
     ArrayPattern: data `ArrayPattern` (
         ([names]) => [NameSet, elements => concat(NameSet, "names", elements)],
@@ -51,7 +82,7 @@ module.exports = withBabelDefinitions(
             concat(NameSet, "names", properties)],
         ([scope]) => [Scope, properties =>
             concat(Scope, "scope", properties)] ),
-    
+
     // ObjectProperty's value is Expression | PatternLike to allow it to do
     // double-duty as a member of an ObjectExpression and ObjectPattern.
     // However, since we have a separate ObjectPatternProperty, we don't need
@@ -93,7 +124,7 @@ module.exports = withBabelDefinitions(
 
     BinaryExpression: data `BinaryExpression` (
         ([scope]) => unionBinaryScope ),
-    
+
     LogicalExpression: data `LogicalExpression` (
         ([scope]) => unionBinaryScope ),
 
@@ -120,7 +151,7 @@ module.exports = withBabelDefinitions(
     ClassDeclaration: data `ClassExpression` (
         id          => nullable(Node("IdentifierPattern")),
         ([scope])   => [Scope, id => Scope.identity /*FIXME*/ ] ),
-    
+
     // ClassImplements?
 
     ExportSpecifier: data `ExportSpecifier` (
