@@ -8,7 +8,18 @@ const SelfContained = require("./self-contained");
 
 const ArrayExpression = Node `ArrayExpression` (
     elements        => array(Expression),
-    ([references])  => References.union.all("elements") );
+    ([references])  => References.union("elements") );
+
+const CallExpression = Node `CallExpression` (
+    callee          => Expression,
+    arguments       => array(Expression),
+    ([references])  => References.union("callee", "arguments") );
+
+const ConditionalExpression = Node `ConditionalExpression` (
+    test            => Expression,
+    consequent      => Expression,
+    alternate       => Expression,
+    ([references])  => References.union("test", "consequent", "alternate") );
 
 const IdentifierExpression = Node `IdentifierExpression {ESTree = Identifier}` (
     name            => string,
@@ -67,6 +78,8 @@ module.exports = union `SelfContained` (
 const Expression = union `Expression` (
     ...union.components(SelfContained),
     ArrayExpression,
+    CallExpression,
+    ConditionalExpression,
     IdentifierExpression,
     BinaryExpression,
     LogicalExpression,

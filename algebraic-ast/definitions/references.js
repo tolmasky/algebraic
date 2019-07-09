@@ -1,6 +1,7 @@
 const { string } = require("@algebraic/type/primitive");
 const { Set } = require("@algebraic/collections");
 const { data: { field } } = require("@algebraic/type");
+const { isArray } = Array;
 
 const References = Set(string);
 const Empty = References();
@@ -14,15 +15,11 @@ module.exports.union = (...owners) =>
     {
         dependencies: owners,
         compute: values => Empty
-            .union(...owners.map(key => values[key].references))
-    });
-
-module.exports.union.all = key =>
-    field.definition(References).computed(
-    {
-        dependencies: [key],
-        compute: values => Empty
-            .union(...values[key].map(value => value.references))
+            .union(...owners
+                .map(key => values[key])
+                .flatMap(value => isArray(value) ?
+                    value.map(item => item.references) :
+                    [value.references]) )
     });
 
 module.exports.adopt = key =>
