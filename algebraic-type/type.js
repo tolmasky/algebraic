@@ -1,6 +1,7 @@
 const type =
 {
     any: require("./any"),
+    array: require("./array"),
     of: require("./of"),
     ...require("./declaration"),
     ...require("./data"),
