@@ -1,4 +1,4 @@
-const { nullable, union, array } = require("@algebraic/type");
+const { data, nullable, union, array } = require("@algebraic/type");
 const { boolean, string, tundefined } = require("@algebraic/type/primitive");
 const Node = require("./node");
 const References = require("./references");
@@ -7,73 +7,91 @@ const SelfContained = require("./self-contained");
 
 
 const ArrayExpression = Node `ArrayExpression` (
-    elements        => array(Expression),
-    ([references])  => References.from("elements") );
+    elements        =>  array(Expression),
+    ([references])  =>  References.from("elements") );
 
 const CallExpression = Node `CallExpression` (
-    callee          => Expression,
-    arguments       => array(Expression),
-    ([references])  => References.from("callee", "arguments") );
+    callee          =>  Expression,
+    arguments       =>  array(Expression),
+    ([references])  =>  References.from("callee", "arguments") );
 
 const ConditionalExpression = Node `ConditionalExpression` (
-    test            => Expression,
-    consequent      => Expression,
-    alternate       => Expression,
-    ([references])  => References.from("test", "consequent", "alternate") );
+    test            =>  Expression,
+    consequent      =>  Expression,
+    alternate       =>  Expression,
+    ([references])  =>  References.from("test", "consequent", "alternate") );
 
 const IdentifierExpression = Node `IdentifierExpression {ESTree = Identifier}` (
-    name            => string,
-    ([references])  => [References, name => References([name])] );
+    name            =>  string,
+    ([references])  =>  [References, name => References([name])] );
 
 const BinaryExpression = Node `BinaryExpression` (
-    left            => Expression,
-    right           => Expression,
-    operator        => string,
-    ([references])  => References.from("left", "right") );
+    left            =>  Expression,
+    right           =>  Expression,
+    operator        =>  string,
+    ([references])  =>  References.from("left", "right") );
 
 const LogicalExpression = Node `LogicalExpression` (
-    left            => Expression,
-    right           => Expression,
-    operator        => string,
-    ([references])  => References.from("left", "right") );
+    left            =>  Expression,
+    right           =>  Expression,
+    operator        =>  string,
+    ([references])  =>  References.from("left", "right") );
 
 const StaticMemberExpression = Node `StaticMemberExpression` (
-    object          => Expression,
-    property        => string,
-    ([references])  => References.from("object") );
+    object          =>  Expression,
+    property        =>  string,
+    ([references])  =>  References.from("object") );
 
 const ComputedMemberExpression = Node `ComputedMemberExpression` (
-    object          => Expression,
-    property        => Expression,
-    ([references])  => References.from("object", "property") );
+    object          =>  Expression,
+    property        =>  Expression,
+    ([references])  =>  References.from("object", "property") );
 
 const NewExpression = Node `NewExpression` (
-    callee          => Expression,
-    arguments       => array(Expression),
-    ([references])  => References.from("callee", "arguments") );
+    callee          =>  Expression,
+    arguments       =>  array(Expression),
+    ([references])  =>  References.from("callee", "arguments") );
 
 const ThisExpression = Node `ThisExpression` (
-    ([references])  => References.Never );
+    ([references])  =>  References.Never );
 
 const SequenceExpression = Node `SequenceExpression` (
-    expressions     => array(Expression),
-    ([references])  => References.from("expressions") );
+    expressions     =>  array(Expression),
+    ([references])  =>  References.from("expressions") );
+
+const TaggedTemplateExpression = Node `TaggedTemplateExpression` (
+    tag             =>  Expression,
+    quasi           =>  TemplateLiteral,
+    ([references])  =>  References.from("tag", "quasi") );
+
+const TemplateElement = Node `TemplateElement` (
+    value           =>  TemplateElement.Value,
+    tail            =>  [boolean, false],
+    ([references])  =>  References.Never );
+
+TemplateElement.Value = data `TemplateElement.Value` (
+    raw             =>  string,
+    cooked          =>  string );
+
+const TemplateLiteral = Node `TemplateLiteral` (
+    expressions     =>  array(Expression),
+    quasis          =>  array(TemplateElement),
+    ([references])  =>  References.from("expressions") );
 
 const UnaryExpression = Node `UnaryExpression` (
-    argument        => Expression,
-    operator        => string,
-    prefix          => [boolean, true],
-    ([references])  => References.from("argument") );
+    argument        =>  Expression,
+    operator        =>  string,
+    prefix          =>  [boolean, true],
+    ([references])  =>  References.from("argument") );
 
 const YieldExpression = Node `YieldExpression` (
-    argument        => Expression,
-    ([references])  => References.from("argument") );
+    argument        =>  Expression,
+    ([references])  =>  References.from("argument") );
 
 const AwaitExpression = Node `AwaitExpression` (
-    argument        => Expression,
-    delegate        => [boolean, false],
-    ([references])  => References.from("argument") );
-
+    argument        =>  Expression,
+    delegate        =>  [boolean, false],
+    ([references])  =>  References.from("argument") );
 
 /*
 const AssignmentExpression = Node `AssignmentExpression` (
@@ -120,6 +138,10 @@ const Expression = union `Expression` (
     NewExpression,
     ThisExpression,
     SequenceExpression,
+    TemplateElement,
+    TemplateLiteral,
+    TaggedTemplateExpression,
+    TemplateLiteral,
     UnaryExpression );
 
 module.exports = Expression;

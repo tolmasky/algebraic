@@ -128,7 +128,11 @@ const mapNode = (function ()
             Node.ObjectPattern(mapToPatterns("properties", mappedFields)),
 
         RestElement: ({ argument, ...mappedFields }) =>
-            Node.RestElement({ ...mappedFields, argument: toPattern(argument) })
+            Node.RestElement({ ...mappedFields, argument: toPattern(argument) }),
+
+        TemplateElement: ({ value, ...mappedFields }) =>
+            Node.TemplateElement({ ...mappedFields,
+                value: Node.TemplateElement.Value(value) })
     });
 })();
 
