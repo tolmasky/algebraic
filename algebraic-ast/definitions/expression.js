@@ -1,10 +1,24 @@
-const { of, data, nullable, union, array, parameterized } = require("@algebraic/type");
+const { data, nullable, array, parameterized, number } = require("@algebraic/type");
 const { boolean, string, tundefined } = require("@algebraic/type/primitive");
-const { IsSymbol } = require("@algebraic/type/declaration");
-const Node = require("./node");
-const IsExpression = Symbol("IsExpression");
 const References = require("./references");
-Error.stackTraceLimit = 1000;
+
+const Group = require("./group");
+const Node = require("./node");
+const Expression = Group `Expression` (Node);
+
+
+
+Expression `IdentifierExpression` (
+    ({ESTree})      =>  "Identifier",
+    name            =>  string,
+    ([references])  =>  [References, name => References([name])] );
+
+Expression `ArrowFunctionExpression` (
+    body            => Expression,
+    id              => nullable(string),
+    params          => array(nullable(string)),
+    ([generator])   => [boolean, () => false],
+    async           => [boolean, false] );
 
 Expression `ArrayExpression` (
     elements        =>  array(Expression) );
@@ -17,11 +31,6 @@ Expression `ConditionalExpression` (
     test            =>  Expression,
     consequent      =>  Expression,
     alternate       =>  Expression );
-
-Expression `IdentifierExpression` (
-    ({ESTree})      =>  "Identifier",
-    name            =>  string,
-    ([references])  =>  [References, name => References([name])] );
 
 Expression `BinaryExpression` (
     left            =>  Expression,
@@ -41,7 +50,7 @@ Expression `StaticMemberExpression` (
 Expression `ComputedMemberExpression` (
     ({ESTree})      =>  "MemberExpression",
     object          =>  Expression,
-    property        =>  Expression );
+    property        =>  Expression);
 
 Expression `NewExpression` (
     callee          =>  Expression,
@@ -56,123 +65,56 @@ Expression `TaggedTemplateExpression` (
     tag             =>  Expression,
     quasi           =>  TemplateLiteral );
 
-const TemplateElement = Expression `TemplateElement` (
-    value           =>  TemplateElement.Value,
-    tail            =>  [boolean, false] );
-
-TemplateElement.Value = data `TemplateElement.Value` (
+const Value = data `Value` (
     raw             =>  string,
     cooked          =>  string );
 
-const TemplateLiteral = Expression `TemplateLiteral` (
-    expressions     =>  array(Expression),
-    quasis          =>  array(TemplateElement) );
+Expression `TemplateElement` (
+    value           =>  Value,
+    tail            =>  [boolean, false] );
 
-const UnaryExpression = Node `UnaryExpression` (
+Expression.TemplateElement.Value = Value;
+
+Expression `TemplateLiteral` (
+    expressions     =>  array(Expression),
+    quasis          =>  array(Expression.TemplateElement) );
+
+const UnaryExpression = Expression `UnaryExpression` (
     argument        =>  Expression,
     operator        =>  string,
     prefix          =>  [boolean, true] );
 
-const YieldExpression = Node `YieldExpression` (
-    argument        =>  Expression );
+const YieldExpression = Expression `YieldExpression` (
+    argument        =>  Expression);
 
-const AwaitExpression = Node `AwaitExpression` (
+const AwaitExpression = Expression `AwaitExpression` (
     argument        =>  Expression,
     delegate        =>  [boolean, false] );
 
-/*
-const AssignmentExpression = Node `AssignmentExpression` (
-    left            => Node.RootPattern,
-    right           => Expression,
-    ([references])  => [References, (left, right) => left.union(right)] ),
+const Extra = parameterized (T =>
+    data `Extra<${T}>` (
+        raw         => string,
+        rawValue    => T ) );
 
-const BooleanLiteral = Node `BooleanLiteral` (
-    value   => boolean );
+Expression `BigIntLiteral` (
+    value               => string,
+    extra               => [nullable(Extra(string)), null] );
 
-const NumericLiteral = Node `NumericLiteral` (
-    value   => number,
-    extra   => [nullable(Extra(number)), null] );
+Expression `BooleanLiteral` (
+    value               => boolean );
 
-const NullLiteral = Node `NullLiteral` ( );
+Expression `NumericLiteral` (
+    value               => number );
 
-const RegExpLiteral = Node `RegExpLiteral` (
-    flags   => string,
-    pattern => string,
-    extra   => [nullable(Extra(tundefined)), null] );
+Expression `NullLiteral` ();
 
-const StringLiteral = Node `StringLiteral` (
-    value   => string,
-    extra   => [nullable(Extra(string)), null] );
+Expression `RegExpLiteral` (
+    flags               => string,
+    pattern             => string,
+    extra               => [nullable(Extra(tundefined)), null] );
 
-module.exports = union `SelfContained` (
-    BigIntLiteral,
-    BooleanLiteral,
-    NumericLiteral,
-    NullLiteral,
-    RegExpLiteral,
-    StringLiteral );*/
-
-function Expression ([name])
-{
-    const fieldsof = type => data
-        .fields(type)
-        .filter(field =>
-            parameterized.parameters(field)[0] === Expression ||
-            parameterized.parameters(field)[0][IsExpression] ||
-            parameterized.parameters(field)[0] === array(Expression));
-
-    return function (...fields)
-    {
-        const names = fields
-            .map(data.field.toFieldDeclaration)
-            .map(declaration => declaration.name);
-        const hasCustomReferencesDefinition =
-            names.indexOf("references") >= 0;
-
-        const dummy = data `dummy-${name}` (...fields);
-        const withReferencesField =
-            hasCustomReferencesDefinition ?
-                fields :
-                [...fields, ([references]) =>
-                    (dependencies => dependencies.length === 0 ?
-                        References.Never :
-                        References.from(...dependencies))
-                    (fieldsof(dummy).map(field => field.name))];
-
-        const type = Node ([name]) (
-            ...withReferencesField );
-
-        type[IsExpression] = true;
-        Expression[name] = type;
-
-        return type;
-    }
-}
-
-Expression[IsSymbol] = value => !!value && !!of(value)[IsExpression];
+Expression `StringLiteral` (
+    value               => string,
+    extra               => [nullable(Extra(string)), null] );
 
 module.exports = Expression;
-
-
-require("./self-contained");
-/*
-const Expression = union `Expression` (
-    ...union.components(SelfContained),
-    ArrayExpression,
-    CallExpression,
-    ConditionalExpression,
-    IdentifierExpression,
-    BinaryExpression,
-    LogicalExpression,
-    ComputedMemberExpression,
-    StaticMemberExpression,
-    NewExpression,
-    ThisExpression,
-    SequenceExpression,
-    TemplateElement,
-    TemplateLiteral,
-    TaggedTemplateExpression,
-    TemplateLiteral,
-    UnaryExpression );
-
-module.exports = Expression;*/

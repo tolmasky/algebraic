@@ -25,9 +25,6 @@ const mapCommonNodeFields = node =>
 
 const Node = require("./node");
 
-require("./self-contained");
-require("./expression");
-
 const toMapNode = function (mappings)
 {
     const { VISITOR_KEYS } = require("@babel/types");

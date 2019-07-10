@@ -10,7 +10,7 @@ module.exports = function ESTreeBridge ([name])
 {
     return function (...fields)
     {
-        const found = fields.findIndex(isESTreeField)
+        const found = fields.findIndex(isESTreeField);
         const ESTreeType = found > 0 ? fields[found]({}) : name;
         const filtered = fields.filter((_, index) => index !== found);
         const type = data ([name]) (...filtered);
