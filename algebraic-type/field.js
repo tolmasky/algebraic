@@ -216,7 +216,7 @@ module.exports.fromCompiled = function ([name, [_, computed, type, values]])
 }
 
 module.exports.toFieldDeclaration = function toFieldDeclaration (declaration)
-{console.log(declaration);
+{
     if (is (field.declaration, declaration))
         return declaration;
 

@@ -57,7 +57,7 @@ const mapNode = (function ()
     const toObjectPropertyPattern = ({ value, ...rest }) =>
         Node.ObjectPropertyPattern({ value: toPattern(value), ...rest });
     const toPattern = pattern =>
-        is(Node.Identifier, pattern) ||
+//        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             Node.IdentifierPattern(pattern) :
         is(Node.ObjectProperty, pattern) ?

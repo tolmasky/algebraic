@@ -26,7 +26,10 @@ function parameterized (internalTypeConstructor)
                 `Type constructor takes ${length} types ` +
                 `but got only ${types.length}`);
 
-        const UUID = stringify(types.map(type => getUUID(type)));
+        const maybeUUID = stringify(types.map(type => getUUID(type)));
+        const UUID = maybeUUID === "[null]" ?
+            stringify(types.map(type => type + "")) :
+            maybeUUID;
         const existing = cache[UUID];
 
         if (existing)

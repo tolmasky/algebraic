@@ -1,5 +1,7 @@
 const { data, nullable, array, parameterized, number } = require("@algebraic/type");
 const { boolean, string, tundefined } = require("@algebraic/type/primitive");
+const { Set } = require("@algebraic/collections");
+const StringSet = Set(string);
 const References = require("./references");
 
 const Group = require("./group");
@@ -7,7 +9,20 @@ const Node = require("./node");
 const Expression = Group `Expression` (Node);
 
 
+Node `IdentifierPattern` (
+    ({ESTree})      => "Identifier",
+    name            => string,
+    ([names])       => [StringSet, name => StringSet([name])] );
 
+Expression `AssignmentExpression` (
+    left            =>  Node.IdentifierPattern,
+    right           =>  Expression,
+    operator        =>  string,
+    ([references])  =>  [References, (left, right) =>
+            left.references
+                .union(right.references, left.names)] );
+
+//({free:name})   =>  string
 Expression `IdentifierExpression` (
     ({ESTree})      =>  "Identifier",
     name            =>  string,

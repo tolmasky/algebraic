@@ -13,6 +13,7 @@ const fieldsof = type => data
         Group.belongs(module.exports.Expression, type) || type === Array)
         (parameterized.parameters(field)[0]));
 
+const getP = field => parameterized.parameters(field)[0];
 
 const Node = Group `Node` (([name]) => function (...fields)
 {
@@ -27,7 +28,7 @@ const Node = Group `Node` (([name]) => function (...fields)
         hasCustomReferencesDefinition ?
             fields :
             [...fields, ([references]) =>
-                (dependencies => (console.log(dependencies),dependencies.length === 0 ?
+                (dependencies => (console.log(fieldsof(dummy).map(field => field)),dependencies.length === 0 ?
                     References.Never :
                     References.from(...dependencies)))
                 (fieldsof(dummy).map(field => field.name))];
@@ -51,7 +52,7 @@ module.exports.Expression = require("./expression");
 // for (const x of Object.keys(Node))
 //    if (x !== "Node" && x !== "Expression")
 //console.log(data.fields(Node["IdentifierExpression"]));
-console.log(Node.IdentifierExpression({ name:"x" }));
-console.log(require("@algebraic/type").is(require("./expression"), Node.IdentifierExpression({ name:"x" })));
-console.log("--> " + Group.belongs(Node, Node["IdentifierExpression"]));
+//console.log(Node.IdentifierExpression({ name:"x" }));
+//console.log(require("@algebraic/type").is(require("./expression"), Node.IdentifierExpression({ name:"x" })));
+//console.log("--> " + Group.belongs(Node, Node["IdentifierExpression"]));
 
