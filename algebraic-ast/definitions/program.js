@@ -26,7 +26,7 @@ exports.Script = Node `Script` (
     sourceFile          => [nullable(string), null],
 
     ([varBindings])     =>  compute (StringSet, take => `body.varBindings`),
-    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindings`),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindingNames`),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `body.freeVariables`,
                                 subtract => `varBindings`,
@@ -44,7 +44,7 @@ exports.Module = data `Module` (
     sourceFile          => [nullable(string), null],
 
     ([varBindings])     =>  compute (StringSet, take => `body.varBindings`),
-    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindings`),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindingNames`),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `body.freeVariables`,
                                 subtract => `varBindings`,

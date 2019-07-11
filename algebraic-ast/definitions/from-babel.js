@@ -125,6 +125,9 @@ const mapNode = (function ()
         ArrayPattern: mappedFields =>
             Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
 
+        LabeledStatement: ({ label, ...mappedFields }) =>
+            Node.LabeledStatement({ ...mappedFields, label: Node.Label(label) }),
+
         // ObjectPropertyPatterns are tricky. We can discover them here in the
         // actual property conversion phase since if they own a pattern, they
         // definitely can't resolve to an ObjectProperty.
