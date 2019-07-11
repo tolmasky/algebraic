@@ -20,7 +20,9 @@ module.exports = Node;
 
 const expressions = Object
     .values(require("./expressions"))
-    .filter(statement => getTypename(statement).endsWith("Expression"));
+    .filter(statement =>
+        getTypename(statement).endsWith("Expression") ||
+        getTypename(statement).endsWith("Literal"));
 const statements = Object
     .values(require("./statements"))
     .filter(statement => getTypename(statement).endsWith("Statement"));

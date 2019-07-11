@@ -2,6 +2,7 @@ const { is, data, nullable, array, or } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
+const { StringSet } = require("./string-set");
 const FreeVariables = require("./string-set").in `freeVariables`;
 
 
@@ -98,5 +99,43 @@ exports.WithStatement = Node `WithStatement` (
     object              =>  Node.Expression,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("object", "body") );
+
+exports.VariableDeclarator = Node `VariableDeclarator` (
+    id                  => Node.RootPattern,
+    init                => [nullable(Node.Expression), null],
+    definite            => [nullable(boolean), null],
+
+    ([bindingNames])    => [StringSet, id => (console.log(id.bindings),id.bindings)],
+    ([freeVariables])   => [StringSet, (id, init) => init ?
+                                init.freeVariables
+                                    .concat(id.freeVariables)
+                                    .subtract(id.bindings) :
+                                id.freeVariables ]);
+
+const fromDeclaratorBindingNames = declarators => declarators
+    .reduce((bindingNames, declarator) =>
+        bindingNames.concat(declarator.bindingNames), StringSet());
+
+exports.VariableDeclaration = Node `VariableDeclaration` (
+    declarators         =>  array (Node.VariableDeclarator),
+    ([declarations])    =>  [array (Node.VariableDeclarator),
+                                declarators => declarators],
+
+    kind                =>  string,
+
+    ([varBindings])     =>  [StringSet, (kind, declarators) =>
+                                kind === "var" ?
+                                    fromDeclaratorBindingNames(declarators) :
+                                    StringSet()],
+    ([blockBindings])   =>  [StringSet, (kind, declarators) =>
+                                kind !== "var" ?
+                                    fromDeclaratorBindingNames(declarators) :
+                                    StringSet()],
+    ([freeVariables])   =>  FreeVariables.from ("declarators") );
+
+
+
+
+
 
 

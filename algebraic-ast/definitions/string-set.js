@@ -13,6 +13,8 @@ module.exports.in = ([inKey]) =>
     Never: [StringSet, () => Empty]
 });
 
+module.exports.StringSet = StringSet;
+
 function lift (dependency)
 {
     return field.definition(StringSet).computed(

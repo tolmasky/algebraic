@@ -20,23 +20,23 @@ exports.IdentifierPattern = Node `IdentifierPattern` (
     ([bindings])        =>  Bindings.lift("name"),
     ([freeVariables])   =>  FreeVariables.lift("name") );
 
-exports.RestElement = data `RestElement` (
+exports.RestElement = Node `RestElement` (
     argument            =>  Node.RootPattern,
     ([bindings])        =>  Bindings.from("argument"),
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
-exports.AssignmentPattern = data `AssignmentPattern` (
+exports.AssignmentPattern = Node `AssignmentPattern` (
     left                =>  Node.RootPattern,
     right               =>  Node.Expression,
     ([bindings])        =>  Bindings.from("left"),
     ([freeVariables])   =>  FreeVariables.from("left", "right") )
 
-exports.ArrayPattern = data `ArrayPattern` (
+exports.ArrayPattern = Node `ArrayPattern` (
     elements            =>  array (or (Node.RootPattern, Node.AssignmentPattern)),
     ([bindings])        =>  Bindings.from("elements"),
     ([freeVariables])   =>  FreeVariables.from("elements") );
 
-exports.ShorthandAssignmentPattern = data `ShorthandAssignmentPattern` (
+exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
     ({override:type})   =>  "AssignmentPattern",
 
     left                =>  Node.IdentifierPattern,
@@ -44,7 +44,7 @@ exports.ShorthandAssignmentPattern = data `ShorthandAssignmentPattern` (
     ([bindings])        =>  Bindings.from("left"),
     ([freeVariables])   =>  FreeVariables.from("left", "right") );
 
-exports.ObjectPropertyPatternShorthand = data `ObjectPropertyPatternShorthand` (
+exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
     ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (true),
@@ -60,7 +60,7 @@ exports.ObjectPropertyPatternShorthand = data `ObjectPropertyPatternShorthand` (
     ([bindings])        =>  Bindings.from("value"),
     ([freeVariables])   =>  FreeVariables.from("value") );
 
-exports.ObjectPropertyPatternLonghand = data `ObjectPropertyPatternLonghand` (
+exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
     ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (false),
@@ -80,7 +80,7 @@ exports.ObjectPropertyPattern = union2 `ObjectPropertyPattern` (
     is                  => Node.ObjectPropertyPatternLonghand,
     or                  => Node.ObjectPropertyPatternShorthand );
 
-exports.ObjectPattern = data `ObjectPattern` (
+exports.ObjectPattern = Node `ObjectPattern` (
     properties          =>  array (Node.ObjectPropertyPattern ),
     ([bindings])        =>  Bindings.from("properties"),
     ([freeVariables])   =>  FreeVariables.from("properties") );

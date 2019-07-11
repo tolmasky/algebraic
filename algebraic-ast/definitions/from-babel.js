@@ -156,7 +156,10 @@ const mapNode = (function ()
 
         TemplateElement: ({ value, ...mappedFields }) =>
             Node.TemplateElement({ ...mappedFields,
-                value: Node.TemplateElement.Value(value) })
+                value: Node.TemplateElement.Value(value) }),
+
+        VariableDeclaration: ({ declarations, ...mappedFields }) =>
+            Node.VariableDeclaration({ declarators: declarations, ...mappedFields })
     });
 })();
 
