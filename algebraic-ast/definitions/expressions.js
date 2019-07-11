@@ -108,6 +108,13 @@ exports.UnaryExpression = data `UnaryExpression` (
     prefix              =>  [boolean, true],
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
+exports.UpdateExpression = data `UpdateExpression` (
+    ([type])            =>  data.always ("UpdateExpression"),
+    argument            =>  Node.Expression,
+    operator            =>  string,
+    prefix              =>  [boolean, true],
+    ([freeVariables])   =>  FreeVariables.from("argument") );
+
 exports.YieldExpression = data `YieldExpression` (
     ([type])            =>  data.always ("YieldExpression"),
     argument            =>  Node.Expression,
