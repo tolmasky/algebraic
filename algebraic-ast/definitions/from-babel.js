@@ -60,8 +60,8 @@ const mapNode = (function ()
 //        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             Node.IdentifierPattern(pattern) :
-        is(Node.ObjectProperty, pattern) ?
-            toObjectPropertyPattern(pattern) :
+//        is(Node.ObjectProperty, pattern) ?
+//            toObjectPropertyPattern(pattern) :
             pattern;
 
     const mapToPatterns = (key, fields) => (patterns =>
@@ -117,7 +117,7 @@ const mapNode = (function ()
             computed ?
                 Node.ComputedMemberExpression({ ...mappedFields, property }) :
                 Node.StaticMemberExpression(
-                    { ...mappedFields, property: property.name }),
+                    { ...mappedFields, property: Node.PropertyName(property) }),
 
         // Or we could discover them later on here, if the ObjectPattern looked
         // syntactically equivalent to an ObjectExpression thus far (e.g. {x}).

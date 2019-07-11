@@ -29,9 +29,9 @@ exports.IdentifierPattern = data `IdentifierPattern` (
 exports.RestElement = data `RestElement` (
     ([type])            =>  always ("RestElement"),
 
-    name                =>  string,
-    ([bindings])        =>  Bindings.lift("name"),
-    ([freeVariables])   =>  FreeVariables.lift("name") );
+    argument            =>  Node.RootPattern,
+    ([bindings])        =>  Bindings.from("argument"),
+    ([freeVariables])   =>  FreeVariables.from("argument") );
 
 exports.ArrayPattern = data `ArrayPattern` (
     ([type])            =>  always ("ArrayPattern"),
