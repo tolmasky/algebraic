@@ -1,12 +1,20 @@
-const { data, nullable, array, number, parameterized, or } = require("@algebraic/type");
+const { data, nullable, array, number, getTypename, or } = require("@algebraic/type");
 
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 
 
+const expressions = Object
+    .values(require("./expressions"))
+    .filter(statement => getTypename(statement).endsWith("Expression"));
+const statements = Object
+    .values(require("./statements"))
+    .filter(statement => getTypename(statement).endsWith("Statement"));
+
 Object.assign(module.exports,
 {
-    Expression: or(...Object.values(require("./expressions"))),
+    Expression: or(...expressions),
+    Statement: or(...statements),
     ...require("./property-names"),
     ...require("./expressions"),
     ...require("./patterns"),
