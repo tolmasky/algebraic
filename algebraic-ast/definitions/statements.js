@@ -89,17 +89,27 @@ exports.ReturnStatement = Node `ReturnStatement` (
 
 exports.ThrowStatement = Node `ThrowStatement` (
     argument            =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("argument") );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute (StringSet, take => `argument.freeVariables` ) );
 
 exports.WhileStatement = Node `WhileStatement` (
     test                =>  Node.Expression,
     body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from("test", "body") );
+    ([varBindings])     =>  compute (StringSet, take => `body.varBindings` ),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBingings` ),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `test.freeVariables`,
+                                take => `body.freeVariables` ) );
 
 exports.WithStatement = Node `WithStatement` (
     object              =>  Node.Expression,
     body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from("object", "body") );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `object.freeVariables`,
+                                take => `body.freeVariables` ) );
 
 exports.VariableDeclarator = Node `VariableDeclarator` (
     id                  => Node.RootPattern,
@@ -122,7 +132,7 @@ exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
 
     ([varBindings])     =>  compute (StringSet,
                                 take => `declarators.bindingNames`),
-    blockBindings       =>  [StringSet, StringSet()],
+    ([blockBindings])   =>  compute.empty (StringSet),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `declarators.freeVariables`,
                                 subtract => `varBindings` ) );
@@ -135,7 +145,7 @@ exports.BlockVariableDeclaration = Node `BlockVariableDeclaration` (
 
     kind                =>  string,
 
-    varBindings         =>  [StringSet, StringSet()],
+    ([varBindings])     =>  compute.empty (StringSet),
     ([blockBindings])   =>  compute (StringSet,
                                 take => `declarators.bindingNames`),
     ([freeVariables])   =>  compute (StringSet,

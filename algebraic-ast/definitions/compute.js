@@ -30,3 +30,9 @@ module.exports = function compute(type, ...shorthandOperations)
 
     return field.definition(type).computed({ dependencies, compute });
 }
+
+module.exports.empty = function empty(type)
+{
+    return [type, () => type()];
+}
+
