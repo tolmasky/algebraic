@@ -2,6 +2,18 @@ const { data, nullable, array, number, parameterized } = require("@algebraic/typ
 
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
+
+const patterns = require("./pattern");
+
+
+Object.assign(module.exports,
+{
+    ...patterns
+});
+
+
+
+/*
 const ESTreeBridge = require("./estree-bridge");
 const References = require("./references");
 
@@ -55,4 +67,4 @@ module.exports.Expression = require("./expression");
 //console.log(Node.IdentifierExpression({ name:"x" }));
 //console.log(require("@algebraic/type").is(require("./expression"), Node.IdentifierExpression({ name:"x" })));
 //console.log("--> " + Group.belongs(Node, Node["IdentifierExpression"]));
-
+*/

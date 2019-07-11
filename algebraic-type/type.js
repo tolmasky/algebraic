@@ -1,5 +1,6 @@
 const type =
 {
+    always: value => [type.of(value), () => value],
     any: require("./any"),
     array: require("./array"),
     of: require("./of"),
