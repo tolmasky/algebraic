@@ -128,14 +128,11 @@ const initialize = (function ()
             missing(owner, name, error) :
             typecheck(owner, name, error);
 
-    return (typename, fields, values) => { 
-    console.log(values);
-//    console.log("DOING " + typename, values, fields, Error().stack);
-    return fields
+    return (typename, fields, values) => fields
         .map(([name, [initialize]]) => [name, initialize(values, name)])
         .map(([name, [success, value]]) => success ?
             [name, value] :
-            fail.type(message(typename, name, value)))};
+            fail.type(message(typename, name, value)));
 })();
 
 module.exports.data = data;

@@ -1,8 +1,22 @@
 const { data, nullable, array, number, getTypename, or } = require("@algebraic/type");
-
+const tagged = require("@algebraic/type/tagged");
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
+const ESTreeBridge = require("./estree-bridge");
 
+
+const Node = tagged((name, ...fields) =>
+    ESTreeBridge ([name]) (
+        ...fields,
+        leadingComments     => [nullable(array(Comment)), null],
+        innerComments       => [nullable(array(Comment)), null],
+        trailingComments    => [nullable(array(Comment)), null],
+        start               => [nullable(number), null],
+        end                 => [nullable(number), null],
+        loc                 => [nullable(SourceLocation), null] ) );
+
+
+module.exports = Node;
 
 const expressions = Object
     .values(require("./expressions"))

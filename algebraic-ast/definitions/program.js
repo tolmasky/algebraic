@@ -6,19 +6,17 @@ const FreeVariables = require("./string-set").in `freeVariables`;
 const Extra = require("./extra");
 
 
-exports.Directive = data `Directive` (
-    ([type])            => data.always ("Directive"),
+exports.Directive = Node `Directive` (
     value               => Node.DirectiveLiteral );
 
-exports.DirectiveLiteral = data `DirectiveLiteral` (
-    ([type])            => data.always ("DirectiveLiteral"),
+exports.DirectiveLiteral = Node `DirectiveLiteral` (
     value               => string );
 
-exports.InterpreterDirective = data `InterpreterDirective` (
+exports.InterpreterDirective = Node `InterpreterDirective` (
     value               => string );
 
-exports.Script = data `Script` (
-    ([type])            => data.always ("Program"),
+exports.Script = Node `Script` (
+    ({override:type})   => "Program",
     ([sourceType])      => data.always ("script"),
 
     body                => array (Node.Statement),
@@ -28,7 +26,7 @@ exports.Script = data `Script` (
     ([freeVariables])   => FreeVariables.from("body") );
 
 exports.Module = data `Module` (
-    ([type])            => data.always ("Program"),
+    ({override:type})   => "Program",
     ([sourceType])      => data.always ("module"),
 
     body                => array (or (Node.ImportDeclaration,

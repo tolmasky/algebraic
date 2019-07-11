@@ -5,21 +5,18 @@ const Node = require("./node");
 const FreeVariables = require("./string-set").in `freeVariables`;
 
 
-exports.AssignmentExpression = data `AssignmentExpression` (
-    ([type])            =>  data.always ("AssignmentExpression"),
+exports.AssignmentExpression = Node `AssignmentExpression` (
     left                =>  Node.RootPattern,
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  FreeVariables.from("left", "right") );
 
-exports.IdentifierExpression = data `IdentifierExpression` (
-    ([type])            =>  data.always ("Identifier"),
+exports.IdentifierExpression = Node `IdentifierExpression` (
+    ({override:type})   =>  "Identifier",
     name                =>  string,
     ([freeVariables])   =>  FreeVariables.lift("name") );
 
-exports.ArrowFunctionExpression = data `ArrowFunctionExpression` (
-    ([type])            =>  data.always ("ArrowFunctionExpression"),
-
+exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     body                =>  or (Node.BlockStatment, Node.Expression),
     ([id])              =>  data.always (null),
     params              =>  array(nullable(Node.RootPattern)),
@@ -29,9 +26,7 @@ exports.ArrowFunctionExpression = data `ArrowFunctionExpression` (
 
     ([freeVariables])   =>  FreeVariables.from("body", "params") );
 
-exports.FunctionExpression = data `FunctionExpression` (
-    ([type])            =>  data.always ("FunctionExpression"),
-
+exports.FunctionExpression = Node `FunctionExpression` (
     body                =>  Node.BlockStatment,
     id                  =>  Node.IdentifierPattern,
     params              =>  array (nullable(Node.RootPattern)),
@@ -41,41 +36,36 @@ exports.FunctionExpression = data `FunctionExpression` (
 
     ([freeVariables])   =>  FreeVariables.from("body", "params") );
 
-exports.ArrayExpression = data `ArrayExpression` (
-    ([type])            =>  data.always ("ArrayExpression"),
+exports.ArrayExpression = Node `ArrayExpression` (
     elements            =>  array(Node.Expression),
     ([freeVariables])   =>  FreeVariables.from("elements") );
 
-exports.CallExpression = data `CallExpression` (
-    ([type])            =>  data.always ("CallExpression"),
+exports.CallExpression = Node `CallExpression` (
     callee              =>  Expression,
     arguments           =>  array(Expression),
     ([freeVariables])   =>  FreeVariables.from("callee", "arguments") );
 
-exports.ConditionalExpression = data `ConditionalExpression` (
-    ([type])            =>  data.always ("ConditionalExpression"),
+exports.ConditionalExpression = Node `ConditionalExpression` (
     test                =>  Node.Expression,
     consequent          =>  Node.Expression,
     alternate           =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables
                                 .from("test", "consequent", "alternate") );
 
-exports.BinaryExpression = data `BinaryExpression` (
-    ([type])            =>  data.always ("BinaryExpression"),
+exports.BinaryExpression = Node `BinaryExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  FreeVariables.from("left", "right")  );
 
-exports.LogicalExpression = data `LogicalExpression` (
-    ([type])            =>  data.always ("LogicalExpression"),
+exports.LogicalExpression = Node `LogicalExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  FreeVariables.from("left", "right") );
 
-exports.StaticMemberExpression = data `StaticMemberExpression` (
-    ([type])            =>  data.always ("MemberExpression"),
+exports.StaticMemberExpression = Node `StaticMemberExpression` (
+    ({override:type})   =>  "MemberExpression",
     ([computed])        =>  data.always (false),
 
     object              =>  Node.Expression,
@@ -83,8 +73,8 @@ exports.StaticMemberExpression = data `StaticMemberExpression` (
     optional            =>  [nullable(boolean), null],
     ([freeVariables])   =>  FreeVariables.from("object") );
 
-exports.ComputedMemberExpression = data `ComputedMemberExpression` (
-    ([type])            =>  data.always ("MemberExpression"),
+exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
+    ({override:type})   =>  "MemberExpression",
     ([computed])        =>  data.always (true),
 
     object              =>  Node.Expression,
@@ -92,54 +82,46 @@ exports.ComputedMemberExpression = data `ComputedMemberExpression` (
     optional            =>  [nullable(boolean), null],
     ([freeVariables])   =>  FreeVariables.from("object", "property") );
 
-exports.NewExpression = data `NewExpression` (
-    ([type])            =>  data.always ("NewExpression"),
+exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,
     arguments           =>  array(Node.Expression),
     ([freeVariables])   =>  FreeVariables.from("callee", "arguments") );
 
-exports.ThisExpression = data `ThisExpression` (
-    ([type])            =>  data.always ("ThisExpression"),
+exports.ThisExpression = Node `ThisExpression` (
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.SequenceExpression = data `SequenceExpression` (
-    ([type])            =>  data.always ("SequenceExpression"),
+exports.SequenceExpression = Node `SequenceExpression` (
     expressions         =>  array(Node.Expression),
     ([freeVariables])   =>  FreeVariables.from("expressions") );
 
-exports.TaggedTemplateExpression = data `TaggedTemplateExpression` (
-    ([type])            =>  data.always ("TaggedTemplateExpression"),
+exports.TaggedTemplateExpression = Node `TaggedTemplateExpression` (
     tag                 =>  Node.Expression,
     quasi               =>  Node.TemplateLiteral,
     ([freeVariables])   =>  FreeVariables.from("tag", "quasi") );
 
-exports.UnaryExpression = data `UnaryExpression` (
-    ([type])            =>  data.always ("UnaryExpression"),
+exports.UnaryExpression = Node `UnaryExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
-exports.UpdateExpression = data `UpdateExpression` (
-    ([type])            =>  data.always ("UpdateExpression"),
+exports.UpdateExpression = Node `UpdateExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
-exports.YieldExpression = data `YieldExpression` (
-    ([type])            =>  data.always ("YieldExpression"),
+exports.YieldExpression = Node `YieldExpression` (
     argument            =>  Node.Expression,
     delegate            =>  [boolean, false],
     ([freeVariables])   =>  FreeVariables.from("argument"));
 
-exports.AwaitExpression = data `AwaitExpression` (
-    ([type])            =>  data.always ("AwaitExpression"),
+exports.AwaitExpression = Node `AwaitExpression` (
     argument            =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
 exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
-    ([type])            =>  data.always ("ObjectProperty"),
+    ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (true),
     ([computed])        =>  data.always (false),
@@ -150,7 +132,7 @@ exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
     ([freeVariables])   =>  FreeVariables.from("value") )
 
 exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
-    ([type])            =>  data.always ("ObjectProperty"),
+    ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (false),
     ([computed])        =>  [boolean, key =>
@@ -167,7 +149,6 @@ exports.ObjectProperty = union2 `ObjectProperty` (
     or                  => Node.ObjectPropertyShorthand );
 
 exports.ObjectExpression = data `ObjectExpression` (
-    ([type])            => data.always ("ObjectExpression"),
     properties          => array (Node.ObjectProperty),
     ([freeVariables])   => FreeVariables.from("properties") );
 

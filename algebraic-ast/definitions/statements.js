@@ -5,48 +5,39 @@ const Node = require("./node");
 const FreeVariables = require("./string-set").in `freeVariables`;
 
 
-exports.Label = data `Label` (
-    ([type])            =>  data.always ("Identifier"),
+exports.Label = Node `Label` (
+    ({override:type})   =>  "Identifier",
     name                =>  string,
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.BlockStatement = data `BlockStatement` (
-    ([type])            =>  data.always ("BlockStatement"),
+exports.BlockStatement = Node `BlockStatement` (
     body                =>  array (Node.Statement),
     ([freeVariables])   =>  FreeVariables.from("body") );
 
-exports.BreakStatement = data `BreakStatement` (
-    ([type])            =>  data.always ("BreakStatement"),
+exports.BreakStatement = Node `BreakStatement` (
     label               =>  Node.Label,
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.ContinueStatement = data `ContinueStatement` (
-    ([type])            =>  data.always ("ContinueStatement"),
+exports.ContinueStatement = Node `ContinueStatement` (
     label               =>  Node.Label,
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.DebuggerStatement = data `DebuggerStatement` (
-    ([type])            =>  data.always ("DebuggerStatement"),
+exports.DebuggerStatement = Node `DebuggerStatement` (
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.DoWhileStatement = data `DoWhileStatement` (
-    ([type])            =>  data.always ("DoWhileStatement"),
+exports.DoWhileStatement = Node `DoWhileStatement` (
     block               =>  Node.BlockStatement,
     test                =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("block", "test") );
 
-exports.EmptyStatement = data `EmptyStatement` (
-    ([type])            =>  data.always ("EmptyStatement"),
+exports.EmptyStatement = Node `EmptyStatement` (
     ([freeVariables])   =>  FreeVariables.Never );
 
-exports.ExpressionStatement = data `ExpressionStatement` (
-    ([type])            =>  data.always ("ExpressionStatement"),
+exports.ExpressionStatement = Node `ExpressionStatement` (
     expression          =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("expression") );
 
-exports.FunctionDeclaration = data `FunctionDeclaration` (
-    ([type])            =>  data.always ("FunctionDeclaration"),
-
+exports.FunctionDeclaration = Node `FunctionDeclaration` (
     // This can be null in the `export default function() { }` case.
     id                  =>  nullable(Node.IdentifierPattern),
     params              =>  array (Node.RootPattern),
@@ -57,30 +48,26 @@ exports.FunctionDeclaration = data `FunctionDeclaration` (
 
     ([freeVariables])   =>  FreeVariables.from("id", "params", "body") )
 
-exports.IfStatement = data `IfStatement` (
-    ([type])            =>  data.always ("IfStatement"),
+exports.IfStatement = Node `IfStatement` (
     test                =>  Node.Expression,
     consequent          =>  Node.Statement,
     alternate           =>  nullable(Node.Statement),
     ([freeVariables])   =>  FreeVariables.from
                                 ("test", "consequent", "alternate") );
 
-exports.ForOfStatement = data `ForOfStatement` (
-    ([type])            =>  data.always ("ForOfStatement"),
+exports.ForOfStatement = Node `ForOfStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
     right               =>  Node.Expression,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("left", "right", "body") );
 
-exports.ForInStatement = data `ForInStatement` (
-    ([type])            =>  data.always ("ForInStatement"),
+exports.ForInStatement = Node `ForInStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
     right               =>  Node.Expression,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("left", "right", "body") );
 
-exports.ForStatement = data `ForStatement` (
-    ([type])            =>  data.always ("ForStatement"),
+exports.ForStatement = Node `ForStatement` (
     init                =>  nullable(or (Node.VariableDeclaration,
                                          Node.AssignmentExpression)),
     test                =>  nullable(Node.Expression),
@@ -89,30 +76,25 @@ exports.ForStatement = data `ForStatement` (
     ([freeVariables])   =>  FreeVariables.from
                                 ("init", "test", "update", "body") );
 
-exports.LabeledStatement = data `LabeledStatement` (
-    ([type])            =>  data.always ("LabeledStatement"),
+exports.LabeledStatement = Node `LabeledStatement` (
     label               =>  Node.Label,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("body") );
 
-exports.ReturnStatement = data `ReturnStatement` (
-    ([type])            =>  data.always ("ReturnStatement"),
+exports.ReturnStatement = Node `ReturnStatement` (
     argument            =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
-exports.ThrowStatement = data `ThrowStatement` (
-    ([type])            =>  data.always ("ThrowStatement"),
+exports.ThrowStatement = Node `ThrowStatement` (
     argument            =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
-exports.WhileStatement = data `WhileStatement` (
-    ([type])            =>  data.always ("WhileStatement"),
+exports.WhileStatement = Node `WhileStatement` (
     test                =>  Node.Expression,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("test", "body") );
 
-exports.WithStatement = data `WithStatement` (
-    ([type])            =>  data.always ("WithStatement"),
+exports.WithStatement = Node `WithStatement` (
     object              =>  Node.Expression,
     body                =>  Node.Statement,
     ([freeVariables])   =>  FreeVariables.from("object", "body") );

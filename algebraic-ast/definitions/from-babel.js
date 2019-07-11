@@ -70,22 +70,22 @@ const mapNode = (function ()
                 value: is (Node.AssignmentPattern, value) ?
                     Node.ShorthandAssignmentPattern(value) :
                     toPattern(value) });
-    const toPattern = pattern => (console.log(pattern, Node.IdentifierPattern),
+    const toPattern = pattern =>
 //        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             Node.IdentifierPattern(pattern) :
         is(Node.ObjectProperty, pattern) ?
             toObjectPropertyPattern(pattern) :
-            pattern);
+            pattern;
 
     const mapToPatterns = (key, fields) => (patterns =>
     ({
         ...fields,
         [key]: fields[key].map(toPattern)
     }))();
-    const Assignment = type => (console.log(type),
+    const Assignment = type =>
         ({ left, ...mappedFields }) =>
-            type({ left: toPattern(left), ...mappedFields }));
+            type({ left: toPattern(left), ...mappedFields });
     const toPatternFields = (keys, type) => mappedFields =>
         type({ ...mappedFields, ...Object.fromEntries(keys
             .map(key => [key, mappedFields[key]])

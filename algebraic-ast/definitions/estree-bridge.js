@@ -1,6 +1,7 @@
 const { data } = require("@algebraic/type");
-const ESTreeFieldRegExp = /^\(\{\s*ESTree\s*\}\)/;
-const isESTreeField = f => typeof f === "function" && ESTreeFieldRegExp.test(f + "");
+const OverrideTypeRegExp = /^\(\{\s*override:type\s*}\)/;
+const isOverrideTypeField = f =>
+    typeof f === "function" && OverrideTypeRegExp.test(f + "");
 
 // ESTree looks for the "type" property of nodes to identify them. We will be
 // extending the types available in ESTree and thus allow one to provide the
@@ -10,8 +11,8 @@ module.exports = function ESTreeBridge ([name])
 {
     return function (...fields)
     {
-        const found = fields.findIndex(isESTreeField);
-        const ESTreeType = found > 0 ? fields[found]({}) : name;
+        const found = fields.findIndex(isOverrideTypeField);
+        const ESTreeType = found >= 0 ? fields[found]({}) : name;
         const filtered = fields.filter((_, index) => index !== found);
         const type = data ([name]) (...filtered);
 
