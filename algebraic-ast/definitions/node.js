@@ -25,7 +25,9 @@ const expressions = Object
         getTypename(statement).endsWith("Literal"));
 const statements = Object
     .values(require("./statements"))
-    .filter(statement => getTypename(statement).endsWith("Statement"));
+    .filter(statement =>
+        getTypename(statement).endsWith("Statement") ||
+        getTypename(statement).endsWith("Declaration") );
 
 Object.assign(module.exports,
 {

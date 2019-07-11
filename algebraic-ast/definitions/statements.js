@@ -54,8 +54,18 @@ exports.IfStatement = Node `IfStatement` (
     test                =>  Node.Expression,
     consequent          =>  Node.Statement,
     alternate           =>  nullable(Node.Statement),
-    ([freeVariables])   =>  FreeVariables.from
-                                ("test", "consequent", "alternate") );
+    ([varBindings])     =>  compute (StringSet,
+                                take => `consequent.varBindings`,
+                                take => `alternate.varBindings` ),
+    ([blockBindings])   =>  compute (StringSet,
+                                take => `consequent.blockBindings`,
+                                take => `alternate.blockBindings` ),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `test.freeVariables`,
+                                take => `consequent.freeVariables`,
+                                take => `alternate.freeVariables`,
+                                subtract => `varBindings`,
+                                subtract => `blockBindings` ) );
 
 exports.ForOfStatement = Node `ForOfStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
@@ -81,26 +91,37 @@ exports.ForStatement = Node `ForStatement` (
 exports.LabeledStatement = Node `LabeledStatement` (
     label               =>  Node.Label,
     body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from("body") );
+    ([varBindings])     =>  compute (StringSet,
+                                take => `body.varBindings` ),
+    ([blockBindings])   =>  compute (StringSet,
+                                take => `body.blockBindings` ),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables` ) );
 
 exports.ReturnStatement = Node `ReturnStatement` (
     argument            =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("argument") );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables` ) );
 
 exports.ThrowStatement = Node `ThrowStatement` (
     argument            =>  Node.Expression,
     ([varBindings])     =>  compute.empty (StringSet),
     ([blockBindings])   =>  compute.empty (StringSet),
-    ([freeVariables])   =>  compute (StringSet, take => `argument.freeVariables` ) );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables` ) );
 
 exports.WhileStatement = Node `WhileStatement` (
     test                =>  Node.Expression,
     body                =>  Node.Statement,
-    ([varBindings])     =>  compute (StringSet, take => `body.varBindings` ),
-    ([blockBindings])   =>  compute (StringSet, take => `body.blockBingings` ),
+    ([varBindings])     =>  compute (StringSet,
+                                take => `body.varBindings` ),
+    ([blockBindings])   =>  compute.empty (StringSet),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `test.freeVariables`,
-                                take => `body.freeVariables` ) );
+                                take => `body.freeVariables`,
+                                subtract => `varBindings` ) );
 
 exports.WithStatement = Node `WithStatement` (
     object              =>  Node.Expression,
