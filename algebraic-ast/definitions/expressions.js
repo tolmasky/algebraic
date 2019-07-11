@@ -144,8 +144,8 @@ exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
     ([freeVariables])   =>  FreeVariables.from("key", "value") );
 
 exports.ObjectProperty = union2 `ObjectProperty` (
-    is                  => ObjectPropertyLonghand,
-    or                  => ObjectPropertyShorthand );
+    is                  => Node.ObjectPropertyLonghand,
+    or                  => Node.ObjectPropertyShorthand );
 
 exports.ObjectExpression = data `ObjectExpression` (
     ([type])            => data.always ("ObjectExpression"),

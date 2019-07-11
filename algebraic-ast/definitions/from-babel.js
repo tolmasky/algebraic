@@ -53,15 +53,26 @@ const toMapNode = function (mappings)
 const mapNode = (function ()
 {
     const { is, string } = require("@algebraic/type");
-    const { Set } = require("@algebraic/collections");
-    const toObjectPropertyPattern = ({ value, ...rest }) =>
-        Node.ObjectPropertyPattern({ value: toPattern(value), ...rest });
+
+    const toObjectPropertyKey = ({ computed, key }) =>
+        computed ? Node.ComputedPropertyName({ expression: key }) :
+        is (Node.IdentifierExpression, key) ? Node.PropertyName(key) :
+        key;
+    const toObjectPropertyPattern = ({ shorthand, value, ...rest }) =>
+        !shorthand ?
+            Node.ObjectPropertyPatternLonghand({ ...rest,
+                key: toObjectPropertyKey(rest),
+                value: toPattern(value) }) :
+            Node.ObjectPropertyPatternShorthand({ ...rest,
+                value: is (Node.AssignmentPattern, value) ?
+                    Node.ShorthandAssignmentPattern(value) :
+                    toPattern(value) });
     const toPattern = pattern => (console.log(pattern, Node.IdentifierPattern),
 //        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             Node.IdentifierPattern(pattern) :
-//        is(Node.ObjectProperty, pattern) ?
-//            toObjectPropertyPattern(pattern) :
+        is(Node.ObjectProperty, pattern) ?
+            toObjectPropertyPattern(pattern) :
             pattern);
 
     const mapToPatterns = (key, fields) => (patterns =>
@@ -110,14 +121,13 @@ const mapNode = (function ()
         // actual property conversion phase since if they own a pattern, they
         // definitely can't resolve to an ObjectProperty.
         ObjectProperty: mappedFields =>
-            is(Node.RootPattern, mappedFields.value) ?
+            is(Node.RootPattern, mappedFields.value) ||
+            is(Node.AssignmentPattern, mappedFields.value) ?
                 toObjectPropertyPattern(mappedFields) :
-            (({ computed, shorthand, key, ...rest }) =>
+            (({ computed, shorthand, ...rest }) =>
                 shorthand ? Node.ObjectPropertyShorthand(mappedFields) :
-                Node.ObjectPropertyLonghand({ ...mappedFields, key:
-                    computed ? Node.ComputedPropertyName({ expression: key }) :
-                    is (Node.IdentifierExpression, key) ? Node.PropertyName(key) :
-                    key }))
+                Node.ObjectPropertyLonghand({ ...mappedFields,
+                    key: toObjectPropertyKey(mappedFields) }))
             (mappedFields),
 
         MemberExpression: ({ computed, property, ...mappedFields }) =>

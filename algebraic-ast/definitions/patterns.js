@@ -1,4 +1,4 @@
-const { data, or, boolean, string, type, array } = require("@algebraic/type");
+const { is, data, or, boolean, string, type, array } = require("@algebraic/type");
 const union2 = require("@algebraic/type/union-new");
 
 
@@ -54,7 +54,7 @@ exports.ShorthandAssignmentPattern = data `ShorthandAssignmentPattern` (
     ([bindings])        =>  Bindings.from("left"),
     ([freeVariables])   =>  FreeVariables.from("left", "right") );
 
-exports.ShorthandPropertyPattern = data `ShorthandPropertyPattern` (
+exports.ObjectPropertyPatternShorthand = data `ObjectPropertyPatternShorthand` (
     ([type])            =>  always ("ObjectProperty"),
 
     ([shorthand])       =>  always (true),
@@ -70,26 +70,30 @@ exports.ShorthandPropertyPattern = data `ShorthandPropertyPattern` (
     ([bindings])        =>  Bindings.from("value"),
     ([freeVariables])   =>  FreeVariables.from("value") );
 
-exports.ObjectPropertyPattern = data `ObjectPropertyPattern` (
+exports.ObjectPropertyPatternLonghand = data `ObjectPropertyPatternLonghand` (
     ([type])            =>  always ("ObjectProperty"),
 
     ([shorthand])       =>  always (false),
-    ([computed])        =>  [boolean, key => is(Node.ComputedPropertyName, key)],
+    ([computed])        =>  [boolean, key =>
+                                is(Node.ComputedPropertyName, key)],
 
     key                 =>  or (Node.ComputedPropertyName,
-                                Node.PropertyName, 
+                                Node.PropertyName,
                                 Node.StringLiteral),
-    value               =>  Node.RootPattern,
+    value               =>  or (Node.RootPattern,
+                                Node.AssignmentPattern),
 
     ([bindings])        =>  Bindings.from("value"),
     ([freeVariables])   =>  FreeVariables.from("key", "value") );
 
+exports.ObjectPropertyPattern = union2 `ObjectPropertyPattern` (
+    is                  => Node.ObjectPropertyPatternLonghand,
+    or                  => Node.ObjectPropertyPatternShorthand );
+
 exports.ObjectPattern = data `ObjectPattern` (
     ([type])            =>  always ("ObjectPattern"),
 
-    properties          =>  array (or (
-                                Node.ObjectPropertyPattern,
-                                Node.ShorthandPropertyPattern) ),
+    properties          =>  array (Node.ObjectPropertyPattern ),
     ([bindings])        =>  Bindings.from("properties"),
     ([freeVariables])   =>  FreeVariables.from("properties") );
 
