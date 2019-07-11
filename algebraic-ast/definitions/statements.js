@@ -44,6 +44,19 @@ exports.ExpressionStatement = data `ExpressionStatement` (
     expression          =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("expression") );
 
+exports.FunctionDeclaration = data `FunctionDeclaration` (
+    ([type])            =>  data.always ("FunctionDeclaration"),
+
+    // This can be null in the `export default function() { }` case.
+    id                  =>  nullable(Node.IdentifierPattern),
+    params              =>  array (Node.RootPattern),
+    body                =>  Node.BlockStatement,
+
+    generator           =>  [boolean, false],
+    async               =>  [boolean, false],
+
+    ([freeVariables])   =>  FreeVariables.from("id", "params", "body") )
+
 exports.IfStatement = data `IfStatement` (
     ([type])            =>  data.always ("IfStatement"),
     test                =>  Node.Expression,

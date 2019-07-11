@@ -20,11 +20,23 @@ exports.IdentifierExpression = data `IdentifierExpression` (
 exports.ArrowFunctionExpression = data `ArrowFunctionExpression` (
     ([type])            =>  data.always ("ArrowFunctionExpression"),
 
-    body                =>  Node.Expression,
+    body                =>  or (Node.BlockStatment, Node.Expression),
     ([id])              =>  data.always (null),
     params              =>  array(nullable(Node.RootPattern)),
 
     ([generator])       =>  data.always (false),
+    async               =>  [boolean, false],
+
+    ([freeVariables])   =>  FreeVariables.from("body", "params") );
+
+exports.FunctionExpression = data `FunctionExpression` (
+    ([type])            =>  data.always ("FunctionExpression"),
+
+    body                =>  Node.BlockStatment,
+    id                  =>  Node.IdentifierPattern,
+    params              =>  array (nullable(Node.RootPattern)),
+
+    generator           =>  [boolean, false],
     async               =>  [boolean, false],
 
     ([freeVariables])   =>  FreeVariables.from("body", "params") );
