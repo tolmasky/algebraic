@@ -30,8 +30,9 @@ function from (inKey, dependencies)
         compute: values => Empty
             .union(...dependencies
                 .map(key => values[key])
-                .flatMap(value => isArray(value) ?
-                    value.map(item => item[inKey]) :
+                .flatMap(value =>
+                    value === null ? Empty :
+                    isArray(value) ? value.map(item => item[inKey]) :
                     [value[inKey]]) )
     });
 }

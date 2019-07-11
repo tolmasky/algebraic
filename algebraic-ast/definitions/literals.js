@@ -1,12 +1,9 @@
-const { data, nullable, parameterized, array } = require("@algebraic/type");
+const { data, nullable, array } = require("@algebraic/type");
 const { boolean, number, string, tundefined } = require("@algebraic/type/primitive");
 const Node = require("./node");
 const FreeVariables = require("./string-set").in `freeVariables`;
+const Extra = require("./extra");
 
-const Extra = parameterized (T =>
-    data `Extra<${T}>` (
-        raw         => string,
-        rawValue    => T ) );
 
 exports.BigIntLiteral = data `BigIntLiteral` (
     ([type])            => data.always ("BigIntLiteral"),

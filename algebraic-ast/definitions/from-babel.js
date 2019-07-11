@@ -28,6 +28,9 @@ const Node = require("./node");
 const toMapNode = function (mappings)
 {
     const { VISITOR_KEYS } = require("@babel/types");
+
+    VISITOR_KEYS["Program"].push("interpreter");
+
     const undeprecated = require("../babel/undeprecated-types");
     const mapVisitorFields = (fields, node) => Object
         .fromEntries(fields.map(field =>
@@ -92,6 +95,11 @@ const mapNode = (function ()
 
     return toMapNode(
     {
+        Program: ({ sourceType, ...mappedFields }) =>
+            sourceType === "module" ?
+                Node.Module(mappedFields) :
+                Node.Script(mappedFields),
+
         AssignmentExpression: Assignment(Node.AssignmentExpression, false),
 
         MemberExpression: (mappedFields, { computed, property }) =>
