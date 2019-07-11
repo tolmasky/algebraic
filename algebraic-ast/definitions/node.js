@@ -10,6 +10,7 @@ Object.assign(module.exports,
     ...require("./property-names"),
     ...require("./expressions"),
     ...require("./patterns"),
+    ...require("./statements")
 });
 
 
