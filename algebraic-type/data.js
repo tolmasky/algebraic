@@ -85,8 +85,9 @@ const data = declaration(function data (type, fieldDeclarations)
         if (!(this instanceof type))
             return new type(values);
 
+        const mutable = { ...values };
         const compiled = fieldsCompiled();
-        const uncomputed = initialize(typename, compiled.uncomputed, values);
+        const uncomputed = initialize(typename, compiled.uncomputed, mutable);
         const computed = compiled.computed.length <= 0 ?
             [] :
             initialize(typename,
@@ -127,12 +128,17 @@ const initialize = (function ()
         is (field.error.missing, error) ?
             missing(owner, name, error) :
             typecheck(owner, name, error);
+    const { assign } = Object;
 
+    // Should we just return values here? We should seal/freeze it too.
     return (typename, fields, values) => fields
-        .map(([name, [initialize]]) => [name, initialize(values, name)])
-        .map(([name, [success, value]]) => success ?
-            [name, value] :
-            fail.type(message(typename, name, value)));
+        .reduce(([values, pairs], [name, [initialize]]) =>
+            (([success, value]) => !success ?
+                fail.type(message(typename, name, value)) :
+                [(console.log(values, name),assign(values, { [name]: value })),
+                    (pairs.push([name, value]), pairs)])
+            (initialize(values, name)),
+            [values, []])[1];
 })();
 
 module.exports.data = data;

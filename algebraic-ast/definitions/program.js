@@ -2,7 +2,8 @@ const { is, data, nullable, array, or } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
-const FreeVariables = require("./string-set").in `freeVariables`;
+const { StringSet } = require("./string-set");
+const compute = require("./compute");
 const Extra = require("./extra");
 
 
@@ -23,7 +24,13 @@ exports.Script = Node `Script` (
     directives          => [array(Node.Directive), []],
     interpreter         => [nullable(Node.InterpreterDirective), null],
     sourceFile          => [nullable(string), null],
-    ([freeVariables])   => FreeVariables.from("body") );
+
+    ([varBindings])     =>  compute (StringSet, take => `body.varBindings`),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindings`),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables`,
+                                subtract => `varBindings`,
+                                subtract => `blockBindings` ) );
 
 exports.Module = data `Module` (
     ({override:type})   => "Program",
@@ -35,7 +42,13 @@ exports.Module = data `Module` (
     directives          => [array(Directive), []],
     interpreter         => [nullable(Node.InterpreterDirective), null],
     sourceFile          => [nullable(string), null],
-    ([freeVariables])   => FreeVariables.from("body") );
+
+    ([varBindings])     =>  compute (StringSet, take => `body.varBindings`),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindings`),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables`,
+                                subtract => `varBindings`,
+                                subtract => `blockBindings` ) );
 
 exports.Program = union2 `Program` (
     is                  => Node.Module,

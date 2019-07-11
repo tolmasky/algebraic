@@ -3,6 +3,7 @@ const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
 const { StringSet } = require("./string-set");
+const compute = require("./compute");
 const FreeVariables = require("./string-set").in `freeVariables`;
 
 
@@ -131,7 +132,25 @@ exports.VariableDeclaration = Node `VariableDeclaration` (
                                 kind !== "var" ?
                                     fromDeclaratorBindingNames(declarators) :
                                     StringSet()],
-    ([freeVariables])   =>  FreeVariables.from ("declarators") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `declarators.freeVariables`,
+                                subtract => `varBindings`,
+                                subtract => `blockBindings` ) );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
