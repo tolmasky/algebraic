@@ -135,7 +135,7 @@ const initialize = (function ()
         .reduce(([values, pairs], [name, [initialize]]) =>
             (([success, value]) => !success ?
                 fail.type(message(typename, name, value)) :
-                [(console.log(values, name),assign(values, { [name]: value })),
+                [assign(values, { [name]: value }),
                     (pairs.push([name, value]), pairs)])
             (initialize(values, name)),
             [values, []])[1];

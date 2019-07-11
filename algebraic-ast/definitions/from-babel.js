@@ -158,8 +158,10 @@ const mapNode = (function ()
             Node.TemplateElement({ ...mappedFields,
                 value: Node.TemplateElement.Value(value) }),
 
-        VariableDeclaration: ({ declarations, ...mappedFields }) =>
-            Node.VariableDeclaration({ declarators: declarations, ...mappedFields })
+        VariableDeclaration: ({ kind, declarations: declarators, ...mappedFields }) =>
+            kind === "var" ?
+                Node.VarVariableDeclaration({ declarators, ...mappedFields }) :
+                Node.BlockVariableDeclaration({ kind, declarators, ...mappedFields })
     });
 })();
 

@@ -106,36 +106,45 @@ exports.VariableDeclarator = Node `VariableDeclarator` (
     init                => [nullable(Node.Expression), null],
     definite            => [nullable(boolean), null],
 
-    ([bindingNames])    => [StringSet, id => (console.log(id.bindings),id.bindings)],
-    ([freeVariables])   => [StringSet, (id, init) => init ?
-                                init.freeVariables
-                                    .concat(id.freeVariables)
-                                    .subtract(id.bindings) :
-                                id.freeVariables ]);
+    ([bindingNames])    => compute (StringSet, take => `id.bindingNames` ),
+    ([freeVariables])   => compute (StringSet,
+                                take => `init.freeVariables`,
+                                take => `id.freeVariables`,
+                                subtract => `id.bindingNames` ) );
 
-const fromDeclaratorBindingNames = declarators => declarators
-    .reduce((bindingNames, declarator) =>
-        bindingNames.concat(declarator.bindingNames), StringSet());
+exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
+    ({override:type})   =>  "VariableDeclaration",
+    declarators         =>  array (Node.VariableDeclarator),
+    ([declarations])    =>  [array (Node.VariableDeclarator),
+                                declarators => declarators],
 
-exports.VariableDeclaration = Node `VariableDeclaration` (
+    ([kind])            =>  data.always `var`,
+
+    ([varBindings])     =>  compute (StringSet,
+                                take => `declarators.bindingNames`),
+    blockBindings       =>  [StringSet, StringSet()],
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `declarators.freeVariables`,
+                                subtract => `varBindings` ) );
+
+exports.BlockVariableDeclaration = Node `BlockVariableDeclaration` (
+    ({override:type})   =>  "VariableDeclaration",
     declarators         =>  array (Node.VariableDeclarator),
     ([declarations])    =>  [array (Node.VariableDeclarator),
                                 declarators => declarators],
 
     kind                =>  string,
 
-    ([varBindings])     =>  [StringSet, (kind, declarators) =>
-                                kind === "var" ?
-                                    fromDeclaratorBindingNames(declarators) :
-                                    StringSet()],
-    ([blockBindings])   =>  [StringSet, (kind, declarators) =>
-                                kind !== "var" ?
-                                    fromDeclaratorBindingNames(declarators) :
-                                    StringSet()],
+    varBindings         =>  [StringSet, StringSet()],
+    ([blockBindings])   =>  compute (StringSet,
+                                take => `declarators.bindingNames`),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `declarators.freeVariables`,
-                                subtract => `varBindings`,
                                 subtract => `blockBindings` ) );
+
+exports.VariableDeclaration = union2 `VariableDecalaration` (
+    is                  => Node.VarVariableDeclaration,
+    or                  => Node.BlockVariableDeclaration );
 
 
 
