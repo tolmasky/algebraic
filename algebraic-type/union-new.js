@@ -9,6 +9,6 @@ module.exports = tagged((name, fields) =>
 {
     const types = cached(() => fields.map(field => field()));
     const is = value => types().some(type => is(type, value));
-
-    return Object.assign(is, { [IsSymbol]: is, [UUIDSymbol]: "aaaaa" });
+console.log("CREATING " + name);
+    return Object.assign(is, { [IsSymbol]: is, [UUIDSymbol]: "aaaaa-"+ name });
 });

@@ -40,6 +40,19 @@ exports.StringLiteral = data `StringLiteral` (
     extra               => [nullable(Extra(string)), null],
     ([freeVariables])   => FreeVariables.Never );
 
+exports.TemplateElement = data `TemplateElement` (
+    value           =>  Node.TemplateElement.Value,
+    tail            =>  [boolean, false] );
+
+exports.TemplateElement.Value = data `TemplateElement.Value` (
+    raw             =>  string,
+    cooked          =>  string );
+
+exports.TemplateLiteral = data `TemplateLiteral` (
+    ([type])            =>  always ("TemplateLiteral"),
+    expressions         =>  array(Node.Expression),
+    quasis              =>  array(Node.TemplateElement),
+    ([freeVariables])   =>  FreeVariables.from("expressions") );
 
 
 

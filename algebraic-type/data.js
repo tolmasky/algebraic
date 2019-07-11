@@ -1,3 +1,4 @@
+const of = require("./of");
 const any = require("./any");
 const fail = require("./fail");
 const partition = require("@climb/partition");
@@ -96,6 +97,8 @@ const data = declaration(function data (type, fieldDeclarations)
             { value, writable, enumerable, configurable }));
         computed.map(([name, value]) => defineProperty(this, name,
             { value, writable, enumerable, configurable }));
+
+        return this;
     });
 
     type.prototype.toString = function () { return inspect(this) };
@@ -125,17 +128,21 @@ const initialize = (function ()
             missing(owner, name, error) :
             typecheck(owner, name, error);
 
-    return (typename, fields, values) => fields
+    return (typename, fields, values) => { 
+    console.log(values);
+//    console.log("DOING " + typename, values, fields, Error().stack);
+    return fields
         .map(([name, [initialize]]) => [name, initialize(values, name)])
         .map(([name, [success, value]]) => success ?
             [name, value] :
-            fail.type(message(typename, name, value)));
+            fail.type(message(typename, name, value)))};
 })();
 
 module.exports.data = data;
 
 const field = require("./field");
 
+data.always = value => [of(value), () => value];
 data.field = field;
 data.fields = type => type[DataMetadata].fields();
 data.fieldDeclarations = type => type[DataMetadata].toFieldDeclarations();

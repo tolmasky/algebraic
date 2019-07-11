@@ -1,4 +1,4 @@
-const { data, nullable, array, number, parameterized } = require("@algebraic/type");
+const { data, nullable, array, number, parameterized, or } = require("@algebraic/type");
 
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
@@ -6,7 +6,8 @@ const Comment = require("./comment");
 
 Object.assign(module.exports,
 {
-    ...require("./literals"),
+    Expression: or(...Object.values(require("./expressions"))),
+    ...require("./expressions"),
     ...require("./patterns"),
 });
 
