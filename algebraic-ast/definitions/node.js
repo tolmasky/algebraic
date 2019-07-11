@@ -7,6 +7,7 @@ const Comment = require("./comment");
 Object.assign(module.exports,
 {
     Expression: or(...Object.values(require("./expressions"))),
+    ...require("./property-names"),
     ...require("./expressions"),
     ...require("./patterns"),
 });

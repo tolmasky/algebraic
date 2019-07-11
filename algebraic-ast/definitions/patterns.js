@@ -46,22 +46,6 @@ exports.ArrayPattern = data `ArrayPattern` (
     ([bindings])        =>  Bindings.from("elements"),
     ([freeVariables])   =>  FreeVariables.from("elements") );
 
-// Babel has no concept of a ComputedProperyNamePattern at all, and so this
-// would require significant conversion on the way back (unlike
-// IdentifierPattern which just pretends to be an Identifier). However, we
-// can do something similar here and pretend to be a ParenthesizedExpression.
-exports.ComputedPropertyName = data `ComputedPropertyName` (
-    ([type])            =>  always ("ParenthesizedExpression"),
-
-    expression          =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("expression") );
-
-exports.PropertyName = data `PropertyName` (
-    ([type])            =>  always `Identifier`,
-
-    name                =>  string,
-    ([freeVariables])   =>  FreeVariables.Never );
-
 exports.ShorthandAssignmentPattern = data `ShorthandAssignmentPattern` (
     ([type])            =>  always ("AssignmentPattern"),
 
@@ -103,7 +87,9 @@ exports.ObjectPropertyPattern = data `ObjectPropertyPattern` (
 exports.ObjectPattern = data `ObjectPattern` (
     ([type])            =>  always ("ObjectPattern"),
 
-    properties          =>  array(ObjectPropertyPattern),
+    properties          =>  array (or (
+                                Node.ObjectPropertyPattern,
+                                Node.ShorthandPropertyPattern) ),
     ([bindings])        =>  Bindings.from("properties"),
     ([freeVariables])   =>  FreeVariables.from("properties") );
 

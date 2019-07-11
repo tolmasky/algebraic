@@ -1,4 +1,6 @@
-const { data, boolean, number, string, nullable, parameterized } = require("@algebraic/type");
+const { is, data, nullable, array, or } = require("@algebraic/type");
+const { boolean, number, string } = require("@algebraic/type/primitive");
+const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
 const FreeVariables = require("./string-set").in `freeVariables`;
 
@@ -10,7 +12,6 @@ exports.AssignmentExpression = data `AssignmentExpression` (
     operator            =>  string,
     ([freeVariables])   =>  FreeVariables.from("left", "right") );
 
-//({free:name})   =>  string
 exports.IdentifierExpression = data `IdentifierExpression` (
     ([type])            =>  data.always ("Identifier"),
     name                =>  string,
@@ -117,6 +118,39 @@ exports.AwaitExpression = data `AwaitExpression` (
     ([type])            =>  data.always ("AwaitExpression"),
     argument            =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("argument") );
+
+exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
+    ([type])            =>  data.always ("ObjectProperty"),
+
+    ([shorthand])       =>  data.always (true),
+    ([computed])        =>  data.always (false),
+
+    ([key])             =>  [Node.PropertyName, value => Node.PropertyName(value)],
+    value               =>  Node.IdentifierExpression,
+
+    ([freeVariables])   =>  FreeVariables.from("value") )
+
+exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
+    ([type])            =>  data.always ("ObjectProperty"),
+
+    ([shorthand])       =>  data.always (false),
+    ([computed])        =>  [boolean, key =>
+                                is(Node.ComputedPropertyName, key)],
+
+    key                 =>  or (Node.ComputedPropertyName,
+                                Node.PropertyName,
+                                Node.StringLiteral),
+    value               =>  Node.Expression,
+    ([freeVariables])   =>  FreeVariables.from("key", "value") );
+
+exports.ObjectProperty = union2 `ObjectProperty` (
+    is                  => ObjectPropertyLonghand,
+    or                  => ObjectPropertyShorthand );
+
+exports.ObjectExpression = data `ObjectExpression` (
+    ([type])            => data.always ("ObjectExpression"),
+    properties          => array (Node.ObjectProperty),
+    ([freeVariables])   => FreeVariables.from("properties") );
 
 Object.assign(exports, require("./literals"));
     

@@ -109,9 +109,16 @@ const mapNode = (function ()
         // ObjectPropertyPatterns are tricky. We can discover them here in the
         // actual property conversion phase since if they own a pattern, they
         // definitely can't resolve to an ObjectProperty.
-        ObjectProperty: mappedFields => is(Node.Pattern, mappedFields.value) ?
-            toObjectPropertyPattern(mappedFields) :
-            Node.ObjectProperty(mappedFields),
+        ObjectProperty: mappedFields =>
+            is(Node.RootPattern, mappedFields.value) ?
+                toObjectPropertyPattern(mappedFields) :
+            (({ computed, shorthand, key, ...rest }) =>
+                shorthand ? Node.ObjectPropertyShorthand(mappedFields) :
+                Node.ObjectPropertyLonghand({ ...mappedFields, key:
+                    computed ? Node.ComputedPropertyName({ expression: key }) :
+                    is (Node.IdentifierExpression, key) ? Node.PropertyName(key) :
+                    key }))
+            (mappedFields),
 
         MemberExpression: ({ computed, property, ...mappedFields }) =>
             computed ?
