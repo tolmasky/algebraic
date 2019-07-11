@@ -16,7 +16,12 @@ exports.Label = Node `Label` (
 
 exports.BlockStatement = Node `BlockStatement` (
     body                =>  array (Node.Statement),
-    ([freeVariables])   =>  FreeVariables.from("body") );
+    ([varBindings])     =>  compute (StringSet, take => `body.varBindings` ),
+    ([blockBindings])   =>  compute (StringSet, take => `body.blockBindings` ),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables`,
+                                subtract => `varBindings`,
+                                subtract => `blockBindings` ) );
 
 exports.BreakStatement = Node `BreakStatement` (
     label               =>  Node.Label,
@@ -70,15 +75,12 @@ exports.IfStatement = Node `IfStatement` (
     ([varBindings])     =>  compute (StringSet,
                                 take => `consequent.varBindings`,
                                 take => `alternate.varBindings` ),
-    ([blockBindings])   =>  compute (StringSet,
-                                take => `consequent.blockBindings`,
-                                take => `alternate.blockBindings` ),
+    ([blockBindings])   =>  compute.empty (StringSet ),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `test.freeVariables`,
                                 take => `consequent.freeVariables`,
                                 take => `alternate.freeVariables`,
-                                subtract => `varBindings`,
-                                subtract => `blockBindings` ) );
+                                subtract => `varBindings` ) );
 
 exports.ForOfStatement = Node `ForOfStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
