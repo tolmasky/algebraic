@@ -9,7 +9,8 @@ const Empty = StringSet();
 module.exports.in = ([inKey]) =>
 ({
     from: (...dependencies) => from(inKey, dependencies),
-    lift
+    lift,
+    Never: [StringSet, () => Empty]
 });
 
 function lift (dependency)

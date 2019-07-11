@@ -106,30 +106,4 @@ const AwaitExpression = Expression `AwaitExpression` (
     argument        =>  Expression,
     delegate        =>  [boolean, false] );
 
-const Extra = parameterized (T =>
-    data `Extra<${T}>` (
-        raw         => string,
-        rawValue    => T ) );
-
-Expression `BigIntLiteral` (
-    value               => string,
-    extra               => [nullable(Extra(string)), null] );
-
-Expression `BooleanLiteral` (
-    value               => boolean );
-
-Expression `NumericLiteral` (
-    value               => number );
-
-Expression `NullLiteral` ();
-
-Expression `RegExpLiteral` (
-    flags               => string,
-    pattern             => string,
-    extra               => [nullable(Extra(tundefined)), null] );
-
-Expression `StringLiteral` (
-    value               => string,
-    extra               => [nullable(Extra(string)), null] );
-
 module.exports = Expression;

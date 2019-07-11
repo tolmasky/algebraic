@@ -3,12 +3,11 @@ const { data, nullable, array, number, parameterized } = require("@algebraic/typ
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 
-const patterns = require("./pattern");
-
 
 Object.assign(module.exports,
 {
-    ...patterns
+    ...require("./literals"),
+    ...require("./patterns"),
 });
 
 
