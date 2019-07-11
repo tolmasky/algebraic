@@ -10,7 +10,9 @@ const FreeVariables = require("./string-set").in `freeVariables`;
 exports.Label = Node `Label` (
     ({override:type})   =>  "Identifier",
     name                =>  string,
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.BlockStatement = Node `BlockStatement` (
     body                =>  array (Node.Statement),
@@ -18,14 +20,20 @@ exports.BlockStatement = Node `BlockStatement` (
 
 exports.BreakStatement = Node `BreakStatement` (
     label               =>  Node.Label,
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.ContinueStatement = Node `ContinueStatement` (
     label               =>  Node.Label,
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.DebuggerStatement = Node `DebuggerStatement` (
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.DoWhileStatement = Node `DoWhileStatement` (
     block               =>  Node.BlockStatement,
@@ -33,11 +41,16 @@ exports.DoWhileStatement = Node `DoWhileStatement` (
     ([freeVariables])   =>  FreeVariables.from("block", "test") );
 
 exports.EmptyStatement = Node `EmptyStatement` (
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.ExpressionStatement = Node `ExpressionStatement` (
     expression          =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("expression") );
+    ([varBindings])     =>  compute.empty (StringSet),
+    ([blockBindings])   =>  compute.empty (StringSet),
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `expression.freeVariables`) );
 
 exports.FunctionDeclaration = Node `FunctionDeclaration` (
     // This can be null in the `export default function() { }` case.
