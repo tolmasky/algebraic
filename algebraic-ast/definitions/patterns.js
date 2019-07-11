@@ -24,8 +24,6 @@ exports.IdentifierPattern = data `IdentifierPattern` (
     ([bindings])        =>  Bindings.lift("name"),
     ([freeVariables])   =>  FreeVariables.lift("name") );
 
-// Along with IdentifierPattern, RestElement is the "Binding Atom". These
-// two properties are where all the bound names come from.
 exports.RestElement = data `RestElement` (
     ([type])            =>  always ("RestElement"),
 
@@ -33,10 +31,18 @@ exports.RestElement = data `RestElement` (
     ([bindings])        =>  Bindings.from("argument"),
     ([freeVariables])   =>  FreeVariables.from("argument") );
 
+exports.AssignmentPattern = data `AssignmentPattern` (
+    ([type])            =>  always ("AssignmentPattern"),
+
+    left                =>  Node.RootPattern,
+    right               =>  Node.Expression,
+    ([bindings])        =>  Bindings.from("left"),
+    ([freeVariables])   =>  FreeVariables.from("left", "right") )
+
 exports.ArrayPattern = data `ArrayPattern` (
     ([type])            =>  always ("ArrayPattern"),
 
-    elements            =>  (console.log(array, Node.RootPattern, Node),array(Node.RootPattern)),
+    elements            =>  array (or (Node.RootPattern, Node.AssignmentPattern)),
     ([bindings])        =>  Bindings.from("elements"),
     ([freeVariables])   =>  FreeVariables.from("elements") );
 

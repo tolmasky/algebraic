@@ -56,22 +56,22 @@ const mapNode = (function ()
     const { Set } = require("@algebraic/collections");
     const toObjectPropertyPattern = ({ value, ...rest }) =>
         Node.ObjectPropertyPattern({ value: toPattern(value), ...rest });
-    const toPattern = pattern =>
+    const toPattern = pattern => (console.log(pattern, Node.IdentifierPattern),
 //        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
             Node.IdentifierPattern(pattern) :
 //        is(Node.ObjectProperty, pattern) ?
 //            toObjectPropertyPattern(pattern) :
-            pattern;
+            pattern);
 
     const mapToPatterns = (key, fields) => (patterns =>
     ({
         ...fields,
         [key]: fields[key].map(toPattern)
     }))();
-    const Assignment = type =>
+    const Assignment = type => (console.log(type),
         ({ left, ...mappedFields }) =>
-            type({ left: toPattern(left), ...mappedFields });
+            type({ left: toPattern(left), ...mappedFields }));
     const toPatternFields = (keys, type) => mappedFields =>
         type({ ...mappedFields, ...Object.fromEntries(keys
             .map(key => [key, mappedFields[key]])
