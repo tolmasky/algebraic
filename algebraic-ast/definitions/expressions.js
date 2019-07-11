@@ -21,7 +21,7 @@ exports.ArrowFunctionExpression = data `ArrowFunctionExpression` (
     ([type])            =>  data.always ("ArrowFunctionExpression"),
 
     body                =>  Node.Expression,
-    id                  =>  data.always (null),
+    ([id])              =>  data.always (null),
     params              =>  array(nullable(Node.RootPattern)),
 
     ([generator])       =>  data.always (false),
