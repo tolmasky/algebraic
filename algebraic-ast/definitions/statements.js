@@ -82,7 +82,8 @@ exports.FunctionDeclaration = Node `FunctionDeclaration` (
                                     take => `body.varBindingNames` ),
 
     ([varBindingNames])     =>  compute.empty (StringSet),
-    ([blockBindingNames])   =>  compute.empty (StringSet),
+    ([blockBindingNames])   =>  compute (StringSet,
+                                    take => `id.bindingNames`),
     ([freeVariables])       =>  compute (StringSet,
                                     take => `id.freeVariables`,
                                     take => `params.freeVariables`,
@@ -129,7 +130,7 @@ exports.ForInStatement = Node `ForInStatement` (
     right                   =>  Node.Expression,
     body                    =>  Node.Statement,
 
-    ([varBindingNames])         =>  compute (StringSet,
+    ([varBindingNames])     =>  compute (StringSet,
                                     take => `left.varBindingNames`,
                                     take => `body.varBindingNames` ),
     ([blockBindingNames])   =>  compute.empty (StringSet),
@@ -169,7 +170,7 @@ exports.LabeledStatement = Node `LabeledStatement` (
     label                   =>  Node.Label,
     body                    =>  Node.Statement,
 
-    ([varBindingNames])         =>  compute (StringSet,
+    ([varBindingNames])     =>  compute (StringSet,
                                     take => `body.varBindingNames` ),
     ([blockBindingNames])   =>  compute.empty (StringSet),
 
