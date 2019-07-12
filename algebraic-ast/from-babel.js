@@ -48,7 +48,7 @@ const toMapNode = function (mappings)
         ((name, fields) =>
             (mappings[name] ?
                 mappings[name](fields, node) :
-                Node[(console.log(name),name)](fields)))
+                Node[name](fields)))
             (node.type, nodeFieldMaps[node.type](node));
     const mapNullableNode = mapNullable(mapNode);
 
