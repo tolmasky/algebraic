@@ -28,9 +28,13 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],
 
+    ([varBindings])     =>  compute (StringSet,
+                                take => `params.bindingNames` ),
+
     ([freeVariables])   =>  compute (StringSet,
                                 take => `body.freeVariables`,
-                                take => `params.freeVariables`) );
+                                take => `params.freeVariables`,
+                                subtract => `varBindings` ) );
 
 exports.FunctionExpression = Node `FunctionExpression` (
     body                =>  Node.BlockStatement,
@@ -40,20 +44,24 @@ exports.FunctionExpression = Node `FunctionExpression` (
     generator           =>  [boolean, false],
     async               =>  [boolean, false],
 
+    ([varBindings])     =>  compute (StringSet,
+                                take => `id.bindingNames`,
+                                take => `body.varBindingNames`,
+                                take => `params.bindingNames`,
+                                take => StringSet(["arguments"]) ),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `body.freeVariables`,
                                 take => `params.freeVariables`,
-                                subtract => `id.bindingNames`,
-                                subtract => StringSet(["arguments"]) ) );
+                                subtract => `varBindings` ) );
 
 exports.ArrayExpression = Node `ArrayExpression` (
-    elements            =>  array(Node.Expression),
+    elements            =>  array(nullable(or (Node.Expression, Node.SpreadElement))),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `elements.freeVariables`) );
 
 exports.CallExpression = Node `CallExpression` (
     callee              =>  Node.Expression,
-    arguments           =>  array(Node.Expression),
+    arguments           =>  array(or (Node.Expression, SpreadElement)),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
@@ -106,7 +114,7 @@ exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
 
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,
-    arguments           =>  array(Node.Expression),
+    arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
@@ -151,7 +159,7 @@ exports.AwaitExpression = Node `AwaitExpression` (
     ([freeVariables])   =>  compute (StringSet,
                                 take => `argument.freeVariables`) );
 
-exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
+exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
     ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (true),
@@ -163,7 +171,7 @@ exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
     ([freeVariables])   =>  compute (StringSet,
                                 take => `value.freeVariables`) )
 
-exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
+exports.ObjectPropertyLonghand = Node `ObjectPropertyLonghand` (
     ({override:type})   =>  "ObjectProperty",
 
     ([shorthand])       =>  data.always (false),
@@ -182,10 +190,15 @@ exports.ObjectProperty = union2 `ObjectProperty` (
     is                  => Node.ObjectPropertyLonghand,
     or                  => Node.ObjectPropertyShorthand );
 
-exports.ObjectExpression = data `ObjectExpression` (
-    properties          => array (Node.ObjectProperty),
+exports.ObjectExpression = Node `ObjectExpression` (
+    properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),
     ([freeVariables])   => compute (StringSet,
                                 take => `properties.freeVariables`) );
+
+exports.SpreadElement = Node `SpreadElement` (
+    argument            => Node.Expression,
+    ([freeVariables])   => compute (StringSet,
+                            take => `argument.freeVariables`) );
 
 Object.assign(exports, require("./literals"));
     

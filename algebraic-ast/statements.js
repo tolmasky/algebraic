@@ -78,19 +78,19 @@ exports.FunctionDeclaration = Node `FunctionDeclaration` (
     generator               =>  [boolean, false],
     async                   =>  [boolean, false],
 
-    ([varBindings])         =>  compute (StringSet,
-                                    take => `body.varBindingNames` ),
-
     ([varBindingNames])     =>  compute.empty (StringSet),
     ([blockBindingNames])   =>  compute (StringSet,
                                     take => `id.bindingNames`),
+
+    ([varBindings])         =>  compute (StringSet,
+                                    take => `id.bindingNames`,
+                                    take => `params.bindingNames`,
+                                    take => `body.varBindingNames`,
+                                    take => StringSet(["arguments"]) ),
     ([freeVariables])       =>  compute (StringSet,
-                                    take => `id.freeVariables`,
                                     take => `params.freeVariables`,
                                     take => `body.freeVariables`,
-                                    subtract => `id.bindingNames`,
-                                    subtract => `params.bindingNames`,
-                                    subtract => StringSet(["arguments"]) ) );
+                                    subtract => `varBindings` ) );
 
 exports.IfStatement = Node `IfStatement` (
     test                    =>  Node.Expression,
