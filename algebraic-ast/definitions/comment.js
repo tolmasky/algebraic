@@ -4,14 +4,16 @@ const ESTreeBridge = require("./estree-bridge");
 
 
 module.exports = union `Comment` (
-    ESTreeBridge `Block {ESTree = CommentBlock}` (
-        value   => string,
-        start   => number,
-        end     => number,
-        loc     => SourceLocation ),
+    ESTreeBridge `Block` (
+        ({override:type})   => "CommentBlock",
+        value               => string,
+        start               => number,
+        end                 => number,
+        loc                 => SourceLocation ),
 
-    ESTreeBridge `Line {ESTree = CommentLine}` (
-        value   => string,
-        start   => number,
-        end     => number,
-        loc     => SourceLocation ) );
+    ESTreeBridge `Line` (
+        ({override:type})   => "CommentLine",
+        value               => string,
+        start               => number,
+        end                 => number,
+        loc                 => SourceLocation ) );
