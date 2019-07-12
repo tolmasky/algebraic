@@ -263,12 +263,12 @@ exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
 
     ([kind])                =>  data.always ("var"),
 
-    ([varBindingBames])     =>  compute (StringSet,
+    ([varBindingNames])     =>  compute (StringSet,
                                     take => `declarators.bindingNames`),
     ([blockBindingNames])   =>  compute.empty (StringSet),
     ([freeVariables])       =>  compute (StringSet,
                                     take => `declarators.freeVariables`,
-                                    subtract => `varBindingBames` ) );
+                                    subtract => `varBindingNames` ) );
 
 exports.BlockVariableDeclaration = Node `BlockVariableDeclaration` (
     ({override:type})       =>  "VariableDeclaration",

@@ -21,7 +21,7 @@ exports.IdentifierExpression = Node `IdentifierExpression` (
                                 take => `name`) );
 
 exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
-    body                =>  or (Node.BlockStatment, Node.Expression),
+    body                =>  or (Node.BlockStatement, Node.Expression),
     ([id])              =>  data.always (null),
     params              =>  array(nullable(Node.RootPattern)),
 
@@ -52,8 +52,8 @@ exports.ArrayExpression = Node `ArrayExpression` (
                                 take => `elements.freeVariables`) );
 
 exports.CallExpression = Node `CallExpression` (
-    callee              =>  Expression,
-    arguments           =>  array(Expression),
+    callee              =>  Node.Expression,
+    arguments           =>  array(Node.Expression),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
