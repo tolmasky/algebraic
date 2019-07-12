@@ -27,11 +27,12 @@ const Node = require("./node");
 
 const toMapNode = function (mappings)
 {
-    const { VISITOR_KEYS } = require("@babel/types");
+    const t = require("@babel/types");
 
-    VISITOR_KEYS["Program"].push("interpreter");
+    t.VISITOR_KEYS["Program"].push("interpreter");
 
-    const undeprecated = require("../babel/undeprecated-types");
+    const undeprecated = t.TYPES
+        .filter(name => t[name] && !t.DEPRECATED_KEYS[name]);
     const mapVisitorFields = (fields, node) => Object
         .fromEntries(fields.map(field =>
             [field, mapNullableNode(node[field])]));
@@ -41,7 +42,7 @@ const toMapNode = function (mappings)
             ...mapCommonNodeFields(node) });
     const nodeFieldMaps = Object.fromEntries(
         undeprecated.map(name =>
-            [name, toMapNodeFields(name, VISITOR_KEYS[name])]));
+            [name, toMapNodeFields(name, t.VISITOR_KEYS[name])]));
     const mapNode = node => Array.isArray(node) ?
         node.map(mapNode) :
         ((name, fields) =>
