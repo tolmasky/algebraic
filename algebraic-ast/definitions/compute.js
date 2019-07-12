@@ -1,4 +1,5 @@
 const { data: { field } } = require("@algebraic/type");
+const has = hasOwnProperty.call.bind(hasOwnProperty);
 
 const fNameRegExp = /([^=\s]+)\s*=>/;
 const fNameParse = f => fNameRegExp.exec(f + "")[1];
@@ -12,7 +13,6 @@ const inKeyPath = (type, empty, value, keys, index = 0) =>
             child.reduce((set, item) =>
                     set.concat(inKeyPath(type, empty, item, keys, index + 1)),
                     empty))(value[keys[index]]);
-    
 
 module.exports = function compute(type, ...shorthandOperations)
 {
@@ -21,11 +21,16 @@ module.exports = function compute(type, ...shorthandOperations)
     const operations = shorthandOperations
         .map(shorthand =>
             [toMethod(fNameParse(shorthand)), shorthand()])
-        .map(([method, keyPath]) => ({ method, keys: keyPath.split(".") }));
-    const dependencies = operations.map(({ keys }) => keys[0]);
+        .map(([method, item]) =>
+            typeof item === "string" ?
+                { method, keys: item.split(".") } :
+                { method, items: item });
+    const dependencies = operations
+        .filter(operation => has(operations, "keys"))
+        .map(({ keys }) => keys[0]);
     const compute = values => operations.reduce(
-        (set, { keys, method }) =>
-            set[method](inKeyPath(type, empty, values, keys)),
+        (set, { items, keys, method }) =>
+            set[method](keys ? inKeyPath(type, empty, values, keys) : items),
         empty);
 
     return field.definition(type).computed({ dependencies, compute });
