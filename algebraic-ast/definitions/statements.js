@@ -98,22 +98,61 @@ exports.ForOfStatement = Node `ForOfStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
     right               =>  Node.Expression,
     body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from("left", "right", "body") );
+
+    ([varBindings])         =>  compute (StringSet,
+                                    take => `left.varBindings`,
+                                    take => `body.varBindings` ),
+    ([blockBindings])       =>  compute (StringSet,
+                                    take => `left.blockBindingNames` ),
+    ([blockBindingNames])   =>  compute.empty (StringSet),
+
+    ([freeVariables])       =>  compute (StringSet,
+                                    take => `left.freeVariables`,
+                                    take => `right.freeVariables`,
+                                    take => `body.freeVariables`,
+                                    subtract => `varBindings`,
+                                    subtract => `blockBindings` ) );
 
 exports.ForInStatement = Node `ForInStatement` (
     left                =>  or (Node.RootPattern, Node.VariableDeclaration),
     right               =>  Node.Expression,
     body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from("left", "right", "body") );
+
+    ([varBindings])         =>  compute (StringSet,
+                                    take => `left.varBindings`,
+                                    take => `body.varBindings` ),
+    ([blockBindings])       =>  compute (StringSet,
+                                    take => `left.blockBindingNames` ),
+    ([blockBindingNames])   =>  compute.empty (StringSet),
+
+    ([freeVariables])       =>  compute (StringSet,
+                                    take => `left.freeVariables`,
+                                    take => `right.freeVariables`,
+                                    take => `body.freeVariables`,
+                                    subtract => `varBindings`,
+                                    subtract => `blockBindings` ) );
 
 exports.ForStatement = Node `ForStatement` (
-    init                =>  nullable(or (Node.VariableDeclaration,
-                                         Node.AssignmentExpression)),
-    test                =>  nullable(Node.Expression),
-    update              =>  nullable(Node.Expression),
-    body                =>  Node.Statement,
-    ([freeVariables])   =>  FreeVariables.from
-                                ("init", "test", "update", "body") );
+    init                    =>  nullable(or (Node.VariableDeclaration,
+                                             Node.AssignmentExpression)),
+    test                    =>  nullable(Node.Expression),
+    update                  =>  nullable(Node.Expression),
+    body                    =>  Node.Statement,
+
+    ([varBindings])         =>  compute (StringSet,
+                                    take => `init.varBindings`,
+                                    take => `body.varBindings` ),
+    ([blockBindings])       =>  compute (StringSet,
+                                    take => `init.blockBindingNames` ),
+    ([blockBindingNames])   =>  compute.empty (StringSet),
+
+    ([freeVariables])       =>  compute (StringSet,
+                                    take => `init.freeVariables`,
+                                    take => `test.freeVariables`,
+                                    take => `update.freeVariables`,
+                                    take => `body.freeVariables`,
+                                    subtract => `varBindings`,
+                                    subtract => `blockBindings` ) );
 
 exports.LabeledStatement = Node `LabeledStatement` (
     label                   =>  Node.Label,
