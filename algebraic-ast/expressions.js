@@ -7,7 +7,10 @@ const compute = require("./compute");
 
 
 exports.AssignmentExpression = Node `AssignmentExpression` (
-    left                =>  Node.RootPattern,
+    left                =>  or (Node.IdentifierExpression,
+                                Node.MemberExpression,
+                                Node.ArrayPattern,
+                                Node.ObjectPattern),
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  compute (StringSet,
@@ -112,6 +115,10 @@ exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
     ([freeVariables])   =>  compute (StringSet,
                                 take => `object.freeVariables`,
                                 take => `property.freeVariables` ) );
+
+exports.MemberExpression = union2 `MemberExpression` (
+    is                  => Node.StaticMemberExpression,
+    or                  => Node.ComputedMemberExpression );
 
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,

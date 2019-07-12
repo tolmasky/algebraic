@@ -84,9 +84,6 @@ const mapNode = (function ()
         ...fields,
         [key]: fields[key].map(toPattern)
     }))();
-    const Assignment = type =>
-        ({ left, ...mappedFields }) =>
-            type({ left: toPattern(left), ...mappedFields });
     const toPatternFields = (keys, type) => mappedFields =>
         type({ ...mappedFields, ...Object.fromEntries(keys
             .map(key => [key, mappedFields[key]])
@@ -101,13 +98,12 @@ const mapNode = (function ()
                 Node.Module(mappedFields) :
                 Node.Script(mappedFields),
 
-        AssignmentExpression: Assignment(Node.AssignmentExpression, false),
-
         MemberExpression: (mappedFields, { computed, property }) =>
             Node.MemberExpression(computed ?
                 mappedFields : { ...mappedFields, property }),
 
         CatchClause: toPatternFields(["param"], Node.CatchClause),
+
         VariableDeclarator: toPatternFields(["id"], Node.VariableDeclarator),
 
         ArrowFunctionExpression: toPatternFields(["params"],
@@ -121,7 +117,8 @@ const mapNode = (function ()
 
         Identifier: Node.IdentifierExpression,
 
-        AssignmentPattern: Assignment(Node.AssignmentPattern, true),
+        AssignmentPattern: ({ left, ...mappedFields }) =>
+            type({ left: toPattern(left), ...mappedFields }),
 
         ArrayPattern: mappedFields =>
             Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
@@ -175,78 +172,3 @@ module.exports = function map(node)
     return mapNode(node);
 }
 
-/*
-
-const Node = require("./node");
-const { NODE_FIELDS } = require("@babel/types");
-const undeprecated = require("./babel/undeprecated-types");
-
-
-const trivialMappings = Object
-    .key(undeprecated)
-    .map(name => [name, ]
-
-
-function trivial(name)
-{
-    const fields = NODE_FIELDS[name];
-    const type = Node[name];
-
-    return function (babelNode)
-    {
-        const entries = fields
-            .map(field => [field, fromBabel(babelNode[field])]);
-
-        return type({ ...babelNode, });
-        babelNode
-        NODE_FIELDS
-        t[name]
-    }
-}
-
-const fromJS = (type, object) =>
-    type((fields => Object.fromEntries(Object
-        .keys(object)
-        .map(key => [key, fields[key]])
-        .map(([key, type]) => !type || is(primitive, type) ?
-            object[key] : fromJS(type, object[key]))))
-        (Object.fromEntries(data.fields(type))));
-
-    
-    
-    .map()
-
-
-
-function mapCommonFields(node) =>
-({
-    leadingComments: (node || []).map(comment => Comment)
-})
-{
-    return {
-        
-
-        leadingComments => [nullable(Array), null],
-        innerComments   => [nullable(Array), null],
-        trailingComment => [nullable(Array), null],
-        start           => [nullable(number), null],
-        end             => [nullable(number), null],
-        loc             => [nullable(SourceLocation), null]
-}
-
-module.exports = function fromBabel(node)
-{
-    return node;
-}
-
-
-/*
-const fromJS = (type, object) =>
-    type((fields => Object.fromEntries(Object
-        .keys(object)
-        .map(key => [key, fields[key]])
-        .map(([key, type]) => [key,
-            !type || typeof object[key] !== "object" ?
-                object[key] : fromJS(type, object[key])])))
-    (Object.fromEntries(data.fields(type))));
-*/

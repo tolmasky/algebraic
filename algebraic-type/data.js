@@ -3,7 +3,7 @@ const any = require("./any");
 const fail = require("./fail");
 const partition = require("@climb/partition");
 
-const { declaration, fNamed, is, getTypename } = require("./declaration");
+const { declaration, fNamed, is, getTypename, getKind } = require("./declaration");
 const { inspect } = require("util");
 const { isArray } = Array;
 const NoDefault = { };
@@ -115,9 +115,9 @@ const data = declaration(function data (type, fieldDeclarations)
 const initialize = (function ()
 {
     const toString = value =>
-        typeof value === "function" ?
-            value + "" :
-            JSON.stringify(value);
+        value === "function" ? `[function ${value.name}]` :
+        of(value) && getKind(of(value)) ? value :
+        JSON.stringify(value);
     const typecheck = (owner, name, { expected, value }) =>
         `${owner} constructor passed value for field "${name}" of wrong ` +
         `type. Expected type ${getTypename(expected)} but got ` +
