@@ -17,8 +17,9 @@ exports.IdentifierPattern = Node `IdentifierPattern` (
     ({override:type})   => "Identifier",
 
     name                =>  string,
-    ([bindingNames])    =>  compute (StringSet, take => `name`),
-    ([freeVariables])   =>  compute (StringSet, take => `name`) );
+    ([bindingNames])    =>  compute (StringSet,
+                                take => `name`),
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.RestElement = Node `RestElement` (
     argument            =>  Node.RootPattern,

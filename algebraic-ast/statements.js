@@ -252,8 +252,7 @@ exports.VariableDeclarator = Node `VariableDeclarator` (
                                     take => `id.bindingNames` ),
     ([freeVariables])       =>  compute (StringSet,
                                     take => `init.freeVariables`,
-                                    take => `id.freeVariables`,
-                                    subtract => `id.bindingNames` ) );
+                                    take => `id.freeVariables` ) );
 
 exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
     ({override:type})       =>  "VariableDeclaration",

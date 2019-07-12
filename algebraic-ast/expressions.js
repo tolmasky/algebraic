@@ -12,7 +12,8 @@ exports.AssignmentExpression = Node `AssignmentExpression` (
     operator            =>  string,
     ([freeVariables])   =>  compute (StringSet,
                                 take => `left.freeVariables`,
-                                take => `right.freeVariables` ) );
+                                take => `right.freeVariables`,
+                                take => `left.bindingNames` ) );
 
 exports.IdentifierExpression = Node `IdentifierExpression` (
     ({override:type})   =>  "Identifier",
