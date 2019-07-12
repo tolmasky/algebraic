@@ -191,6 +191,36 @@ exports.ThrowStatement = Node `ThrowStatement` (
     ([freeVariables])       =>  compute (StringSet,
                                     take => `argument.freeVariables` ) );
 
+exports.TryStatement = Node `TryStatement` (
+    block                   =>  Node.BlockStatement,
+    handler                 =>  [nullable(Node.CatchClause), null],
+    finalizer               =>  [nullable(Node.BlockStatement), null],
+    ([varBindingNames])     =>  compute (StringSet,
+                                    take => `block.varBindingNames`,
+                                    take => `handler.varBindingNames`,
+                                    take => `finalizer.varBindingNames` ),
+    ([blockBindingNames])   =>  compute.empty (StringSet),
+    ([freeVariables])       =>  compute (StringSet,
+                                    take => `block.freeVariables`,
+                                    take => `handler.freeVariables`,
+                                    take => `finalizer.freeVariables`,
+                                    subtract => `varBindingNames` ) );
+
+exports.CatchClause = Node `CatchClause` (
+    param                   =>  Node.RootPattern,
+    body                    =>  Node.BlockStatement,
+
+    ([varBindingNames])     =>  compute (StringSet,
+                                    take => `body.varBindingNames` ),
+    ([blockBindingNames])   =>  compute.empty (StringSet),
+
+    ([blockBindings])       =>  compute (StringSet,
+                                    take => `param.bindingNames` ),
+    ([freeVariables])       =>  compute (StringSet,
+                                    take => `param.freeVariables`,
+                                    take => `body.freeVariables`,
+                                    subtract => `blockBindings` ) );
+
 exports.WhileStatement = Node `WhileStatement` (
     test                    =>  Node.Expression,
     body                    =>  Node.Statement,

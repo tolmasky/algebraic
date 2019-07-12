@@ -33,7 +33,7 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
                                 take => `params.freeVariables`) );
 
 exports.FunctionExpression = Node `FunctionExpression` (
-    body                =>  Node.BlockStatment,
+    body                =>  Node.BlockStatement,
     id                  =>  nullable(Node.IdentifierPattern),
     params              =>  array (nullable(Node.RootPattern)),
 
@@ -44,7 +44,7 @@ exports.FunctionExpression = Node `FunctionExpression` (
                                 take => `body.freeVariables`,
                                 take => `params.freeVariables`,
                                 subtract => `id.bindingNames`,
-                                subtract => SetString(["arguments"]) ) );
+                                subtract => StringSet(["arguments"]) ) );
 
 exports.ArrayExpression = Node `ArrayExpression` (
     elements            =>  array(Node.Expression),
