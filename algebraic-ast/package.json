@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/ast",
-  "version": "1.0.0-alpha.11",
+  "version": "1.0.0-alpha.12",
   "description": "",
   "main": "node.js",
   "scripts": {
@@ -11,6 +11,11 @@
   "license": "MIT",
   "dependencies": {
     "@babel/parser": "^7.5.0",
-    "@babel/types": "^7.5.0"
+    "@babel/types": "^7.5.0",
+    "@climb/partition": "1.0.0-alpha.3"
+  },
+  "peerDependencies": {
+    "@algebraic/type": "1.0.0-alpha.12",
+    "@algebraic/collectoons": "1.0.0-alpha.12"
   }
 }
