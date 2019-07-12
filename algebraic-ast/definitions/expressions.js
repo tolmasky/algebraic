@@ -2,19 +2,23 @@ const { is, data, nullable, array, or } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
-const FreeVariables = require("./string-set").in `freeVariables`;
+const { StringSet } = require("./string-set");
+const compute = require("./compute");
 
 
 exports.AssignmentExpression = Node `AssignmentExpression` (
     left                =>  Node.RootPattern,
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  FreeVariables.from("left", "right") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `left.freeVariables`,
+                                take => `right.freeVariables` ) );
 
 exports.IdentifierExpression = Node `IdentifierExpression` (
     ({override:type})   =>  "Identifier",
     name                =>  string,
-    ([freeVariables])   =>  FreeVariables.lift("name") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `name`) );
 
 exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     body                =>  or (Node.BlockStatment, Node.Expression),
@@ -24,45 +28,60 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],
 
-    ([freeVariables])   =>  FreeVariables.from("body", "params") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables`,
+                                take => `params.freeVariables`) );
 
 exports.FunctionExpression = Node `FunctionExpression` (
     body                =>  Node.BlockStatment,
-    id                  =>  Node.IdentifierPattern,
+    id                  =>  nullable(Node.IdentifierPattern),
     params              =>  array (nullable(Node.RootPattern)),
 
     generator           =>  [boolean, false],
     async               =>  [boolean, false],
 
-    ([freeVariables])   =>  FreeVariables.from("body", "params") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `body.freeVariables`,
+                                take => `params.freeVariables`,
+                                subtract => `id.bindingNames`,
+                                subtract => SetString(["arguments"]) ) );
 
 exports.ArrayExpression = Node `ArrayExpression` (
     elements            =>  array(Node.Expression),
-    ([freeVariables])   =>  FreeVariables.from("elements") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `elements.freeVariables`) );
 
 exports.CallExpression = Node `CallExpression` (
     callee              =>  Expression,
     arguments           =>  array(Expression),
-    ([freeVariables])   =>  FreeVariables.from("callee", "arguments") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `callee.freeVariables`,
+                                take => `arguments.freeVariables` ) );
 
 exports.ConditionalExpression = Node `ConditionalExpression` (
     test                =>  Node.Expression,
     consequent          =>  Node.Expression,
     alternate           =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables
-                                .from("test", "consequent", "alternate") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `test.freeVariables` ,
+                                take => `consequent.freeVariables`,
+                                take => `alternate.freeVariables` ) );
 
 exports.BinaryExpression = Node `BinaryExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  FreeVariables.from("left", "right")  );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `left.freeVariables`,
+                                take => `right.freeVariables` )  );
 
 exports.LogicalExpression = Node `LogicalExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  FreeVariables.from("left", "right") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `left.freeVariables`,
+                                take => `right.freeVariables` ) );
 
 exports.StaticMemberExpression = Node `StaticMemberExpression` (
     ({override:type})   =>  "MemberExpression",
@@ -71,7 +90,8 @@ exports.StaticMemberExpression = Node `StaticMemberExpression` (
     object              =>  Node.Expression,
     property            =>  Node.PropertyName,
     optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  FreeVariables.from("object") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `object.freeVariables`) );
 
 exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
     ({override:type})   =>  "MemberExpression",
@@ -80,45 +100,56 @@ exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
     object              =>  Node.Expression,
     property            =>  Node.Expression,
     optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  FreeVariables.from("object", "property") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `object.freeVariables`,
+                                take => `property.freeVariables` ) );
 
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,
     arguments           =>  array(Node.Expression),
-    ([freeVariables])   =>  FreeVariables.from("callee", "arguments") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `callee.freeVariables`,
+                                take => `arguments.freeVariables` ) );
 
 exports.ThisExpression = Node `ThisExpression` (
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.SequenceExpression = Node `SequenceExpression` (
     expressions         =>  array(Node.Expression),
-    ([freeVariables])   =>  FreeVariables.from("expressions") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `expressions.freeVariables`) );
 
 exports.TaggedTemplateExpression = Node `TaggedTemplateExpression` (
     tag                 =>  Node.Expression,
     quasi               =>  Node.TemplateLiteral,
-    ([freeVariables])   =>  FreeVariables.from("tag", "quasi") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `tag.freeVariables`,
+                                take => `quasi.freeVariables`) );
 
 exports.UnaryExpression = Node `UnaryExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
-    ([freeVariables])   =>  FreeVariables.from("argument") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables`) );
 
 exports.UpdateExpression = Node `UpdateExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
-    ([freeVariables])   =>  FreeVariables.from("argument") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables`) );
 
 exports.YieldExpression = Node `YieldExpression` (
     argument            =>  Node.Expression,
     delegate            =>  [boolean, false],
-    ([freeVariables])   =>  FreeVariables.from("argument"));
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables`));
 
 exports.AwaitExpression = Node `AwaitExpression` (
     argument            =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("argument") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `argument.freeVariables`) );
 
 exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
     ({override:type})   =>  "ObjectProperty",
@@ -129,7 +160,8 @@ exports.ObjectPropertyShorthand = data `ObjectPropertyShorthand` (
     ([key])             =>  [Node.PropertyName, value => Node.PropertyName(value)],
     value               =>  Node.IdentifierExpression,
 
-    ([freeVariables])   =>  FreeVariables.from("value") )
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `value.freeVariables`) )
 
 exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
     ({override:type})   =>  "ObjectProperty",
@@ -142,7 +174,9 @@ exports.ObjectPropertyLonghand = data `ObjectPropertyLonghand` (
                                 Node.PropertyName,
                                 Node.StringLiteral),
     value               =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("key", "value") );
+    ([freeVariables])   =>  compute (StringSet,
+                                take => `key.freeVariables`,
+                                take => `value.freeVariables` ) );
 
 exports.ObjectProperty = union2 `ObjectProperty` (
     is                  => Node.ObjectPropertyLonghand,
@@ -150,7 +184,8 @@ exports.ObjectProperty = union2 `ObjectProperty` (
 
 exports.ObjectExpression = data `ObjectExpression` (
     properties          => array (Node.ObjectProperty),
-    ([freeVariables])   => FreeVariables.from("properties") );
+    ([freeVariables])   => compute (StringSet,
+                                take => `properties.freeVariables`) );
 
 Object.assign(exports, require("./literals"));
     
