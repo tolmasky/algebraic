@@ -26,7 +26,7 @@ module.exports = function compute(type, ...shorthandOperations)
                 { method, keys: item.split(".") } :
                 { method, items: item });
     const dependencies = operations
-        .filter(operation => has(operations, "keys"))
+        .filter(operation => has(operation, "keys"))
         .map(({ keys }) => keys[0]);
     const compute = values => operations.reduce(
         (set, { items, keys, method }) =>
