@@ -7,8 +7,8 @@ module.exports = function (mappings)
 {
     const map = node =>
         isArray(node) ?
-            mapArray(node, map) : (console.log(getTypename(of(node))),
-            (mappings[getTypename(of(node))] || mapChildren)(node, map));
+            mapArray(node, map) :
+            (mappings[getTypename(of(node))] || mapChildren)(node, map);
     return map;
 }
 

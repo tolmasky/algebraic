@@ -65,7 +65,7 @@ exports.ArrayExpression = Node `ArrayExpression` (
 
 exports.CallExpression = Node `CallExpression` (
     callee              =>  Node.Expression,
-    arguments           =>  array(or (Node.Expression, SpreadElement)),
+    arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
     ([freeVariables])   =>  compute (StringSet,
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
