@@ -17,6 +17,7 @@ exports.BooleanLiteral = Node `BooleanLiteral` (
 
 exports.NumericLiteral = Node `NumericLiteral` (
     value               =>  number,
+    extra               =>  [nullable(Extra(number)), null],
     ([freeVariables])   =>  compute.empty (StringSet) );
 
 exports.NullLiteral = Node `NullLiteral` (

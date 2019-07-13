@@ -11,7 +11,8 @@ exports.Directive = Node `Directive` (
     value               => Node.DirectiveLiteral );
 
 exports.DirectiveLiteral = Node `DirectiveLiteral` (
-    value               => string );
+    value               => string,
+    extra               => [nullable(Extra(string)), null] );
 
 exports.InterpreterDirective = Node `InterpreterDirective` (
     value               => string );

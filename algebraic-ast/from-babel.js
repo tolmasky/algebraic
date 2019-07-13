@@ -19,8 +19,7 @@ const mapCommonNodeFields = node =>
     trailingComments: mapComments(node.trailingComments),
     start: node.start,
     end: node.end,
-    loc: mapSourceLocation(node.loc),
-    extra: null
+    loc: mapSourceLocation(node.loc)
 });
 
 const Node = require("./node");
@@ -56,7 +55,8 @@ const toMapNode = function (mappings)
 }
 const mapNode = (function ()
 {
-    const { is, string } = require("@algebraic/type");
+    const { is, data, string, number, getTypename } = require("@algebraic/type");
+    const { parameterized: { parameters } } = require("@algebraic/type/parameterized");
 
     const toObjectPropertyKey = ({ computed, key }) =>
         computed ? Node.ComputedPropertyName({ expression: key }) :
@@ -162,7 +162,20 @@ const mapNode = (function ()
         VariableDeclaration: ({ kind, declarations: declarators, ...mappedFields }) =>
             kind === "var" ?
                 Node.VarVariableDeclaration({ declarators, ...mappedFields }) :
-                Node.BlockVariableDeclaration({ kind, declarators, ...mappedFields })
+                Node.BlockVariableDeclaration({ kind, declarators, ...mappedFields }),
+
+        ...Object.fromEntries([
+            Node.BigIntLiteral,
+            Node.NumericLiteral,
+            Node.RegExpLiteral,
+            Node.StringLiteral,
+            Node.DirectiveLiteral]
+                .map(type => [type,
+                    parameters(parameters(data.fields(type)
+                        .find(field => field.name === "extra"))[0])[0]])
+                .map(([type, ExtraT]) => [getTypename(type),
+                    ({ extra, ...mappedFields }) =>
+                        type({ ...mappedFields, extra: ExtraT(extra) })]))
     });
 })();
 
