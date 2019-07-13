@@ -18,6 +18,7 @@ const Node = tagged((name, ...fields) =>
         loc                 => [nullable(SourceLocation), null] ),
         { [NodeSymbol]: true }) );
 
+Node.Node = Node;
 Node[IsSymbol] = value => !!value && !!of(value) && of(value)[NodeSymbol];
 
 module.exports = Node;
