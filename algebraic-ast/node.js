@@ -1,3 +1,4 @@
+const { IsSymbol } = require("@algebraic/type/declaration");
 const { data, nullable, array, number, getTypename, or } = require("@algebraic/type");
 const tagged = require("@algebraic/type/tagged");
 const SourceLocation = require("./source-location");
@@ -15,6 +16,10 @@ const Node = tagged((name, ...fields) =>
         end                 => [nullable(number), null],
         loc                 => [nullable(SourceLocation), null] ) );
 
+Node[IsSymbol] = value =>
+    !!value &&
+    typeof value === "object" &&
+    typeof value.type === "string";
 
 module.exports = Node;
 
