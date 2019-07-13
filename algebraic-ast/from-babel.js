@@ -118,7 +118,7 @@ const mapNode = (function ()
         Identifier: Node.IdentifierExpression,
 
         AssignmentPattern: ({ left, ...mappedFields }) =>
-            type({ left: toPattern(left), ...mappedFields }),
+            Node.AssignmentPattern({ left: toPattern(left), ...mappedFields }),
 
         ArrayPattern: mappedFields =>
             Node.ArrayPattern(mapToPatterns("elements", mappedFields)),
