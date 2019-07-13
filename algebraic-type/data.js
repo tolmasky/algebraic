@@ -115,13 +115,16 @@ const data = declaration(function data (type, fieldDeclarations)
 const initialize = (function ()
 {
     const toString = value =>
-        value === "function" ? `[function ${value.name}]` :
-        of(value) && getKind(of(value)) ? value :
-        JSON.stringify(value);
+        value === void(0) ? "undefined" :
+        value === null ? "null" :
+        typeof value === "function" ? `[function ${value.name}]` :
+        typeof value !== "object" ? JSON.stringify(value, null, 2) :
+        of(value) && getKind(of(value)) ? value + "" :
+        JSON.stringify(value, null, 2);
     const typecheck = (owner, name, { expected, value }) =>
         `${owner} constructor passed value for field "${name}" of wrong ` +
-        `type. Expected type ${getTypename(expected)} but got ` +
-        `${toString(value)}.`;
+        `type. Expected type ${getTypename(expected)} but got:\n\n` +
+        `${toString(value)}\n`;
     const missing = (owner, name) =>
         `${owner} constructor requires field "${name}"`;
     const message = (owner, name, error) =>
