@@ -1,25 +1,24 @@
 const { IsSymbol } = require("@algebraic/type/declaration");
-const { data, nullable, array, number, getTypename, or } = require("@algebraic/type");
+const { of, data, nullable, array, number, getTypename, or } = require("@algebraic/type");
 const tagged = require("@algebraic/type/tagged");
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
+const NodeSymbol = Symbol("Node");
 
 
 const Node = tagged((name, ...fields) =>
-    ESTreeBridge ([name]) (
+    Object.assign(ESTreeBridge ([name]) (
         ...fields,
         leadingComments     => [nullable(array(Comment)), null],
         innerComments       => [nullable(array(Comment)), null],
         trailingComments    => [nullable(array(Comment)), null],
         start               => [nullable(number), null],
         end                 => [nullable(number), null],
-        loc                 => [nullable(SourceLocation), null] ) );
+        loc                 => [nullable(SourceLocation), null] ),
+        { [NodeSymbol]: true }) );
 
-Node[IsSymbol] = value =>
-    !!value &&
-    typeof value === "object" &&
-    typeof value.type === "string";
+Node[IsSymbol] = value => !!value && !!of(value) && of(value)[NodeSymbol];
 
 module.exports = Node;
 
@@ -44,4 +43,3 @@ Object.assign(module.exports,
     ...require("./statements"),
     ...require("./program")
 });
-

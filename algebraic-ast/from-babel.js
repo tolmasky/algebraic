@@ -1,5 +1,6 @@
 const Comment = require("./comment");
 const { Position, SourceLocation } = require("./source-location");
+const { is } = require("@algebraic/type");
 
 const isNullOrUndefined =
     object => object === null || object === void(0);
@@ -17,8 +18,8 @@ const mapCommonNodeFields = node =>
     leadingComments: mapComments(node.leadingComments),
     innerComments: mapComments(node.innerComments),
     trailingComments: mapComments(node.trailingComments),
-    start: node.start,
-    end: node.end,
+    start: node.start || null,
+    end: node.end || null,
     loc: mapSourceLocation(node.loc)
 });
 
@@ -42,8 +43,9 @@ const toMapNode = function (mappings)
     const nodeFieldMaps = Object.fromEntries(
         undeprecated.map(name =>
             [name, toMapNodeFields(name, t.VISITOR_KEYS[name])]));
-    const mapNode = node => Array.isArray(node) ?
-        node.map(mapNode) :
+    const mapNode = node =>
+        Array.isArray(node) ? node.map(mapNode) :
+        is (Node, node) ? node :
         ((name, fields) =>
             (mappings[name] ?
                 mappings[name](fields, node) :
@@ -175,7 +177,7 @@ const mapNode = (function ()
                         .find(field => field.name === "extra"))[0])[0]])
                 .map(([type, ExtraT]) => [getTypename(type),
                     ({ extra, ...mappedFields }) =>
-                        type({ ...mappedFields, extra: ExtraT(extra) })]))
+                        type({ ...mappedFields, extra: extra ? ExtraT(extra) : null })]))
     });
 })();
 
