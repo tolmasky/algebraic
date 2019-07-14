@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/ast",
-  "version": "1.0.0-alpha.17",
+  "version": "1.0.0-alpha.18",
   "description": "",
   "main": "node.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "@climb/partition": "1.0.0-alpha.3"
   },
   "peerDependencies": {
-    "@algebraic/type": "1.0.0-alpha.17",
-    "@algebraic/collectoons": "1.0.0-alpha.17"
+    "@algebraic/type": "1.0.0-alpha.18",
+    "@algebraic/collectoons": "1.0.0-alpha.18"
   }
 }
