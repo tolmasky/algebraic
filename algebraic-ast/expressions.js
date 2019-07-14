@@ -19,7 +19,7 @@ exports.AssignmentExpression = Node `AssignmentExpression` (
                                 take => `left.bindingNames` ) );
 
 exports.IdentifierExpression = Node `IdentifierExpression` (
-    ({override:type})   =>  "Identifier",
+    ([ESTreeType])      =>  data.always ("Identifier"),
     name                =>  string,
     ([freeVariables])   =>  compute (StringSet,
                                 take => `name`) );
@@ -96,7 +96,7 @@ exports.LogicalExpression = Node `LogicalExpression` (
                                 take => `right.freeVariables` ) );
 
 exports.StaticMemberExpression = Node `StaticMemberExpression` (
-    ({override:type})   =>  "MemberExpression",
+    ([ESTreeType])      =>  data.always ("MemberExpression"),
     ([computed])        =>  data.always (false),
 
     object              =>  Node.Expression,
@@ -106,7 +106,7 @@ exports.StaticMemberExpression = Node `StaticMemberExpression` (
                                 take => `object.freeVariables`) );
 
 exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
-    ({override:type})   =>  "MemberExpression",
+    ([ESTreeType])      =>  data.always ("MemberExpression"),
     ([computed])        =>  data.always (true),
 
     object              =>  Node.Expression,
@@ -168,7 +168,7 @@ exports.AwaitExpression = Node `AwaitExpression` (
                                 take => `argument.freeVariables`) );
 
 exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
-    ({override:type})   =>  "ObjectProperty",
+    ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (true),
     ([computed])        =>  data.always (false),
@@ -180,7 +180,7 @@ exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
                                 take => `value.freeVariables`) )
 
 exports.ObjectPropertyLonghand = Node `ObjectPropertyLonghand` (
-    ({override:type})   =>  "ObjectProperty",
+    ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (false),
     ([computed])        =>  [boolean, key =>
@@ -207,6 +207,10 @@ exports.SpreadElement = Node `SpreadElement` (
     argument            => Node.Expression,
     ([freeVariables])   => compute (StringSet,
                             take => `argument.freeVariables`) );
+
+exports.PlaceholderExpression = Node `PlaceholderExpression` (
+    name                => string,
+    ([freeVariables])   => compute.empty (StringSet) );
 
 Object.assign(exports, require("./literals"));
     

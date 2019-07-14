@@ -8,7 +8,7 @@ const FreeVariables = require("./string-set").in `freeVariables`;
 
 
 exports.Label = Node `Label` (
-    ({override:type})       =>  "Identifier",
+    ([ESTreeType])          =>  data.always ("Identifier"),
     name                    =>  string,
     ([varBindingNames])     =>  compute.empty (StringSet),
     ([blockBindingNames])   =>  compute.empty (StringSet),
@@ -255,7 +255,7 @@ exports.VariableDeclarator = Node `VariableDeclarator` (
                                     take => `id.freeVariables` ) );
 
 exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
-    ({override:type})       =>  "VariableDeclaration",
+    ([ESTreeType])          =>  data.always ("VariableDeclaration"),
     declarators             =>  array (Node.VariableDeclarator),
     ([declarations])        =>  [array (Node.VariableDeclarator),
                                     declarators => declarators],
@@ -270,7 +270,7 @@ exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
                                     subtract => `varBindingNames` ) );
 
 exports.BlockVariableDeclaration = Node `BlockVariableDeclaration` (
-    ({override:type})       =>  "VariableDeclaration",
+    ([ESTreeType])          =>  data.always ("VariableDeclaration"),
     declarators             =>  array (Node.VariableDeclarator),
     ([declarations])        =>  [array (Node.VariableDeclarator),
                                     declarators => declarators],

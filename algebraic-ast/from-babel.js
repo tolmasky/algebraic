@@ -1,6 +1,7 @@
 const Comment = require("./comment");
 const { Position, SourceLocation } = require("./source-location");
 const { is } = require("@algebraic/type");
+const fail = require("@algebraic/type/fail");
 
 const isNullOrUndefined =
     object => object === null || object === void(0);
@@ -177,7 +178,12 @@ const mapNode = (function ()
                         .find(field => field.name === "extra"))[0])[0]])
                 .map(([type, ExtraT]) => [getTypename(type),
                     ({ extra, ...mappedFields }) =>
-                        type({ ...mappedFields, extra: extra ? ExtraT(extra) : null })]))
+                        type({ ...mappedFields, extra: extra ? ExtraT(extra) : null })])),
+
+        Placeholder: ({ name, expectedNode }) =>
+            expectedNode !== "Expression" ?
+                fail(`Only PlaceholderExpressions are supported.`) :
+                Node.PlaceholderExpression({ name: name.name })
     });
 })();
 

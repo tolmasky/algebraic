@@ -14,7 +14,7 @@ exports.RootPattern = union2 `RootPattern` (
 // the type property to "Identifier". This makes this portion of the tree
 // appear unchanged to Babel and other ESTree compatible tools.
 exports.IdentifierPattern = Node `IdentifierPattern` (
-    ({override:type})   => "Identifier",
+    ([ESTreeType])      =>  data.always ("Identifier"),
 
     name                =>  string,
     ([bindingNames])    =>  compute (StringSet,
@@ -45,7 +45,7 @@ exports.ArrayPattern = Node `ArrayPattern` (
                                 take => `elements.freeVariables`) );
 
 exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
-    ({override:type})   =>  "AssignmentPattern",
+    ([ESTreeType])      =>  data.always ("AssignmentPattern"),
 
     left                =>  Node.IdentifierPattern,
     right               =>  Node.Expression,
@@ -56,7 +56,7 @@ exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
                                 take => `right.freeVariables` ));
 
 exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
-    ({override:type})   =>  "ObjectProperty",
+    ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (true),
     ([computed])        =>  data.always (false),
@@ -74,7 +74,7 @@ exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
                                 take => `value.freeVariables`) );
 
 exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
-    ({override:type})   =>  "ObjectProperty",
+    ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (false),
     ([computed])        =>  [boolean, key =>
