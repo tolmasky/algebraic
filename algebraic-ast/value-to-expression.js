@@ -4,9 +4,19 @@ const { isArray } = Array;
 
 const Node = require("./node");
 
+const Negative = argument => Node.UnaryExpression({ operator: "-", argument });
+
 const ZeroLiteral = Node.NumericLiteral({ value: 0 });
-const NegativeZeroLiteral =
-    Node.UnaryExpression({ operator: "-", argument: ZeroLiteral });
+const NegativeZeroLiteral = Negative(ZeroLiteral);
+
+const OneLiteral = Node.NumericLiteral({ value: 1 });
+const NegativeOneLiteral = Negative(OneLiteral);
+
+const Divide = (left, right) =>
+    Node.BinaryExpression({ operator: "/", left, right });
+const NaNLiteral = Divide(ZeroLiteral, ZeroLiteral);
+const InfinityLiteral = Divide(OneLiteral, ZeroLiteral);
+const NegativeInfinityLiteral = Divide(NegativeOneLiteral, ZeroLiteral);
 
 const TrueLiteral = Node.BooleanLiteral({ value: true });
 const FalseLiteral = Node.BooleanLiteral({ value: false });
@@ -30,14 +40,16 @@ module.exports = function valueToExpression(value)
     if (typeof value === "undefined")
         return void0;
 
-    if (Object.is(0, value))
-        return ZeroLiteral;
-
-    if (Object.is(-0, value))
-        return NegativeZeroLiteral;
-
     if (typeof value === "number")
-        return Node.NumericLiteral({ value });
+        return  isNaN(value) ? NaNLiteral :
+                value === Infinity  ? InfinityLiteral :
+                value === -Infinity ? NegativeInfinityLiteral :
+                Object.is(-0, value) ? NegativeZeroLiteral :
+                value === 0 ? ZeroLiteral :
+                value === 1 ? OneLiteral :
+                value === -1 ? NegativeOneLiteral :
+                value > 0 ? Node.NumericLiteral({ value }) :
+                Negative(Node.NumericLiteral({ value: -value }));
 
     if (typeof value === "string")
         return Node.StringLiteral({ value });
