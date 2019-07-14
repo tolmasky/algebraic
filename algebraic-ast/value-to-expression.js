@@ -39,9 +39,9 @@ module.exports = function valueToExpression(value)
     if (typeof value === "number")
         return Node.NumericLiteral({ value });
 
-    if (typeof value === "string") {console.log(value);
+    if (typeof value === "string")
         return Node.StringLiteral({ value });
-}
+
     if (is(Node, value))
         return value;
 
