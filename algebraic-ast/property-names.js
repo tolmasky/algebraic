@@ -7,13 +7,13 @@ const FreeVariables = require("./string-set").in `freeVariables`;
 // require significant conversion on the way back (unlike PropertyName which
 // just pretends to be an Identifier). However, we can do something similar
 // here and pretend to be a ParenthesizedExpression.
-exports.ComputedPropertyName = data `ComputedPropertyName` (
+exports.ComputedPropertyName = Node `ComputedPropertyName` (
     ([type])            =>  data.always ("ParenthesizedExpression"),
 
     expression          =>  Node.Expression,
     ([freeVariables])   =>  FreeVariables.from("expression") );
 
-exports.PropertyName = data `PropertyName` (
+exports.PropertyName = Node `PropertyName` (
     ([type])            =>  data.always ("Identifier"),
 
     name                =>  string,

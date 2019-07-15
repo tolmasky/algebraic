@@ -75,7 +75,7 @@ function toTypename(strings, ...args)
         typename + asTypename(arg) + strings[index + 1], strings[0]);
 }
 
-function declare({ is, create, typename, unscopedTypename, serialize, deserialize })
+function declare({ is, create, typename, unscopedTypename, serialize, deserialize, kind })
 {
     const type = fNamed(typename, function (...args)
     {
@@ -89,6 +89,7 @@ function declare({ is, create, typename, unscopedTypename, serialize, deserializ
     type[IsSymbol] = is;
     type[SerializeSymbol] = serialize;
     type[DeserializeSymbol] = deserialize;
+    type[KindSymbol] = kind;
 
     return type;
 }
