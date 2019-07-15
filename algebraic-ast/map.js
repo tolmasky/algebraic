@@ -8,7 +8,8 @@ module.exports = function (mappings)
     const map = node =>
         isArray(node) ?
             mapArray(node, map) :
-            (mappings[getTypename(of(node))] || mapChildren)(node, map);
+            mapNode(mappings, node, map);
+
     return map;
 }
 
@@ -22,15 +23,21 @@ function mapArray(nodes, map)
                 updated))(map(node)), nodes);
 }
 
-function mapChildren(node, map)
+function mapNode(mappings, node, map)
 {
-    const mappedChildren = Object
-        .entries(node)
-        .filter(([_, node]) => is (Node, node) || isArray(node))
-        .map(([key, node]) => [key, map(node), node])
-        .filter(([_, mapped, node]) => node !== mapped)
+    const type = of(node);
+    const typename = getTypename(type);
+    const custom = mappings[typename];
+
+    if (custom)
+        return custom(node, map);
+
+    const mappedChildren = type
+        .traversable
+        .map(key => [key, map(node[key]), node[key]])
+        .filter(([_, mapped, node]) => node !== mapped);
 
     return mappedChildren.length <= 0 ?
         node :
-        of(node)({ ...node, ...Object.fromEntries(mappedChildren) });
+        type({ ...node, ...Object.fromEntries(mappedChildren) });
 }
