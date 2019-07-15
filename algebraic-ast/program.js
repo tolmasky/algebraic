@@ -35,14 +35,14 @@ exports.Script = Node `Script` (
                                 subtract => `varBindings`,
                                 subtract => `blockBindings` ) );
 
-exports.Module = data `Module` (
+exports.Module = Node `Module` (
     ([ESTreeType])      => data.always ("Program"),
     ([sourceType])      => data.always ("module"),
 
-    body                => array (or (Node.ImportDeclaration,
-                                      Node.ExportDeclaration,
+    body                => array (or (/*Node.ImportDeclaration,
+                                      Node.ExportDeclaration,*/
                                       Node.Statement)),
-    directives          => [array(Directive), []],
+    directives          => [array(Node.Directive), []],
     interpreter         => [nullable(Node.InterpreterDirective), null],
     sourceFile          => [nullable(string), null],
 

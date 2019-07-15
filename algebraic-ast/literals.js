@@ -45,7 +45,7 @@ exports.TemplateElement.Value = data `TemplateElement.Value` (
 exports.TemplateLiteral = Node `TemplateLiteral` (
     expressions         =>  array(Node.Expression),
     quasis              =>  array(Node.TemplateElement),
-    ([freeVariables])   =>  comput (StringSet,
+    ([freeVariables])   =>  compute (StringSet,
                                 take => `expressions` ) );
 
 
