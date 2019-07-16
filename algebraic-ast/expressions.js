@@ -3,6 +3,7 @@ const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
 const { StringSet } = require("./string-set");
+const { KeyPathsByName } = require("./key-path");
 const compute = require("./compute");
 
 
@@ -13,7 +14,7 @@ exports.AssignmentExpression = Node `AssignmentExpression` (
                                 Node.ObjectPattern),
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables`,
                                 take => `left.bindingNames` ) );
@@ -21,7 +22,7 @@ exports.AssignmentExpression = Node `AssignmentExpression` (
 exports.IdentifierExpression = Node `IdentifierExpression` (
     ([ESTreeType])      =>  data.always ("Identifier"),
     name                =>  string,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `name`) );
 
 exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
@@ -60,13 +61,13 @@ exports.FunctionExpression = Node `FunctionExpression` (
 
 exports.ArrayExpression = Node `ArrayExpression` (
     elements            =>  array(nullable(or (Node.Expression, Node.SpreadElement))),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `elements.freeVariables`) );
 
 exports.CallExpression = Node `CallExpression` (
     callee              =>  Node.Expression,
     arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
 
@@ -74,7 +75,7 @@ exports.ConditionalExpression = Node `ConditionalExpression` (
     test                =>  Node.Expression,
     consequent          =>  Node.Expression,
     alternate           =>  Node.Expression,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `test.freeVariables` ,
                                 take => `consequent.freeVariables`,
                                 take => `alternate.freeVariables` ) );
@@ -83,7 +84,7 @@ exports.BinaryExpression = Node `BinaryExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables` )  );
 
@@ -91,7 +92,7 @@ exports.LogicalExpression = Node `LogicalExpression` (
     left                =>  Node.Expression,
     right               =>  Node.Expression,
     operator            =>  string,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables` ) );
 
@@ -102,7 +103,7 @@ exports.StaticMemberExpression = Node `StaticMemberExpression` (
     object              =>  Node.Expression,
     property            =>  Node.PropertyName,
     optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `object.freeVariables`) );
 
 exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
@@ -112,7 +113,7 @@ exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
     object              =>  Node.Expression,
     property            =>  Node.Expression,
     optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `object.freeVariables`,
                                 take => `property.freeVariables` ) );
 
@@ -123,22 +124,22 @@ exports.MemberExpression = union2 `MemberExpression` (
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,
     arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `callee.freeVariables`,
                                 take => `arguments.freeVariables` ) );
 
 exports.ThisExpression = Node `ThisExpression` (
-    ([freeVariables])   =>  compute.empty (StringSet) );
+    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
 
 exports.SequenceExpression = Node `SequenceExpression` (
     expressions         =>  array(Node.Expression),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `expressions.freeVariables`) );
 
 exports.TaggedTemplateExpression = Node `TaggedTemplateExpression` (
     tag                 =>  Node.Expression,
     quasi               =>  Node.TemplateLiteral,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `tag.freeVariables`,
                                 take => `quasi.freeVariables`) );
 
@@ -146,25 +147,25 @@ exports.UnaryExpression = Node `UnaryExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
 exports.UpdateExpression = Node `UpdateExpression` (
     argument            =>  Node.Expression,
     operator            =>  string,
     prefix              =>  [boolean, true],
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
 exports.YieldExpression = Node `YieldExpression` (
     argument            =>  Node.Expression,
     delegate            =>  [boolean, false],
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`));
 
 exports.AwaitExpression = Node `AwaitExpression` (
     argument            =>  Node.Expression,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
 exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
@@ -176,7 +177,7 @@ exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
     ([key])             =>  [Node.PropertyName, value => Node.PropertyName(value)],
     value               =>  Node.IdentifierExpression,
 
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `value.freeVariables`) )
 
 exports.ObjectPropertyLonghand = Node `ObjectPropertyLonghand` (
@@ -190,7 +191,7 @@ exports.ObjectPropertyLonghand = Node `ObjectPropertyLonghand` (
                                 Node.PropertyName,
                                 Node.StringLiteral),
     value               =>  Node.Expression,
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `key.freeVariables`,
                                 take => `value.freeVariables` ) );
 
@@ -200,17 +201,13 @@ exports.ObjectProperty = union2 `ObjectProperty` (
 
 exports.ObjectExpression = Node `ObjectExpression` (
     properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),
-    ([freeVariables])   => compute (StringSet,
+    ([freeVariables])   => KeyPathsByName.compute (
                                 take => `properties.freeVariables`) );
 
 exports.SpreadElement = Node `SpreadElement` (
     argument            => Node.Expression,
-    ([freeVariables])   => compute (StringSet,
+    ([freeVariables])   => KeyPathsByName.compute (
                             take => `argument.freeVariables`) );
-
-exports.PlaceholderExpression = Node `PlaceholderExpression` (
-    name                => string,
-    ([freeVariables])   => compute.empty (StringSet) );
 
 Object.assign(exports, require("./literals"));
     

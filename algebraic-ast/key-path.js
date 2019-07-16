@@ -51,8 +51,8 @@ const take = (lhs, rhs) =>
     rhs.size === 0 ? lhs :
     rhs.reduce((accum, keyPaths, name) =>
         accum.update(name, KeyPaths(),
-            existing => existing.concat(keyPaths),
-        lhs));
+            existing => existing.concat(keyPaths)),
+        lhs);
 
 const inKeyPath = (value, keys, index = 0) =>
     (child =>

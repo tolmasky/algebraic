@@ -10,6 +10,7 @@ const { isArray } = Array;
 const has = hasOwnProperty.call.bind(hasOwnProperty);
 const any = require("./any");
 const fail = require("./fail");
+const of = require("./of");
 
 
 // data.fields are datas themselves, so creating them is a little tricky. You
@@ -129,7 +130,12 @@ function fromShorthandDefinition(computed, definition)
 
     if (computed && !tuple)
         return fail("Failed to parse computed property, you must pass an array");
-
+/*
+    if (computed && !tuple)
+        return toComputedIC(
+            of(definition),
+            { compute:() => definition, dependencies:[] });
+*/
     const type = tuple ? definition[0] : definition;
     const fallback = tuple ?
         maybe(type).just({ value: definition[1] }) :
