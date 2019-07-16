@@ -70,6 +70,12 @@ const inKeyPath = (value, keys, index = 0) =>
                 .reduce(take, None))(value[keys[index]]);
 
 
+
+KeyPathsByName.just = function (name)
+{
+    return KeyPathsByName({ [name]: KeyPaths([KeyPath.Root]) });
+}
+
 KeyPathsByName.compute = function (...shorthandOperations)
 {
     const subtract = (accum, subtracted) =>
