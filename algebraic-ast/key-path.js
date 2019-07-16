@@ -15,6 +15,7 @@ const None = KeyPathsByName();
 
 module.exports.KeyPath = KeyPath;
 module.exports.KeyPathsByName = KeyPathsByName;
+module.exports.KeyPathsByName.None = KeyPathsByName();
 
 KeyPath.Root.prototype[Symbol.iterator] =
 KeyPath.Parent.prototype[Symbol.iterator] = function * ()
@@ -77,7 +78,7 @@ KeyPathsByName.compute = function (...shorthandOperations)
 
     const operations = shorthandOperations
         .map(shorthand =>
-            [toMethod(fNameParse(shorthand)), shorthand()])
+            [fNameParse(shorthand), shorthand()])
         .map(([method, item]) =>
             typeof item === "string" ?
                 { method, keys: item.split(".") } :
@@ -90,7 +91,7 @@ KeyPathsByName.compute = function (...shorthandOperations)
             methods[method](accum, keys ? inKeyPath(values, keys) : items),
         None);
 
-    return field.definition(type).computed({ dependencies, compute });
+    return field.definition(KeyPathsByName).computed({ dependencies, compute });
 }
 
 KeyPathsByName.compute.empty = function empty()
