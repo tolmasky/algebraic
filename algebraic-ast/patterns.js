@@ -1,8 +1,7 @@
 const { is, data, or, boolean, string, type, array } = require("@algebraic/type");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
-const { StringSet } = require("./string-set");
-const compute = require("./compute");
+const { KeyPathsByName } = require("./key-path");
 
 
 exports.RootPattern = union2 `RootPattern` (
@@ -17,31 +16,31 @@ exports.IdentifierPattern = Node `IdentifierPattern` (
     ([ESTreeType])      =>  data.always ("Identifier"),
 
     name                =>  string,
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `name`),
-    ([freeVariables])   =>  compute.empty (StringSet) );
+    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
 
 exports.RestElement = Node `RestElement` (
     argument            =>  Node.RootPattern,
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `argument.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
 exports.AssignmentPattern = Node `AssignmentPattern` (
     left                =>  Node.RootPattern,
     right               =>  Node.Expression,
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `left.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables` ) );
 
 exports.ArrayPattern = Node `ArrayPattern` (
     elements            =>  array (or (Node.RootPattern, Node.AssignmentPattern)),
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `elements.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `elements.freeVariables`) );
 
 exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
@@ -49,9 +48,9 @@ exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
 
     left                =>  Node.IdentifierPattern,
     right               =>  Node.Expression,
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `left.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables` ));
 
@@ -68,9 +67,9 @@ exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
     value               =>  or (Node.IdentifierPattern,
                                 Node.ShorthandAssignmentPattern ),
 
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `value.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `value.freeVariables`) );
 
 exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
@@ -86,9 +85,9 @@ exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
     value               =>  or (Node.RootPattern,
                                 Node.AssignmentPattern),
 
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `value.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables`) );
 
@@ -98,8 +97,8 @@ exports.ObjectPropertyPattern = union2 `ObjectPropertyPattern` (
 
 exports.ObjectPattern = Node `ObjectPattern` (
     properties          =>  array (Node.ObjectPropertyPattern ),
-    ([bindingNames])    =>  compute (StringSet,
+    ([bindingNames])    =>  KeyPathsByName.compute (
                                 take => `properties.bindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `properties.freeVariables`) );
 

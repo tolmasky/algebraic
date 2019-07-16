@@ -2,8 +2,7 @@ const { is, data, nullable, array, or } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
-const { StringSet } = require("./string-set");
-const compute = require("./compute");
+const { KeyPathsByName } = require("./key-path");
 const Extra = require("./extra");
 
 
@@ -26,11 +25,11 @@ exports.Script = Node `Script` (
     interpreter         => [nullable(Node.InterpreterDirective), null],
     sourceFile          => [nullable(string), null],
 
-    ([varBindings])     =>  compute (StringSet,
+    ([varBindings])     =>  KeyPathsByName.compute (
                                 take => `body.varBindingNames`),
-    ([blockBindings])   =>  compute (StringSet,
+    ([blockBindings])   =>  KeyPathsByName.compute (
                                 take => `body.blockBindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `body.freeVariables`,
                                 subtract => `varBindings`,
                                 subtract => `blockBindings` ) );
@@ -46,11 +45,11 @@ exports.Module = Node `Module` (
     interpreter         => [nullable(Node.InterpreterDirective), null],
     sourceFile          => [nullable(string), null],
 
-    ([varBindings])     =>  compute (StringSet,
+    ([varBindings])     =>  KeyPathsByName.compute (
                                 take => `body.varBindingNames`),
-    ([blockBindings])   =>  compute (StringSet,
+    ([blockBindings])   =>  KeyPathsByName.compute (
                                 take => `body.blockBindingNames`),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `body.freeVariables`,
                                 subtract => `varBindings`,
                                 subtract => `blockBindings` ) );

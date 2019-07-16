@@ -73,7 +73,7 @@ const inKeyPath = (value, keys, index = 0) =>
 KeyPathsByName.compute = function (...shorthandOperations)
 {
     const subtract = (accum, subtracted) =>
-        accum.filter(name => subtracted.has(name));
+        accum.filter(name => !subtracted.has(name));
     const methods = { take, subtract };
 
     const operations = shorthandOperations

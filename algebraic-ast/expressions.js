@@ -33,10 +33,10 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],
 
-    ([varBindings])     =>  compute (StringSet,
+    ([varBindings])     =>  KeyPathsByName.compute (
                                 take => `params.bindingNames` ),
 
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `body.freeVariables`,
                                 take => `params.freeVariables`,
                                 subtract => `varBindings` ) );
@@ -49,12 +49,12 @@ exports.FunctionExpression = Node `FunctionExpression` (
     generator           =>  [boolean, false],
     async               =>  [boolean, false],
 
-    ([varBindings])     =>  compute (StringSet,
+    ([varBindings])     =>  KeyPathsByName.compute (
                                 take => `id.bindingNames`,
                                 take => `body.varBindingNames`,
                                 take => `params.bindingNames`,
                                 take => StringSet(["arguments"]) ),
-    ([freeVariables])   =>  compute (StringSet,
+    ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `body.freeVariables`,
                                 take => `params.freeVariables`,
                                 subtract => `varBindings` ) );
