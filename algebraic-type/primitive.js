@@ -61,6 +61,8 @@ const primitives =
         typename: "[primitive undefined]",
         is: fNamed("[is undefined]", value => value === void(0))
     }),
+    
+    symbol: primitive `symbol` ([]),
 
     object: primitive `object` (
         [JSON.stringify, true],
