@@ -1,11 +1,14 @@
-const { is, data, string, union } = require("@algebraic/type");
+const { of, is, data, number, string, union } = require("@algebraic/type");
 const { Map, List } = require("@algebraic/collections");
 
 const KeyPath = union `KeyPath` (
     data `Root` (),
     data `Parent` (
-        key     => string,
-        child   => [KeyPath, KeyPath.Root] ) );
+        key         => string,
+        child       => [KeyPath, KeyPath.Root],
+        ([length])  => [number, child => child.length + 1]) );
+
+KeyPath.Root.length = 0;
 
 module.exports = KeyPath;
 
@@ -16,6 +19,36 @@ const None = KeyPathsByName();
 module.exports.KeyPath = KeyPath;
 module.exports.KeyPathsByName = KeyPathsByName;
 module.exports.KeyPathsByName.None = KeyPathsByName();
+
+const getJust = (length, keyPath, object) =>
+    length < 0 ? getJust(keyPath.length + length, keyPath, object) :
+    length === 0 ? [object, keyPath] :
+    getJust(length - 1, keyPath.child, object[keyPath.key]);
+
+const get = (keyPath, object) =>
+    keyPath === KeyPath.Root ? object :
+    get(keyPath.child, object[keyPath.key]);
+
+const set = (keyPath, object, item) =>
+    keyPath === KeyPath.Root ? item :
+    (item => isArray(object) ?
+        (object = [...object], object[keyPath.key] = item, object) :
+        (of(object)({ ...object, item })))
+    (set(keyPath.child, object[keyPath.key], item))
+
+const setJust = (length, keyPath, item, object) =>
+    length < 0 ? setJust(keyPath.length + length, keyPath, item, object) :
+    length === 0 ? item :
+    (item => isArray(object) ?
+        (object = [...object], object[keyPath.key] = item, object) :
+        (of(object)({ ...object, [keyPath.key]: item })))
+    (setJust(length - 1, keyPath.child, item, object[keyPath.key]));
+
+module.exports.get = get;
+module.exports.getJust = getJust;
+
+module.exports.set = set;
+module.exports.setJust = setJust;
 
 KeyPath.Root.prototype[Symbol.iterator] =
 KeyPath.Parent.prototype[Symbol.iterator] = function * ()
