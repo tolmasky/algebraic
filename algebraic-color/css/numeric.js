@@ -23,5 +23,8 @@ module.exports = templatedRegExp(
     "deg": keyword("deg"),
     "grad": keyword("grad"),
     "rad": keyword("rad"),
-    "turn": keyword("turn") 
+    "turn": keyword("turn"),
+
+    // https://www.w3.org/TR/css-color-4/#typedef-hue
+    "hue": /${number}|${angle}/
 });

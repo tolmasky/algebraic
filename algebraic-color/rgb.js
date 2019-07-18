@@ -40,7 +40,7 @@ const CSSRegExp = (function ()
     return templatedRegExp(
     {
         ...numeric,
-    
+
         // https://www.w3.org/TR/css-color-4/#funcdef-rgb
         // Also for legacy reasons, an rgba() function also exists, with an
         // identical grammar and behavior to rgb().
@@ -48,7 +48,7 @@ const CSSRegExp = (function ()
 
         "rgb.keyword": keyword("rgb"),
         "rgb.list": /${rgb.list.numbers}|${rgb.list.percentages}/,
-    
+
         //  rgb() = rgb( <percentage>#{3} , <alpha-value>? ) |
         //          rgb( <number>#{3} , <alpha-value>? )
         "rgb.list.percentages":
