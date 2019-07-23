@@ -43,8 +43,8 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
 
 exports.FunctionExpression = Node `FunctionExpression` (
     body                =>  Node.BlockStatement,
-    id                  =>  nullable(Node.IdentifierPattern),
-    params              =>  array (nullable(Node.RootPattern)),
+    id                  =>  [nullable(Node.IdentifierPattern), null],
+    params              =>  [array (nullable(Node.RootPattern)), []],
 
     generator           =>  [boolean, false],
     async               =>  [boolean, false],

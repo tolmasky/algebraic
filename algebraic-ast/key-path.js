@@ -50,6 +50,13 @@ module.exports.getJust = getJust;
 module.exports.set = set;
 module.exports.setJust = setJust;
 
+const equalsJust = (length, lhs, rhs) =>
+    length < 0 ? equalsJust(lhs.length - length, lhs, rhs) :
+    length === 0 ? true :
+    lhs.key === rhs.key && equalsJust(length - 1, lhs.child, rhs.child);
+
+module.exports.equalsJust = equalsJust;
+
 KeyPath.Root.prototype[Symbol.iterator] =
 KeyPath.Parent.prototype[Symbol.iterator] = function * ()
 {
@@ -61,6 +68,13 @@ KeyPath.Parent.prototype[Symbol.iterator] = function * ()
         iterator = iterator.child;
     }
 }
+
+const at = (keyPath, index) =>
+    index < 0 ? at(keyPath, keyPath.length + index) :
+    index === 0 ? keyPath.key :
+    at(keyPath.child, index - 1);
+
+KeyPath.at = at;
 
 KeyPath.Root.prototype.toString =
 KeyPath.Parent.prototype.toString = function ()
