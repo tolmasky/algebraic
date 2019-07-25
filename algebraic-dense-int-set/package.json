@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/dense-int-set",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.19",
   "description": "",
   "main": "dense-int-set.js",
   "scripts": {

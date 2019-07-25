@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/type",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "description": "",
   "main": "type.js",
   "scripts": {
@@ -10,6 +10,6 @@
   "author": "Francisco Ryan Tolmasky I",
   "license": "MIT",
   "dependencies": {
-    "@climb/partition": "1.0.0-alpha.3"
+    "@climb/partition": "1.0.0-alpha.4"
   }
 }
