@@ -8,5 +8,8 @@
   },
   "keywords": [],
   "author": "Francisco Ryan Tolmasky",
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@climb/unfold": "1.0.0-alpha.4"
+  }
 }
