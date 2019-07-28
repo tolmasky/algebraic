@@ -28,7 +28,7 @@ exports.IdentifierExpression = Node `IdentifierExpression` (
 exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     body                =>  or (Node.BlockStatement, Node.Expression),
     ([id])              =>  data.always (null),
-    params              =>  array(nullable(Node.RootPattern)),
+    params              =>  [array(nullable(Node.RootPattern)), []],
 
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],

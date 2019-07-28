@@ -25,6 +25,9 @@ function mapArray(nodes, map)
 
 function mapNode(mappings, node, map)
 {
+    if (!node)
+        return node;
+
     const type = of(node);
     const typename = getTypename(type);
     const custom = mappings[typename];
