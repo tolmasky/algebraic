@@ -1,3 +1,5 @@
+const fromEntries = require("@climb/from-entries");
+
 const { is, string } = require("@algebraic/type");
 const { OrderedSet } = require("@algebraic/collections");
 
@@ -27,7 +29,7 @@ module.exports = function template(f)
     const indexedTemplate = toTemplate(templateString);
 
     return (...args) =>
-        fromBabel(indexedTemplate(Object.fromEntries(
+        fromBabel(indexedTemplate(fromEntries(
         [
             ...(hasRest ? args.slice(0, params.length - 1) : args)
                 .map((value, index) =>

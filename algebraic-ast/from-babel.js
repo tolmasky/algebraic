@@ -1,3 +1,5 @@
+const fromEntries = require("@climb/from-entries");
+
 const Comment = require("./comment");
 const { Position, SourceLocation } = require("./source-location");
 const { is } = require("@algebraic/type");
@@ -34,14 +36,14 @@ const toMapNode = function (mappings)
 
     const undeprecated = t.TYPES
         .filter(name => t[name] && !t.DEPRECATED_KEYS[name]);
-    const mapVisitorFields = (fields, node) => Object
-        .fromEntries(fields.map(field =>
+    const mapVisitorFields = (fields, node) =>
+        fromEntries(fields.map(field =>
             [field, mapNullableNode(node[field])]));
     const toMapNodeFields = (name, fields) => node =>
         ({  ...node,
             ...mapVisitorFields(fields, node),
             ...mapCommonNodeFields(node) });
-    const nodeFieldMaps = Object.fromEntries(
+    const nodeFieldMaps = fromEntries(
         undeprecated.map(name =>
             [name, toMapNodeFields(name, t.VISITOR_KEYS[name])]));
     const mapNode = node =>
@@ -88,7 +90,7 @@ const mapNode = (function ()
         [key]: fields[key].map(toPattern)
     }))();
     const toPatternFields = (keys, type) => mappedFields =>
-        type({ ...mappedFields, ...Object.fromEntries(keys
+        type({ ...mappedFields, ...fromEntries(keys
             .map(key => [key, mappedFields[key]])
             .map(([key, value]) => [key,
                 Array.isArray(value) ?
@@ -167,7 +169,7 @@ const mapNode = (function ()
                 Node.VarVariableDeclaration({ declarators, ...mappedFields }) :
                 Node.BlockVariableDeclaration({ kind, declarators, ...mappedFields }),
 
-        ...Object.fromEntries([
+        ...fromEntries([
             Node.BigIntLiteral,
             Node.NumericLiteral,
             Node.RegExpLiteral,

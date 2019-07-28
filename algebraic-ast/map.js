@@ -1,4 +1,5 @@
 const { isArray } = Array;
+const fromEntries = require("@climb/from-entries");
 const { is, of, getTypename } = require("@algebraic/type");
 const Node = require("./node");
 
@@ -42,5 +43,5 @@ function mapNode(mappings, node, map)
 
     return mappedChildren.length <= 0 ?
         node :
-        type({ ...node, ...Object.fromEntries(mappedChildren) });
+        type({ ...node, ...fromEntries(mappedChildren) });
 }

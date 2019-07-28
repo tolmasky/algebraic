@@ -1,4 +1,6 @@
 const { isArray } = Array;
+const fromEntries = require("@climb/from-entries");
+
 
 module.exports = function toBabel(node)
 {
@@ -11,7 +13,7 @@ module.exports = function toBabel(node)
     if (isArray(node))
         return node.map(toBabel);
 
-    const babelNode = Object.fromEntries(Object
+    const babelNode = fromEntries(Object
         .entries(node)
         .map(([key, value]) => [key, toBabel(node[key])]))
 

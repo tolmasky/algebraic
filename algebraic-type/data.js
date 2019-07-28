@@ -2,6 +2,7 @@ const of = require("./of");
 const any = require("./any");
 const fail = require("./fail");
 const partition = require("@climb/partition");
+const fromEntries = require("@climb/from-entries");
 
 const { declaration, fNamed, is, getTypename, getKind } = require("./declaration");
 const { inspect } = require("util");
@@ -92,7 +93,7 @@ const data = declaration(function data (type, fieldDeclarations)
             [] :
             initialize(typename,
                 compiled.computed,
-                Object.fromEntries(uncomputed));
+                fromEntries(uncomputed));
 
         uncomputed.map(([name, value]) => defineProperty(this, name,
             { value, writable, enumerable, configurable }));

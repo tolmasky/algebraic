@@ -1,3 +1,5 @@
+const fromEntries = require("@climb/from-entries");
+
 const { of, is, string } = require("@algebraic/type");
 const { OrderedSet, Map } = require("@algebraic/collections");
 const { isArray } = Array;
@@ -63,5 +65,5 @@ function replace(replacements, names, node)
 
     return mappedChildren.length <= 0 ?
         node :
-        of(node)({ ...node, ...Object.fromEntries(mappedChildren) });
+        of(node)({ ...node, ...fromEntries(mappedChildren) });
 }
