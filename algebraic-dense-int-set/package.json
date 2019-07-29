@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "Francisco Ryan Tolmasky",
   "license": "MIT",
-  "peerDependencies": {
+  "dependencies": {
     "@climb/unfold": "1.0.0-alpha.5"
   }
 }
