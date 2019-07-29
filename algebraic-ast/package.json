@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/ast",
-  "version": "1.0.0-alpha.19",
+  "version": "1.0.0-alpha.20",
   "description": "",
   "main": "node.js",
   "scripts": {
@@ -13,11 +13,12 @@
     "@babel/generator": "^7.5.0",
     "@babel/parser": "^7.5.0",
     "@babel/types": "^7.5.0",
+    "@climb/dfs-reachability": "1.0.0-alpha.5",
     "@climb/from-entries": "1.0.0-alpha.5",
-    "@climb/partition": "1.0.0-alpha.4"
+    "@climb/partition": "1.0.0-alpha.5"
   },
   "peerDependencies": {
-    "@algebraic/type": "1.0.0-alpha.19",
-    "@algebraic/collections": "1.0.0-alpha.19"
+    "@algebraic/type": "1.0.0-alpha.20",
+    "@algebraic/collections": "1.0.0-alpha.20"
   }
 }

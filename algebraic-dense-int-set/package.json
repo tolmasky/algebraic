@@ -1,6 +1,6 @@
 {
   "name": "@algebraic/dense-int-set",
-  "version": "1.0.0-alpha.19",
+  "version": "1.0.0-alpha.20",
   "description": "",
   "main": "dense-int-set.js",
   "scripts": {
@@ -10,6 +10,6 @@
   "author": "Francisco Ryan Tolmasky",
   "license": "MIT",
   "peerDependencies": {
-    "@climb/unfold": "1.0.0-alpha.4"
+    "@climb/unfold": "1.0.0-alpha.5"
   }
 }
