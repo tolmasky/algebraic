@@ -1,4 +1,5 @@
 const partition = require("@climb/partition");
+const fromEntries = require("@climb/from-entries");
 
 
 module.exports = templateRegExp = (function ()
@@ -11,7 +12,7 @@ module.exports = templateRegExp = (function ()
         source.replace(template, match => `(?:${values[extract(match)].source})`));
     const insertAll = (tuples, values) => Object.assign(
         values,
-        Object.fromEntries(tuples.map(([name, source]) =>
+        fromEntries(tuples.map(([name, source]) =>
             [name, insert(source, values)])));
     const has = hasOwnProperty.call.bind(hasOwnProperty);
     const depend = (bound, tuples) =>
