@@ -102,21 +102,19 @@ const take = (lhs, rhs) =>
         lhs);
 
 const inKeyPath = (value, keys, index = 0) =>
-    (child =>
-        !child ? None :
-        index === keys.length - 1 ?
-            typeof child === "string" ?
-                KeyPathsByName({ [child]: KeyPaths([KeyPath.Root]) }) :
-                child :
-        !isArray(child) ?
-            inKeyPath(child, keys, index + 1).map(push(keys[index])) :
-            child
-                .map((item, iteration) =>
-                    inKeyPath(item, keys, index + 1)
-                        .map(push(keys[index], iteration + "")))
-                .reduce(take, None))(value[keys[index]]);
-
-
+    !value ? None :
+    index === keys.length ?
+        typeof value === "string" ?
+            KeyPathsByName({ [value]: KeyPaths([KeyPath.Root]) }) :
+            value :
+    !isArray(value) ?
+        inKeyPath(value[keys[index]], keys, index + 1)
+            .map(index + 1 < keys.length ? push(keys[index]) : x => x) :
+        value
+            .map((item, iteration) =>
+                inKeyPath(item, keys, index)
+                    .map(push(iteration + "")))
+            .reduce(take, None);
 
 KeyPathsByName.just = function (name)
 {
