@@ -47,6 +47,7 @@ const toMapNode = function (mappings)
         undeprecated.map(name =>
             [name, toMapNodeFields(name, t.VISITOR_KEYS[name])]));
     const mapNode = node =>
+        !node ? node :
         Array.isArray(node) ? node.map(mapNode) :
         is (Node, node) ? node :
         ((name, fields) =>

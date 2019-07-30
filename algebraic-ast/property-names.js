@@ -1,6 +1,6 @@
 const { data, string } = require("@algebraic/type");
 const Node = require("./node");
-const FreeVariables = require("./string-set").in `freeVariables`;
+const { KeyPathsByName } = require("./key-path");
 
 
 // Babel has no concept of a ComputedProperyName at all, and so this would
@@ -11,10 +11,11 @@ exports.ComputedPropertyName = Node `ComputedPropertyName` (
     ([type])            =>  data.always ("ParenthesizedExpression"),
 
     expression          =>  Node.Expression,
-    ([freeVariables])   =>  FreeVariables.from("expression") );
+    ([freeVariables])   =>  KeyPathsByName.compute (
+                                take => `expression.freeVariables` ) );
 
 exports.PropertyName = Node `PropertyName` (
     ([type])            =>  data.always ("Identifier"),
 
     name                =>  string,
-    ([freeVariables])   =>  FreeVariables.Never );
+    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
