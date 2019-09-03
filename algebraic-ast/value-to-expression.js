@@ -38,7 +38,7 @@ module.exports = function valueToExpression(value)
         return NullLiteral;
 
     if (typeof value === "undefined")
-        return void0;
+        return Void0Literal;
 
     if (typeof value === "number")
         return  isNaN(value) ? NaNLiteral :
