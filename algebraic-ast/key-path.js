@@ -1,4 +1,5 @@
-const { of, is, data, number, string, union } = require("@algebraic/type");
+const { of, is, data, union, parameterized, getKind } = require("@algebraic/type");
+const { number, string, symbol } = require("@algebraic/type/primitive");
 const { Map, List } = require("@algebraic/collections");
 
 const KeyPath = union `KeyPath` (
@@ -23,11 +24,13 @@ module.exports.KeyPathsByName.None = KeyPathsByName();
 const getJust = (length, keyPath, object) =>
     length < 0 ? getJust(keyPath.length + length, keyPath, object) :
     length === 0 ? [object, keyPath] :
-    getJust(length - 1, keyPath.child, object[keyPath.key]);
+    getJust(length - 1, keyPath.child,
+        isList(object) ? object.get(keyPath.key) : object[keyPath.key]);
 
 const get = (keyPath, object) =>
     keyPath === KeyPath.Root ? object :
-    get(keyPath.child, object[keyPath.key]);
+    get(keyPath.child,
+        isList(object) ? object.get(keyPath.key) : object[keyPath.key]);
 
 const set = (keyPath, object, item) =>
     keyPath === KeyPath.Root ? item :
@@ -64,7 +67,7 @@ KeyPath.Parent.prototype[Symbol.iterator] = function * ()
 
     while (!is(KeyPath.Root, iterator))
     {
-        yield JSON.stringify(iterator.key);
+        yield iterator.key;
         iterator = iterator.child;
     }
 }
@@ -88,6 +91,9 @@ const has = hasOwnProperty.call.bind(hasOwnProperty);
 
 const { field } = data;
 const { isArray } = Array;
+// FIXME: Unfortunate.
+const isList = (List => value => of(value) === List)(of(List(KeyPath)()));
+
 
 const push = (...keys) => keyPaths =>
     keyPaths.map(keyPath => keys
@@ -107,7 +113,7 @@ const inKeyPath = (value, keys, index = 0) =>
         typeof value === "string" ?
             KeyPathsByName({ [value]: KeyPaths([KeyPath.Root]) }) :
             value :
-    !isArray(value) ?
+    !isArray(value) && !isList(value) ?
         inKeyPath(value[keys[index]], keys, index + 1)
             .map(index + 1 < keys.length ? push(keys[index]) : x => x) :
         value
