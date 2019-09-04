@@ -60,7 +60,7 @@ function ContentAddressOf(value)
 }
 
 function cacheNonEnumerable(target, contentAddress)
-{if (typeof target === "function") console.log("CACHED CONTENT ADDRESS: " + contentAddress);
+{
     defineProperty(target, CachedContentAddress,
     {
         value: contentAddress,
