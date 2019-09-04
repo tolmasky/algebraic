@@ -14,7 +14,9 @@ const type =
     maybe: require("./maybe"),
     nullable: require("./nullable"),
     or: require("./or"),
-    result: require("./result")
+    result: require("./result"),
+    Δ: (original, changes) => type.of(original)({ ...original, ...changes }),
+    fail: require("./fail")
 };
 
 module.exports = type;

@@ -33,10 +33,11 @@ const fieldFromDeclaration = (function ()
         declaration.create() : fFromArrowFunction(declaration);
 })();
 
-const writable = false;
-const enumerable = true;
-const configurable = false;
 const defineProperty = Object.defineProperty;
+const immutableProperty = (object, name, value) =>
+    defineProperty(object, name,
+    { value, writable: false, enumerable: true, configurable: false });
+
 
 const DataMetadata = Symbol("data.metadata");
 const cached = f => (cached => () => cached ?
@@ -95,10 +96,8 @@ const data = declaration(function data (type, fieldDeclarations)
                 compiled.computed,
                 fromEntries(uncomputed));
 
-        uncomputed.map(([name, value]) => defineProperty(this, name,
-            { value, writable, enumerable, configurable }));
-        computed.map(([name, value]) => defineProperty(this, name,
-            { value, writable, enumerable, configurable }));
+        uncomputed.map(([name, value]) => immutableProperty(this, name, value));
+        computed.map(([name, value]) => immutableProperty(this, name, value));
 
         return this;
     });
