@@ -47,6 +47,22 @@ const setJust = (length, keyPath, item, object) =>
         (of(object)({ ...object, [keyPath.key]: item })))
     (setJust(length - 1, keyPath.child, item, object[keyPath.key]));
 
+const update = (f, keyPath, target) =>
+    updateJust(f, keyPath.length, keyPath, target);
+
+const updateJust = (f, length, keyPath, target) =>
+    length < 0 ? updateJust(f, keyPath.length + length, keyPath, target) :
+    length === 0 ? f(target, keyPath.length > 0 && keyPath) :
+    (key =>
+        (replacement => isArray(target) ?
+            (target = [...target], target[key] = replacement, target) :
+            (of(target)({ ...target, [key]: replacement })))
+        (updateJust(f, length - 1, keyPath.child, target[key])))
+    (keyPath.key);
+
+module.exports.update = update;
+module.exports.updateJust = updateJust;
+
 module.exports.get = get;
 module.exports.getJust = getJust;
 
@@ -125,6 +141,11 @@ const inKeyPath = (value, keys, index = 0) =>
 KeyPathsByName.just = function (name)
 {
     return KeyPathsByName({ [name]: KeyPaths([KeyPath.Root]) });
+}
+
+KeyPathsByName.concat = function (keyPathsByNames)
+{
+    return keyPathsByNames.reduce(take, KeyPathsByName.None);
 }
 
 KeyPathsByName.compute = function (...shorthandOperations)
