@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const fromEntries = require("@climb/from-entries");
+const mapAccum = require("@climb/map-accum");
 
 const { getTypename, getKind, is } = require("./declaration");
 const of = require("./of");
@@ -7,7 +8,7 @@ const { data } = require("./data");
 const fail = require("./fail");
 
 const CachedContentAddress = Symbol("ContentAddress");
-const { hasOwnProperty, defineProperty } = Object; 
+const { hasOwnProperty, defineProperty } = Object;
 const { isArray } = Array;
 
 
@@ -40,7 +41,7 @@ function ContentAddressOf(value)
 
     if (primitive === "function")
         return cacheNonEnumerable(value, fromFunction(value));
-        
+
     // Technically arrays are mutable and thus not content-addressable,
     // but we assume the best here. We specifically don't cache for this
     // reason though.
@@ -130,14 +131,19 @@ const fromFunction = (function()
 
 function fromProperties(properties)
 {
-    return fromEntries(Object
-        .entries(properties)
-        .map(([key, value]) => [key, ContentAddressOf(value)]));
+    const [succeeded, pairs] = mapAccum(
+        (succeeded, [key, value]) =>
+            (address => [!!address, [key, address]])
+            (succeeded && ContentAddressOf(value)),
+        true,
+        Object.entries(properties));
+
+    return succeeded && fromEntries(pairs);
 }
 
 function fromKeyedChildAddresses(prefix, children)
 {
-    return `${prefix}-${getSha512(JSON.stringify(children))}`;
+    return children && `${prefix}-${getSha512(JSON.stringify(children))}`;
 }
 
 // Buffers are mutable, so can't cache... warn?

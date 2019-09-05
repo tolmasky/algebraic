@@ -66,7 +66,17 @@ const primitives =
 
     object: primitive `object` (
         [JSON.stringify, true],
-        JSON.parse)
+        JSON.parse)/*,
+
+    prototypeless: declare(
+    {
+        typename: "[primitive prototypeless]",
+        is: fNamed("[is prototypeless]", value =>
+            !!value &&
+            typeof value === "object" &&
+            Object.getPrototypeOf(value) === null)
+    })*/
+
 //    λ: parameterized (...Ts => primitives.ftype)
 }
 
