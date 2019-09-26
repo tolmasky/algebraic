@@ -58,7 +58,7 @@ const DenseIntSet =
     isSubsetOf: (superset, subset) =>
         subset.length === 0 ? true :
         superset.length < subset.length ? false :
-        subset.every((piece, slot) => !!((piece & superset[slot]) & piece)),
+        subset.every((piece, slot) => (piece & superset[slot]) === piece),
 
     from: iterable => iterable.reduce((set, number) =>
         DenseIntSet.union(set, DenseIntSet.just(number)),
