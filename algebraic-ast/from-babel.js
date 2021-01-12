@@ -34,6 +34,8 @@ const toMapNode = function (mappings)
 
     t.VISITOR_KEYS["Program"].push("interpreter");
 
+    // DEPRECATED_KEYS is an unfortunate named map that actually contains
+    // DEPRECATED_TYPES.
     const undeprecated = t.TYPES
         .filter(name => t[name] && !t.DEPRECATED_KEYS[name]);
     const mapVisitorFields = (fields, node) =>
@@ -59,6 +61,7 @@ const toMapNode = function (mappings)
 
     return mapNode;
 }
+
 const mapNode = (function ()
 {
     const { is, data, string, number, getTypename } = require("@algebraic/type");
@@ -167,8 +170,8 @@ const mapNode = (function ()
 
         VariableDeclaration: ({ kind, declarations: declarators, ...mappedFields }) =>
             kind === "var" ?
-                Node.VarVariableDeclaration({ declarators, ...mappedFields }) :
-                Node.BlockVariableDeclaration({ kind, declarators, ...mappedFields }),
+                Node.VarVariableDeclaration({ ...mappedFields, declarators }) :
+                Node.BlockVariableDeclaration({ ...mappedFields, kind, declarators }),
 
         ...fromEntries([
             Node.BigIntLiteral,
