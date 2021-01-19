@@ -10,12 +10,9 @@ const { KeyPathsByName } = require("./key-path");
 exports.ComputedPropertyName = Node `ComputedPropertyName` (
     ([type])            =>  data.always ("ParenthesizedExpression"),
 
-    expression          =>  Node.Expression,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `expression.freeVariables` ) );
+    expression          =>  Node.Expression );
 
 exports.PropertyName = Node `PropertyName` (
     ([type])            =>  data.always ("Identifier"),
 
-    name                =>  string,
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+    name                =>  string );

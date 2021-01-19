@@ -16,7 +16,7 @@ const mapComment = ({ type, loc, ...rest }) =>
         ({ ...rest, loc: mapSourceLocation(loc) });
 const mapArrayOf = map => array => array.map(map);
 const mapComments = mapNullable(mapArrayOf(mapComment));
-const mapCommonNodeFields = node =>
+const mapMetadataNodeFields = node => Node.Metadata
 ({
     leadingComments: mapComments(node.leadingComments),
     innerComments: mapComments(node.innerComments),
@@ -42,9 +42,10 @@ const toMapNode = function (mappings)
         fromEntries(fields.map(field =>
             [field, mapNullableNode(node[field])]));
     const toMapNodeFields = (name, fields) => node =>
-        ({  ...node,
-            ...mapVisitorFields(fields, node),
-            ...mapCommonNodeFields(node) });
+    [
+        { ...node, ...mapVisitorFields(fields, node) },
+        mapMetadataNodeFields(node)
+    ];
     const nodeFieldMaps = fromEntries(
         undeprecated.map(name =>
             [name, toMapNodeFields(name, t.VISITOR_KEYS[name])]));
@@ -52,11 +53,11 @@ const toMapNode = function (mappings)
         !node ? node :
         Array.isArray(node) ? node.map(mapNode) :
         is (Node, node) ? node :
-        ((name, fields) =>
+        ((name, fields, metadata) =>
             (mappings[name] ?
                 mappings[name](fields, node) :
-                Node[name](fields)))
-            (node.type, nodeFieldMaps[node.type](node));
+                Node[name]({ metadata, data: Node[name].Data(fields) })))
+            (node.type, ...nodeFieldMaps[node.type](node));
     const mapNullableNode = mapNullable(mapNode);
 
     return mapNode;
@@ -104,8 +105,8 @@ const mapNode = (function ()
     {
         Program: ({ sourceType, ...mappedFields }) =>
             sourceType === "module" ?
-                Node.Module(mappedFields) :
-                Node.Script(mappedFields),
+                Node.Module({ data: Node.Module.Data(mappedFields) }) :
+                Node.Script({ data: Node.Script.Data(mappedFields) }),
 
         MemberExpression: (mappedFields, { computed, property }) =>
             Node.MemberExpression(computed ?
@@ -179,12 +180,19 @@ const mapNode = (function ()
             Node.RegExpLiteral,
             Node.StringLiteral,
             Node.DirectiveLiteral]
-                .map(type => [type,
-                    parameters(parameters(data.fields(type)
+                .map(type => [type, parameters(
+                    data.fields(type)
+                        .find(field => field.name === "data"))[0]])
+                .map(([type, TData]) => [type, TData, parameters(parameters(
+                    data.fields(TData)
                         .find(field => field.name === "extra"))[0])[0]])
-                .map(([type, ExtraT]) => [getTypename(type),
-                    ({ extra, ...mappedFields }) =>
-                        type({ ...mappedFields, extra: extra ? ExtraT(extra) : null })])),
+                .map(([type, TData, ExtraT]) => [getTypename(type),
+                    ({ extra, ...mappedFields }) => type(
+                    {
+                        data: TData({
+                            ...mappedFields,
+                            extra: extra ? ExtraT(extra) : null
+                    }) })])),
 
         Placeholder: ({ name, expectedNode }) =>
             expectedNode !== "Expression" ?

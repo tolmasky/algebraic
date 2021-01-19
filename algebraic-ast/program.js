@@ -23,16 +23,7 @@ exports.Script = Node `Script` (
     body                => array (Node.Statement),
     directives          => [array(Node.Directive), []],
     interpreter         => [nullable(Node.InterpreterDirective), null],
-    sourceFile          => [nullable(string), null],
-
-    ([varBindings])     =>  KeyPathsByName.compute (
-                                take => `body.varBindingNames`),
-    ([blockBindings])   =>  KeyPathsByName.compute (
-                                take => `body.blockBindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `body.freeVariables`,
-                                subtract => `varBindings`,
-                                subtract => `blockBindings` ) );
+    sourceFile          => [nullable(string), null] );
 
 exports.Module = Node `Module` (
     ([ESTreeType])      => data.always ("Program"),
@@ -43,16 +34,7 @@ exports.Module = Node `Module` (
                                       Node.Statement)),
     directives          => [array(Node.Directive), []],
     interpreter         => [nullable(Node.InterpreterDirective), null],
-    sourceFile          => [nullable(string), null],
-
-    ([varBindings])     =>  KeyPathsByName.compute (
-                                take => `body.varBindingNames`),
-    ([blockBindings])   =>  KeyPathsByName.compute (
-                                take => `body.blockBindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `body.freeVariables`,
-                                subtract => `varBindings`,
-                                subtract => `blockBindings` ) );
+    sourceFile          => [nullable(string), null] );
 
 exports.Program = union2 `Program` (
     is                  => Node.Module,

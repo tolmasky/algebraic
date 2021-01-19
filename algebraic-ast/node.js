@@ -1,6 +1,8 @@
+Error.stackTraceLimit = 100000;
+
 const { IsSymbol } = require("@algebraic/type/declaration");
 const { isArray } = Array;
-const { is, of, data, union, nullable, array, number, getTypename, or, getKind } = require("@algebraic/type");
+const { is, of, data, union, nullable, array, number, getTypename, or, getKind, parameterized } = require("@algebraic/type");
 const union2 = require("@algebraic/type/union-new");
 const { parameters } = require("@algebraic/type").parameterized;
 const { Map, List } = require("@algebraic/collections");
@@ -11,6 +13,30 @@ const ESTreeBridge = require("./estree-bridge");
 const NodeSymbol = Symbol("Node");
 
 
+const Metadata = data `Metadata` (
+    leadingComments     =>  [nullable(array(Comment)), null],
+    innerComments       =>  [nullable(array(Comment)), null],
+    trailingComments    =>  [nullable(array(Comment)), null],
+    start               =>  [nullable(number), null],
+    end                 =>  [nullable(number), null],
+    loc                 =>  [nullable(SourceLocation), null] );
+
+const Node = parameterized(function (name, ...fields)
+{
+    const Data = data `${name}Data` (...fields);
+    const DataField = fields.length <= 0 ? [Data, Data] : Data;
+
+    return Object.assign(data `${name}` (
+        data                =>  DataField,
+        metadata            =>  [nullable(Metadata), null] ),
+        { Data });
+});
+
+Node.Metadata = Metadata;
+
+module.exports = Node;
+
+/*
 const Node = tagged((name, ...fields) =>
     Object.assign(ESTreeBridge ([name]) (
         ...fields,
@@ -24,7 +50,7 @@ const Node = tagged((name, ...fields) =>
 
 Node.Node = Node;
 Node[IsSymbol] = value => !!value && !!of(value) && of(value)[NodeSymbol];
-
+*/
 module.exports = Node;
 
 const expressions = Object
@@ -49,6 +75,7 @@ Object.assign(module.exports,
     ...require("./program")
 });
 
+/*
 // Deal with union2.
 // Deal with array<X>.
 const isNodeOrComposite = type =>

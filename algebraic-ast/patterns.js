@@ -15,44 +15,23 @@ exports.RootPattern = union2 `RootPattern` (
 exports.IdentifierPattern = Node `IdentifierPattern` (
     ([ESTreeType])      =>  data.always ("Identifier"),
 
-    name                =>  string,
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `name`),
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+    name                =>  string );
 
 exports.RestElement = Node `RestElement` (
-    argument            =>  Node.RootPattern,
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `argument.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `argument.freeVariables`) );
+    argument            =>  Node.RootPattern );
 
 exports.AssignmentPattern = Node `AssignmentPattern` (
     left                =>  Node.RootPattern,
-    right               =>  Node.Expression,
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `left.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables` ) );
+    right               =>  Node.Expression );
 
 exports.ArrayPattern = Node `ArrayPattern` (
-    elements            =>  array (or (Node.RootPattern, Node.AssignmentPattern)),
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `elements.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `elements.freeVariables`) );
+    elements            =>  array (or (Node.RootPattern, Node.AssignmentPattern)) );
 
 exports.ShorthandAssignmentPattern = Node `ShorthandAssignmentPattern` (
     ([ESTreeType])      =>  data.always ("AssignmentPattern"),
 
     left                =>  Node.IdentifierPattern,
-    right               =>  Node.Expression,
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `left.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables` ));
+    right               =>  Node.Expression );
 
 exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
     ([ESTreeType])      =>  data.always ("ObjectProperty"),
@@ -65,12 +44,7 @@ exports.ObjectPropertyPatternShorthand = Node `ObjectPropertyPatternShorthand` (
                                     Node.PropertyName(value) :
                                     Node.PropertyName(value.left)],
     value               =>  or (Node.IdentifierPattern,
-                                Node.ShorthandAssignmentPattern ),
-
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `value.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `value.freeVariables`) );
+                                Node.ShorthandAssignmentPattern ) );
 
 exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
     ([ESTreeType])      =>  data.always ("ObjectProperty"),
@@ -83,22 +57,12 @@ exports.ObjectPropertyPatternLonghand = Node `ObjectPropertyPatternLonghand` (
                                 Node.PropertyName,
                                 Node.StringLiteral),
     value               =>  or (Node.RootPattern,
-                                Node.AssignmentPattern),
-
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `value.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables`) );
+                                Node.AssignmentPattern) );
 
 exports.ObjectPropertyPattern = union2 `ObjectPropertyPattern` (
     is                  => Node.ObjectPropertyPatternLonghand,
     or                  => Node.ObjectPropertyPatternShorthand );
 
 exports.ObjectPattern = Node `ObjectPattern` (
-    properties          =>  array (Node.ObjectPropertyPattern ),
-    ([bindingNames])    =>  KeyPathsByName.compute (
-                                take => `properties.bindingNames`),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `properties.freeVariables`) );
+    properties          =>  array (Node.ObjectPropertyPattern ) );
 
