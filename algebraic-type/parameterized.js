@@ -117,6 +117,6 @@ parameterized.parameters = function (valueOrType)
 {
     return valueOrType ?
         (valueOrType[ParametersSymbol] || of(valueOrType)[ParametersSymbol]) :
-        fail.type(`Parameters was passed ${type}.`);
+        fail.type(`Parameters was passed ${valueOrType}.`);
 }
 
