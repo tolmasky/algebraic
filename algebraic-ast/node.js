@@ -23,13 +23,9 @@ const Metadata = data `Metadata` (
 
 const Node = parameterized(function (name, ...fields)
 {
-    const Data = data `${name}Data` (...fields);
-    const DataField = fields.length <= 0 ? [Data, Data] : Data;
-
     return Object.assign(data `${name}` (
-        data                =>  DataField,
-        metadata            =>  [nullable(Metadata), null] ),
-        { Data });
+        ...fields,
+        metadata            =>  [nullable(Metadata), null] ));
 });
 
 Node.Metadata = Metadata;
