@@ -1,6 +1,7 @@
 const of = require("./of");
 const fail = require("./fail");
 const has = hasOwnProperty.call.bind(hasOwnProperty);
+const { isArray } = Array;
 
 const { getUUID, getTypename, IsSymbol, is } = require("./declaration");
 const { stringify } = JSON;
@@ -19,8 +20,26 @@ function parameterized (internalTypeConstructor)
 
     const cache = Object.create(null);
     const length = internalTypeConstructor.length;
-    const typeConstructor = function typeConstructor(...types)
+    const typeConstructor = function typeConstructor(...args)
     {
+        if (args.length === 1 && isArray(args[0]))
+            return (...types) =>
+                typeConstructor(
+                    new StructuredDeclaration({ name: args[0][0], types }));
+
+        if (args[0] instanceof StructuredDeclaration)
+        {
+            const { name, types } = args[0];
+            const type = internalTypeConstructor(name, ...types);
+
+            type[TypeConstructorSymbol] = typeConstructor;
+            type[ParametersSymbol] = types;
+
+            return type;
+        }
+
+        const types = args;
+
         if (length !== 0 && types.length !== length)
             throw TypeError(
                 `Type constructor takes ${length} types ` +
@@ -48,6 +67,12 @@ function parameterized (internalTypeConstructor)
 
     return typeConstructor;
 };
+
+function StructuredDeclaration({ name, types })
+{
+    this.name = name;
+    this.types = types;
+}
 
 module.exports.parameterized = parameterized;
 
@@ -92,6 +117,6 @@ parameterized.parameters = function (valueOrType)
 {
     return valueOrType ?
         (valueOrType[ParametersSymbol] || of(valueOrType)[ParametersSymbol]) :
-        fail.type(`Parameters was passed ${type}.`);
+        fail.type(`Parameters was passed ${valueOrType}.`);
 }
 
