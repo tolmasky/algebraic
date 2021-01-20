@@ -33,11 +33,14 @@ const toMapNode = function (mappings)
     const t = require("@babel/types");
 
     t.VISITOR_KEYS["Program"].push("interpreter");
+    t.VISITOR_KEYS["BranchExpression"] = ["argument"];
+    t.VISITOR_KEYS["DerviceCallAndBranchExpression"] = ["callee", "arguments"];
 
     // DEPRECATED_KEYS is an unfortunate named map that actually contains
     // DEPRECATED_TYPES.
     const undeprecated = t.TYPES
-        .filter(name => t[name] && !t.DEPRECATED_KEYS[name]);
+        .filter(name => t[name] && !t.DEPRECATED_KEYS[name])
+        .concat(["BranchExpression", "DeriveCallAndBranchExpression"]);
     const mapVisitorFields = (fields, node) =>
         fromEntries(fields.map(field =>
             [field, mapNullableNode(node[field])]));
