@@ -2,28 +2,31 @@ const { IsSymbol } = require("@algebraic/type/declaration");
 const { isArray } = Array;
 const { is, of, data, union, nullable, array, number, getTypename, or, getKind } = require("@algebraic/type");
 const union2 = require("@algebraic/type/union-new");
-const { parameters } = require("@algebraic/type").parameterized;
+const { parameterized } = require("@algebraic/type");
+const { parameters } = parameterized;
 const { Map, List } = require("@algebraic/collections");
 const tagged = require("@algebraic/type/tagged");
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
 const NodeSymbol = Symbol("Node");
+const { KeyPathsByName } = require("./key-path");
 
-
-const Node = tagged((name, ...fields) =>
-    Object.assign(ESTreeBridge ([name]) (
+const Node = parameterized(function (name, ...fields)
+{
+    return ESTreeBridge ([name]) (
         ...fields,
+        ([blockingBranchExpressions]) => data.always (KeyPathsByName.None) ,
+//        ([hasBlockingBranch])   => data.always(false),
         leadingComments     => [nullable(array(Comment)), null],
         innerComments       => [nullable(array(Comment)), null],
         trailingComments    => [nullable(array(Comment)), null],
         start               => [nullable(number), null],
         end                 => [nullable(number), null],
-        loc                 => [nullable(SourceLocation), null] ),
-        { [NodeSymbol]: true }) );
+        loc                 => [nullable(SourceLocation), null] );
+});
 
 Node.Node = Node;
-Node[IsSymbol] = value => !!value && !!of(value) && of(value)[NodeSymbol];
 
 module.exports = Node;
 
@@ -61,7 +64,7 @@ const isNodeOrComposite = type =>
 
 Object
     .values(Node)
-    .filter(type => type[NodeSymbol])
+    .filter(type => parameterized.is(Node, type))
     .map(type => [type, data.fields(type)
         .filter(field =>
             is (data.field.definition.supplied, field.definition))
