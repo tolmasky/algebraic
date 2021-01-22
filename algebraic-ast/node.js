@@ -16,8 +16,6 @@ const Node = parameterized(function (name, ...fields)
 {
     return ESTreeBridge ([name]) (
         ...fields,
-        ([blockingBranchExpressions]) => data.always (KeyPathsByName.None) ,
-//        ([hasBlockingBranch])   => data.always(false),
         leadingComments     => [nullable(array(Comment)), null],
         innerComments       => [nullable(array(Comment)), null],
         trailingComments    => [nullable(array(Comment)), null],
@@ -33,6 +31,7 @@ module.exports = Node;
 const expressions = Object
     .values(require("./expressions"))
     .filter(statement =>
+        getTypename(statement).endsWith("Reference") ||
         getTypename(statement).endsWith("Expression") ||
         getTypename(statement).endsWith("Literal"));
 const statements = Object
@@ -56,11 +55,13 @@ Object.assign(module.exports,
 // Deal with array<X>.
 const isNodeOrComposite = type =>
     type === Array ||
-    type[NodeSymbol] ||
+    parameterized.is(Node, type) ||
     getKind(type) === union2 &&
         union2.components(type).some(isNodeOrComposite) ||
     getKind(type) === union &&
         union.components(type).some(isNodeOrComposite);
+
+Node.isNodeOrCompose = isNodeOrComposite;
 
 Object
     .values(Node)
@@ -73,7 +74,6 @@ Object
             !name.endsWith("Comments") && isNodeOrComposite(type))
         .map(([name]) => name)])
     .map(([type, keys]) => type.traversable = keys);
-
 
 /*
 function placeholders(type)

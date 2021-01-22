@@ -1,4 +1,4 @@
-const { is, data, nullable, array, or } = require("@algebraic/type");
+const { is, data, nullable, array, or, maybe } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
 const union2 = require("@algebraic/type/union-new");
 const Node = require("./node");
@@ -17,6 +17,15 @@ exports.AssignmentExpression = Node `AssignmentExpression` (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables`,
                                 take => `left.bindingNames` ) );
+const Intrinsic = data `Intrinsic` (
+    name                => string,
+    keyword             => [nullable(string), null] );
+
+exports.Intrinsic = Intrinsic;
+
+exports.IntrinsicReference = Node `IntrinsicReference` (
+    intrinsic           =>  Intrinsic,
+    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
 
 exports.IdentifierExpression = Node `IdentifierExpression` (
     ([ESTreeType])      =>  data.always ("Identifier"),
@@ -223,8 +232,3 @@ exports.DeriveCallAndBranchExpression = Node `DeriveCallAndBranchExpression` (
 
 
 Object.assign(exports, require("./literals"));
-    
-    
-    
-    
-    

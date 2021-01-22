@@ -16,7 +16,10 @@ const type =
     or: require("./or"),
     result: require("./result"),
     Δ: (original, changes) => type.of(original)({ ...original, ...changes }),
-    fail: require("./fail")
+    fail: require("./fail"),
+    name: require("./declaration").getUnscopedTypename,
+    specifier: require("./declaration").getTypename,
+    kind: require("./declaration").getKind
 };
 
 module.exports = type;
