@@ -2,24 +2,33 @@ const { CodeGenerator } = require("@babel/generator");
 const { constructor: Generator } =
     Object.getPrototypeOf(new CodeGenerator()._generator);
 
-
 class IntrinsicGenerator extends Generator
 {
-    constructor(ast, { onIntrinsic, ...options } = { }, code)
-    {
-        super(ast, options, code);
-
-        this.onIntrinsic = onIntrinsic;
-    }
-
     IntrinsicReference(node, ...rest)
     {
-        if (!this.onIntrinsic ||
-            !this.onIntrinsic(node, ...rest))
-            this.exactSource(node.loc, () =>
-                this.word(`%${node.intrinsic.name}%`));
+        this.exactSource(node.loc, () =>
+            this.word(`%${node.intrinsic.name}%`));
     }
-}
 
-// FIXME: pass onIntrinsic to generate instead?
-module.exports = (...args) => (new IntrinsicGenerator(...args)).generate().code;
+    CallExpression(node, ...rest)
+    {
+        if (!isKeywordCompatibleIntrinsicCall(node))
+            return super.CallExpression(node, ...rest);
+
+        this.word(node.callee.intrinsic.keyword);
+        this.space();
+        this.print(node.arguments[0]);
+    }
+};
+
+const isKeywordCompatibleIntrinsicCall = node =>
+    node.type === "CallExpression" &&
+    node.callee.type === "IntrinsicReference" &&
+    !!node.callee.intrinsic.keyword &&
+    node.arguments.length === 1;
+
+
+module.exports = (ast, ...rest) =>
+    new IntrinsicGenerator(ast, ...rest).generate().code
+
+module.exports.IntrinsicGenerator = IntrinsicGenerator;
