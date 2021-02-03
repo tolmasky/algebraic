@@ -8,15 +8,16 @@ const compute = require("./compute");
 
 exports.AssignmentExpression = Node `AssignmentExpression` (
     left                =>  or (Node.IdentifierExpression,
-                                Node.MemberExpression,
+                                Node.MemberExpression/*,
                                 Node.ArrayPattern,
-                                Node.ObjectPattern),
+                                Node.ObjectPattern*/),
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables`,
                                 take => `left.bindingNames` ) );
+
 const Intrinsic = data `Intrinsic` (
     name                => string,
     keyword             => [nullable(string), null] );
@@ -36,7 +37,9 @@ exports.IdentifierExpression = Node `IdentifierExpression` (
 exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     body                =>  or (Node.BlockStatement, Node.Expression),
     ([id])              =>  data.always (null),
-    params              =>  [array(nullable(Node.RootPattern)), []],
+
+    parameters              =>  [array (Node.DefaultableBinding), []],
+    restParameter           =>  [nullable (Node.RestElementBinding), null],
 
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],
@@ -51,8 +54,10 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
 
 exports.FunctionExpression = Node `FunctionExpression` (
     body                =>  Node.BlockStatement,
-    id                  =>  [nullable(Node.IdentifierPattern), null],
-    params              =>  [array (nullable(Node.RootPattern)), []],
+    id                  =>  [nullable(Node.IdentifierBinding), null],
+
+    parameters          =>  [array (Node.DefaultableBinding), []],
+    restParameter       =>  [nullable (Node.RestElementBinding), null],
 
     generator           =>  [boolean, false],
     async               =>  [boolean, false],

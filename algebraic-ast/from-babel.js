@@ -67,6 +67,9 @@ const toMapNode = function (mappings)
     return mapNode;
 }
 
+
+
+
 const mapNode = (function ()
 {
     const { is, data, string, number, getTypename } = require("@algebraic/type");
@@ -85,6 +88,7 @@ const mapNode = (function ()
                 value: is (Node.AssignmentPattern, value) ?
                     Node.ShorthandAssignmentPattern(value) :
                     toPattern(value) });
+
     const toPattern = pattern =>
 //        is(Node.Identifier, pattern) ||
         is(Node.IdentifierExpression, pattern) ?
@@ -105,6 +109,11 @@ const mapNode = (function ()
                 Array.isArray(value) ?
                     value.map(toPattern) : toPattern(value)])) });
 
+    const toBinding = pattern =>
+        is (Node.IdentifierExpression, node) ?
+            Node.BindingIdentifier(node) :
+            pattern;
+
     return toMapNode(
     {
         Program: ({ sourceType, ...mappedFields }) =>
@@ -118,7 +127,7 @@ const mapNode = (function ()
 
         CatchClause: toPatternFields(["param"], Node.CatchClause),
 
-        VariableDeclarator: toPatternFields(["id"], Node.VariableDeclarator),
+//        VariableDeclarator: toPatternFields(["id"], Node.VariableDeclarator),
 
         ArrowFunctionExpression: toPatternFields(["params"],
             Node.ArrowFunctionExpression),
@@ -173,10 +182,12 @@ const mapNode = (function ()
             Node.TemplateElement({ ...mappedFields,
                 value: Node.TemplateElement.Value(value) }),
 
-        VariableDeclaration: ({ kind, declarations: declarators, ...mappedFields }) =>
-            kind === "var" ?
-                Node.VarVariableDeclaration({ ...mappedFields, declarators }) :
-                Node.BlockVariableDeclaration({ ...mappedFields, kind, declarators }),
+        VariableDeclaration: ({ kind, declarations }) =>
+            ({
+                var:    Node.VariableDeclaration,
+                const:  Node.ConstLexicalDeclaration,
+                let:    Node.LetLexicalDeclaration
+            })[kind]({ bindings: declarations.map(toBinding) }),
 
         ...fromEntries([
             Node.BigIntLiteral,
@@ -199,8 +210,269 @@ const mapNode = (function ()
 })();
 
 
-module.exports = function map(node)
+const t = require("@babel/types");
+const keys =
+    (keys => node => keys[node.type])
+    ({ ...t.VISITOR_KEYS, IntrinsicReference: [] });
+const trivial = (node, map) => node && (console.log("ATTEMPTING TRIVIAL FOR ", node, node.type),Node[node.type])(map(node));
+
+    const { data, string, number, type } = require("@algebraic/type");
+    const { parameterized: { parameters } } = require("@algebraic/type/parameterized");
+
+
+
+const fromBabel = require("./map-babel-node")(
+    keys,
+    (mappings => (node, map) => (mappings[node.type] || trivial)
+        ({ ...node, ...mapCommonNodeFields(node) }, map))
+({
+    Identifier: node => Node.IdentifierExpression(node),
+
+    MemberExpression: (node, map) => node.computed ?
+        Node.ComputedMemberExpression(map(node)) :
+        Node.StaticMemberExpression
+        ({
+            ...node,
+            property: Node.PropertyName(fromBabel(node.property)),
+            object: fromBabel(node.object)
+        }),
+
+    VariableDeclaration: ({ kind, declarations }) =>
+    ({
+        var:    Node.VariableDeclaration,
+        const:  Node.ConstLexicalDeclaration,
+        let:    Node.LetLexicalDeclaration
+    })[kind]({ bindings: declarations/*.map(toBinding)*/ }),
+
+    FunctionDeclaration: node => Node.FunctionDeclaration
+    ({
+        ...node,
+        ...toParameterBindings(node.params),
+        id: toIdentifierBinding(node.id),
+        body: fromBabel(node.body)
+    }),
+
+    ...fromEntries([
+        Node.BigIntLiteral,
+        Node.NumericLiteral,
+        Node.RegExpLiteral,
+        Node.StringLiteral,
+        Node.DirectiveLiteral]
+            .map(NodeT => [NodeT,
+                parameters(parameters(data.fields(NodeT)
+                    .find(field => field.name === "extra"))[0])[0]])
+            .map(([NodeT, ExtraT]) => [
+                type.name(NodeT),
+                ({ extra, ...node }, map) => NodeT(
+                {
+                    ...map(node),
+                    extra: extra ? ExtraT(extra) : null
+                })]))
+}));
+
+
+const consts = Object.assign(
+    f => f(),
+    {
+        defer: (f, initialized = false) =>
+        (...args) =>
+            (initialized || (initialized = f()))(...args)
+    });
+
+const toRestableArray = (function ()
 {
-    return mapNode(node);
-}
+    const defer = f => (...args) => f();
+    const extract = f => [(f + "").match(/^[^\s=]+/g)[0], f()];
+    const isRest = item =>
+        item && (item.type + "").startsWith("Rest");
+    const split = (array, { length } = array) =>
+        array.length > 0 && isRest(array[length - 1])?
+        [array.slice(0, -1), array[length - 1]] :
+        [array, null];
+    const toTailProperty = plural => plural
+        .replace(/s$/, "")
+        .replace(/ies$/, "y")
+        .replace(/^./, ch => `rest${ch.toUpperCase()}`);
+
+    return description => consts.defer((
+        [headProperty, [headConvert, tailConvert]] = extract(description),
+        tailProperty = toTailProperty(headProperty)) =>
+            array => consts
+                (([head, tail] = split(array)) =>
+                ({
+                    [headProperty]: head.map(headConvert),
+                    [tailProperty]: tail && tailConvert(tail)
+                })));
+})();
+
+const toFormalParameters = ({ params }, { length } = params) =>
+    (tailIsRestElement =>
+    ({
+        parameters:
+            (tailIsRestElement ? params.slice(0, length - 1) : params)
+                .map(toDefaultableBinding),
+        restParameter : tailIsRestElement ?
+            toRestElementBinding(tail) :
+            null
+    }))(length > 0 && params[length - 1].type === "RestElement");
+
+const expect = (function ()
+{
+    const { TYPES } = require("@babel/types");
+    const extensions = Object
+        .fromEntries(TYPES
+        .map(name => [name, function (f)
+        {
+            return expect(this.predicates.concat([[name, f]]));
+        }]));
+    const types = predicates => predicates
+        .map(([type]) => JSON.stringify(type)).join(", ");
+
+    const _ = node => ({ ...node, ...mapCommonNodeFields(node) });
+
+    return Object.assign(predicates =>
+        Object.assign((node, ...rest) =>
+            (([, f]) => f(_(node), ...rest))
+                (predicates.find(([type]) => type === node.type) ||
+                fail (
+                    `Expected node of type ${types(predicates)}, ` +
+                    `but instead got ${node ? node.type : ">null<" }`)),
+            { predicates },
+            extensions),
+        { predicates: [] },
+        extensions);
+})();
+
+const from = expect;
+
+from.or = (...froms) => from([].concat(...froms.map(from => from.predicates)));
+
+
+/*
+const toParameterBinding = expect
+    .
+
+const toPatternBinding = expect
+    .
+*/
+
+//const toBindingRestElement = expect
+//    .Identifier(({ argument }) => )
+
+
+const toIdentifierBinding = from
+    .Identifier(Node.IdentifierBinding);
+
+const toArrayPatternBinding = consts((
+    toElements = toRestableArray(elements =>
+        [toDefaultableBinding, toRestElementBinding])) =>
+    from.ArrayPattern(node => Node.ArrayPatternBinding
+    ({ ...node, ...toElements(node.elements) })));
+
+const toRestPropertyBinding = toIdentifierBinding;
+
+const toObjectPatternBinding = consts((
+    toProperties = toRestableArray(properties =>
+        [toPropertyBinding, toRestPropertyBinding])) =>
+    from.ObjectPattern(node => Node.ObjectPatternBinding
+    ({ ...node, ...toProperties(node.properties) })));
+
+const toBareBinding = from.or(
+    toIdentifierBinding,
+    toArrayPatternBinding,
+    toObjectPatternBinding );
+
+const toDefaultedBinding = from.AssignmentPattern(
+    node => Node.DefaultedBinding
+    ({
+        ...node,
+        binding: toBareBinding(node.left),
+        fallback: fromBabel(node.right)
+    }));
+
+const toDefaultableBinding = from.or(toDefaultedBinding, toBareBinding);
+
+const toRestElementBinding = toBareBinding;
+
+const toParameterBindings =
+    toRestableArray(parameters =>
+        [toDefaultableBinding, toRestElementBinding]);
+
+
+/*
+
+const toIdentifierBinding = expect
+({
+    AssignmentExpression: (node, map) =>
+        Node.InitializedIdentifierBinding(
+        {
+            id: Node.BindingIdentifier(node.left),
+            initializer: Node.Expression(map(node.right))
+        }),
+    IdentifierExpression: node =>
+        Node.UninitializedIdentifierBinding
+            ({ id: Node.BindingIdentifier(node) })
+})
+
+
+
+    .IdentifierExpression(false)
+    ._(initialized => )
+
+const toIdentifierBinding = (node, map) => expect(
+{
+    AssignmentExpression: true,
+    IdentifierExpression: false
+}, initialized => initialized ?
+    Node.InitializedIdentifierBinding(
+    {
+        id: Node.BindingIdentifier(node.left),
+        initializer: Node.Expression(map(node.right))
+    }) :
+    Node.UninitializedIdentifierBinding(
+    {
+        id: Node.BindingIdentifier(node)
+    }));
+
+    const toObjectPropertyKey = ({ computed, key }) =>
+        computed ? Node.ComputedPropertyName({ expression: key }) :
+        is (Node.IdentifierExpression, key) ? Node.PropertyName(key) :
+        key;
+    const toObjectPropertyPattern = ({ shorthand, value, ...rest }) =>
+        !shorthand ?
+            Node.ObjectPropertyPatternLonghand({ ...rest,
+                key: toObjectPropertyKey(rest),
+                value: toPattern(value) }) :
+            Node.ObjectPropertyPatternShorthand({ ...rest,
+                value: is (Node.AssignmentPattern, value) ?
+                    Node.ShorthandAssignmentPattern(value) :
+                    toPattern(value) });
+
+    const toPattern = pattern =>
+//        is(Node.Identifier, pattern) ||
+        is(Node.IdentifierExpression, pattern) ?
+            Node.IdentifierPattern(pattern) :
+        is(Node.ObjectProperty, pattern) ?
+            toObjectPropertyPattern(pattern) :
+            pattern;
+
+    const mapToPatterns = (key, fields) => (patterns =>
+    ({
+        ...fields,
+        [key]: fields[key].map(toPattern)
+    }))();
+    const toPatternFields = (keys, type) => mappedFields =>
+        type({ ...mappedFields, ...fromEntries(keys
+            .map(key => [key, mappedFields[key]])
+            .map(([key, value]) => [key,
+                Array.isArray(value) ?
+                    value.map(toPattern) : toPattern(value)])) });
+
+    const toBinding = pattern =>
+        is (Node.IdentifierExpression, node) ?
+            Node.BindingIdentifier(node) :
+            pattern;
+*/
+module.exports = fromBabel;
+
 

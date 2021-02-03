@@ -69,8 +69,11 @@ exports.ExpressionStatement = Node `ExpressionStatement` (
 
 exports.FunctionDeclaration = Node `FunctionDeclaration` (
     // This can be null in the `export default function() { }` case.
-    id                      =>  nullable(Node.IdentifierPattern),
-    params                  =>  array (Node.RootPattern),
+    id                      =>  nullable(Node.IdentifierBinding),
+
+    parameters              =>  [array (Node.DefaultableBinding), []],
+    restParameter           =>  [nullable (Node.RestElementBinding), null],
+
     body                    =>  Node.BlockStatement,
 
     generator               =>  [boolean, false],
@@ -79,7 +82,7 @@ exports.FunctionDeclaration = Node `FunctionDeclaration` (
     ([varBindingNames])     =>  data.always (KeyPathsByName.None),
     ([blockBindingNames])   =>  KeyPathsByName.compute (
                                     take => `id.bindingNames`),
-
+// wrong? because params can have a free variables that should NOT be removed from varBindings.
     ([varBindings])         =>  KeyPathsByName.compute (
                                     take => `id.bindingNames`,
                                     take => `params.bindingNames`,
@@ -105,7 +108,9 @@ exports.IfStatement = Node `IfStatement` (
                                     subtract => `varBindingNames` ) );
 
 exports.ForOfStatement = Node `ForOfStatement` (
-    left                    =>  or (Node.RootPattern, Node.VariableDeclaration),
+    left                    =>  or (Node.AssignmentExpression,
+                                    Node.VariableDeclaration,
+                                    Node.LexicalDeclaration),
     right                   =>  Node.Expression,
     body                    =>  Node.Statement,
 
@@ -124,7 +129,9 @@ exports.ForOfStatement = Node `ForOfStatement` (
                                     subtract => `blockBindings` ) );
 
 exports.ForInStatement = Node `ForInStatement` (
-    left                    =>  or (Node.RootPattern, Node.VariableDeclaration),
+    left                    =>  or (Node.AssignmentExpression,
+                                    Node.VariableDeclaration,
+                                    Node.LexicalDeclaration),
     right                   =>  Node.Expression,
     body                    =>  Node.Statement,
 
@@ -143,8 +150,9 @@ exports.ForInStatement = Node `ForInStatement` (
                                     subtract => `blockBindings` ) );
 
 exports.ForStatement = Node `ForStatement` (
-    init                    =>  nullable(or (Node.VariableDeclaration,
-                                             Node.AssignmentExpression)),
+    init                    =>  or (Node.AssignmentExpression,
+                                    Node.VariableDeclaration,
+                                    Node.LexicalDeclaration),
     test                    =>  nullable(Node.Expression),
     update                  =>  nullable(Node.Expression),
     body                    =>  Node.Statement,
@@ -205,7 +213,7 @@ exports.TryStatement = Node `TryStatement` (
                                     subtract => `varBindingNames` ) );
 
 exports.CatchClause = Node `CatchClause` (
-    param                   =>  Node.RootPattern,
+    param                   =>  Node.Binding,
     body                    =>  Node.BlockStatement,
 
     ([varBindingNames])     =>  KeyPathsByName.compute (
@@ -241,69 +249,23 @@ exports.WithStatement = Node `WithStatement` (
                                     take => `body.freeVariables`,
                                     subtract => `varBindingNames` ) );
 
-exports.VariableDeclarator = Node `VariableDeclarator` (
-    id                      =>  Node.RootPattern,
-    init                    =>  [nullable(Node.Expression), null],
-    definite                =>  [nullable(boolean), null],
+// https://tc39.es/ecma262/#prod-VariableStatement
+exports.VariableDeclaration   = Node `VariableDeclaration` (
+    bindings                =>  array (or (
+                                    Node.IdentifierBinding,
+                                    Node.DefaultedBinding ) ) );
 
-    ([bindingNames])        =>  KeyPathsByName.compute (
-                                    take => `id.bindingNames` ),
-    ([freeVariables])       =>  KeyPathsByName.compute (
-                                    take => `init.freeVariables`,
-                                    take => `id.freeVariables` ) );
+// https://tc39.es/ecma262/#prod-LexicalDeclaration
+exports.LexicalDeclaration = union2 `LexicalDeclaration` (
+    is                      =>  Node.LetLexicalDeclaration,
+    or                      =>  Node.ConstLexicalDeclaration );
 
-exports.VarVariableDeclaration = Node `VarVariableDeclaration` (
-    ([ESTreeType])          =>  data.always ("VariableDeclaration"),
-    declarators             =>  array (Node.VariableDeclarator),
-    ([declarations])        =>  [array (Node.VariableDeclarator),
-                                    declarators => declarators],
+exports.LetLexicalDeclaration = Node `LetLexicalDeclaration` (
+    bindings                =>  array (or (
+                                    Node.IdentifierBinding,
+                                    Node.DefaultedBinding ) ) );
 
-    ([kind])                =>  data.always ("var"),
-
-    ([varBindingNames])     =>  KeyPathsByName.compute (
-                                    take => `declarators.bindingNames`),
-    ([blockBindingNames])   =>  data.always (KeyPathsByName.None),
-    ([freeVariables])       =>  KeyPathsByName.compute (
-                                    take => `declarators.freeVariables`,
-                                    subtract => `varBindingNames` ) );
-
-exports.BlockVariableDeclaration = Node `BlockVariableDeclaration` (
-    ([ESTreeType])          =>  data.always ("VariableDeclaration"),
-    declarators             =>  array (Node.VariableDeclarator),
-    ([declarations])        =>  [array (Node.VariableDeclarator),
-                                    declarators => declarators],
-
-    kind                    =>  string,
-
-    ([varBindingNames])     =>  data.always (KeyPathsByName.None),
-    ([blockBindingNames])   =>  KeyPathsByName.compute (
-                                    take => `declarators.bindingNames`),
-    ([freeVariables])       =>  KeyPathsByName.compute (
-                                    take => `declarators.freeVariables`,
-                                    subtract => `blockBindingNames` ) );
-
-exports.VariableDeclaration = union2 `VariableDecalaration` (
-    is                      => Node.VarVariableDeclaration,
-    or                      => Node.BlockVariableDeclaration );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+exports.ConstLexicalDeclaration = Node `ConstLexicalDeclaration` (
+    bindings                =>  array (Node.DefaultedBinding) );
 
 

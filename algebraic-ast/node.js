@@ -1,6 +1,6 @@
 const { IsSymbol } = require("@algebraic/type/declaration");
 const { isArray } = Array;
-const { is, of, data, union, nullable, array, number, getTypename, or, getKind } = require("@algebraic/type");
+const { is, of, data, union, nullable, array, number, or, getKind, type } = require("@algebraic/type");
 const union2 = require("@algebraic/type/union-new");
 const { parameterized } = require("@algebraic/type");
 const { parameters } = parameterized;
@@ -28,17 +28,15 @@ Node.Node = Node;
 
 module.exports = Node;
 
+const ExpressionRegExp = /(Reference|Expression|Literal)$/;
 const expressions = Object
     .values(require("./expressions"))
-    .filter(statement =>
-        getTypename(statement).endsWith("Reference") ||
-        getTypename(statement).endsWith("Expression") ||
-        getTypename(statement).endsWith("Literal"));
+    .filter(T => ExpressionRegExp.test(type.name(T)));
+
+const StatementRegExp = /(Statement|Declaration)$/;
 const statements = Object
     .values(require("./statements"))
-    .filter(statement =>
-        getTypename(statement).endsWith("Statement") ||
-        getTypename(statement).endsWith("Declaration") );
+    .filter(T => StatementRegExp.test(type.name(T)));
 
 Object.assign(module.exports,
 {

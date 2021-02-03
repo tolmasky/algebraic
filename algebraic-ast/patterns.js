@@ -1,6 +1,84 @@
-const { is, data, or, boolean, string, type, array } = require("@algebraic/type");
-const union2 = require("@algebraic/type/union-new");
+const { is, data, or, string, array, nullable } = require("@algebraic/type");
+const union = require("@algebraic/type/union-new");
 const Node = require("./node");
+
+
+// In order to maintain backwards compatibility with ESTree's spec, we set
+// the type property to "Identifier". This makes this portion of the tree
+// appear unchanged to Babel and other ESTree compatible tools.
+exports.IdentifierBinding = Node `IdentifierBinding` (
+    ([ESTreeType])      =>  data.always ("Identifier"),
+    name                =>  string );
+
+/*exports.DefaultedIdentifierBinding = Node `DefaultedIdentifierBinding` (
+    identifier          => Node.IdentifierBinding,
+    fallback            => Node.Expression );
+
+exports.DefaultableIdentifierBinding = union `DefaultableIdentifierBinding` (
+    is                  =>  Node.IdentifierBinding,
+    or                  =>  Node.DefaultedIdentifierBinding );*/
+
+exports.DefaultedBinding = Node `DefaultedBinding` (
+    binding             => Node.IdentifierBinding,
+    fallback            => Node.Expression );
+
+exports.DefaultableBinding = union `DefaultableBinding` (
+    is                  => Node.Binding,
+    or                  => Node.DefaultedBinding );
+
+exports.Binding = union `Binding` (
+    is                  => Node.PatternBinding,
+    or                  => Node.IdentifierBinding );
+
+exports.PatternBinding = union `PatternBinding` (
+    is                  =>  Node.ObjectPatternBinding,
+    or                  =>  Node.ArrayPatternBinding );
+
+/*exports.DefaultedPatternBinding = Node `DefaultedPatternBinding` (
+    pattern             => Node.PatternBinding,
+    fallback            => Node.Expression );
+
+exports.DefaultablePatternBinding = union `DefaultablePatternBinding` (
+    is                  => Node.PatternBinding,
+    or                  => Node.DefaultedPatternBinding );*/
+
+exports.ObjectPatternBinding = Node `ObjectPatternBinding` (
+    properties          =>  array (Node.PropertyBinding),
+    restProperty        =>  nullable (Node.RestPropertyBinding) );
+
+exports.ArrayPatternBinding = Node `ArrayPatternBinding` (
+    elements            =>  or (Node.Elision,
+                                Node.DefaultableBinding),
+    restElement         =>  nullable (Node.RestElementBinding) );
+
+exports.RestPropertyBinding = Node `RestPropertyBinding` (
+    argument            =>  Node.IdentifierBinding );
+
+exports.Elision         = Node `Elision` ( x => string);
+
+exports.PropertyBinding = union `PropertyBinding` (
+    is                  =>  Node.DefaultableIdentifierBinding,
+    or                  =>  Node.PropertyBindingPair );
+
+exports.PropertyBindingPair = Node `PropertyBindingPair` (
+    key                 =>  Node.PropertyName,
+    value               =>  Node.DefaultableBinding );
+
+// DefaultableBinding = TC39.BindingElement
+// https://tc39.es/ecma262/#prod-BindingElement
+//
+/*exports.DefaultableBinding = union `DefaultableBinding` (
+    is                  =>  Node.DefaultableIdentifierBinding,
+    or                  =>  Node.DefaultablePatternBinding );*/
+
+exports.RestElementBinding = Node `RestElementBinding` (
+    argument            =>  Node.Binding );
+
+Node.ArrayPattern = Node.ArrayPatternBinding;
+Node.ObjectPattern = Node.ObjectPatternBinding;
+/*
+const union2 = require("@algebraic/type/union-new");
+
 const { KeyPathsByName } = require("./key-path");
 
 
@@ -101,4 +179,4 @@ exports.ObjectPattern = Node `ObjectPattern` (
                                 take => `properties.bindingNames`),
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `properties.freeVariables`) );
-
+*/
