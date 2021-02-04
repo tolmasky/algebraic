@@ -109,6 +109,17 @@ exports.LogicalExpression = Node `LogicalExpression` (
                                 take => `left.freeVariables`,
                                 take => `right.freeVariables` ) );
 
+exports.MemberExpression = Node `MemberExpression` (
+    ([ESTreeType])      =>  data.always ("MemberExpression"),
+    ([computed])        =>  [boolean, property =>
+                                        is(Node.Expression, property)],
+
+    object              =>  Node.Expression,
+    property            =>  or (Node.Expression, Node.IdentifierName),
+    optional            =>  [nullable(boolean), null],
+    ([freeVariables])   =>  KeyPathsByName.compute (
+                                take => `object.freeVariables`) );
+/*
 exports.StaticMemberExpression = Node `StaticMemberExpression` (
     ([ESTreeType])      =>  data.always ("MemberExpression"),
     ([computed])        =>  data.always (false),
@@ -128,11 +139,11 @@ exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
     optional            =>  [nullable(boolean), null],
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `object.freeVariables`,
-                                take => `property.freeVariables` ) );
+                                take => `property.freeVariables` ) );*/
 
-exports.MemberExpression = union2 `MemberExpression` (
-    is                  => Node.StaticMemberExpression,
-    or                  => Node.ComputedMemberExpression );
+//exports.MemberExpression = union2 `MemberExpression` (
+//    is                  => Node.StaticMemberExpression,
+//    or                  => Node.ComputedMemberExpression );
 
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,

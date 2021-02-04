@@ -26,6 +26,8 @@ const mapCommonNodeFields = node =>
     loc: mapSourceLocation(node.loc)
 });
 
+const toSourceData = node => Node.SourceData(mapCommonNodeFields(node));
+
 const Node = require("./node");
 
 const toMapNode = function (mappings)
@@ -224,18 +226,18 @@ const trivial = (node, map) => node && (console.log("ATTEMPTING TRIVIAL FOR ", n
 const fromBabel = require("./map-babel-node")(
     keys,
     (mappings => (node, map) => (mappings[node.type] || trivial)
-        ({ ...node, ...mapCommonNodeFields(node) }, map))
+        ({ ...node, sourceData: toSourceData(node) }, map))
 ({
     Identifier: node => Node.IdentifierExpression(node),
 
-    MemberExpression: (node, map) => node.computed ?
-        Node.ComputedMemberExpression(map(node)) :
-        Node.StaticMemberExpression
-        ({
-            ...node,
-            property: Node.PropertyName(fromBabel(node.property)),
-            object: fromBabel(node.object)
-        }),
+    MemberExpression: ({ computed, ...node }) => Node.MemberExpression(
+    {
+        ...node,
+        property: !computed ?
+            Node.IdentifierName(node.property) :
+            fromBabel(node.property),
+        object: fromBabel(node.object)
+    }),
 
     VariableDeclaration: ({ kind, declarations }) =>
     ({
@@ -290,7 +292,7 @@ const toRestableArray = (function ()
         [array.slice(0, -1), array[length - 1]] :
         [array, null];
     const toTailProperty = plural => plural
-        .replace(/s$/, "")
+        .replace(/(?<!ie)s$/, "")
         .replace(/ies$/, "y")
         .replace(/^./, ch => `rest${ch.toUpperCase()}`);
 
@@ -328,11 +330,11 @@ const expect = (function ()
     const types = predicates => predicates
         .map(([type]) => JSON.stringify(type)).join(", ");
 
-    const _ = node => ({ ...node, ...mapCommonNodeFields(node) });
+    const _ = node => ({ ...node, sourceData: toSourceData(node) });
 
     return Object.assign(predicates =>
         Object.assign((node, ...rest) =>
-            (([, f]) => f(_(node), ...rest))
+            node && (([, f]) => f(_(node), ...rest))
                 (predicates.find(([type]) => type === node.type) ||
                 fail (
                     `Expected node of type ${types(predicates)}, ` +
@@ -389,6 +391,23 @@ const toDefaultedBinding = from.AssignmentPattern(
         binding: toBareBinding(node.left),
         fallback: fromBabel(node.right)
     }));
+
+// Should this be necessary?... vs. just doing fromBabel...
+const toLiteralPropertyNameValue = from
+    .Identifier(Node.IdentifierName)
+    .StringLiteral(fromBabel)
+    .NumericLiteral(fromBabel);
+
+const toPropertyName = (computed, key) => computed ?
+    Node.ComputedPropertyName({ expression: key }) :
+    Node.LiteralPropertyName({ value: toLiteralPropertyNameValue(key) });
+
+const toPropertyBinding = from.ObjectProperty(node => Node.PropertyBinding
+({
+    ...node,
+    key: toPropertyName(node.computed, node.key),
+    binding: toDefaultableBinding(node.value)
+}));
 
 const toDefaultableBinding = from.or(toDefaultedBinding, toBareBinding);
 

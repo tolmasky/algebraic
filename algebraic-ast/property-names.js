@@ -1,4 +1,5 @@
-const { data, string } = require("@algebraic/type");
+const { string, or } = require("@algebraic/type");
+const union = require("@algebraic/type/union-new");
 const Node = require("./node");
 const { KeyPathsByName } = require("./key-path");
 
@@ -7,7 +8,7 @@ const { KeyPathsByName } = require("./key-path");
 // require significant conversion on the way back (unlike PropertyName which
 // just pretends to be an Identifier). However, we can do something similar
 // here and pretend to be a ParenthesizedExpression.
-exports.ComputedPropertyName = Node `ComputedPropertyName` (
+/*exports.ComputedPropertyName = Node `ComputedPropertyName` (
     ([type])            =>  data.always ("ParenthesizedExpression"),
 
     expression          =>  Node.Expression,
@@ -18,4 +19,19 @@ exports.PropertyName = Node `PropertyName` (
     ([type])            =>  data.always ("Identifier"),
 
     name                =>  string,
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+    ([freeVariables])   =>  data.always (KeyPathsByName.None) );*/
+
+exports.PropertyName = union `PropertyName` (
+    is                  =>  Node.LiteralPropertyName,
+    or                  =>  Node.ComputedPropertyName );
+
+exports.IdentifierName = Node `IdentifierName` (
+    name                =>  string );
+
+exports.LiteralPropertyName = Node `LiteralPropertyName` (
+    value               =>  or (Node.IdentifierName,
+                                Node.StringLiteral,
+                                Node.NumericLiteral ) );
+
+exports.ComputedPropertyName = Node `ComputedPropertyName` (
+    expression          =>  Node.Expression );

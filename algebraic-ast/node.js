@@ -12,17 +12,22 @@ const ESTreeBridge = require("./estree-bridge");
 const NodeSymbol = Symbol("Node");
 const { KeyPathsByName } = require("./key-path");
 
+const SourceData = data `SourceData` (
+    leadingComments     => [nullable(array(Comment)), null],
+    innerComments       => [nullable(array(Comment)), null],
+    trailingComments    => [nullable(array(Comment)), null],
+    start               => [nullable(number), null],
+    end                 => [nullable(number), null],
+    loc                 => [nullable(SourceLocation), null] );
+
 const Node = parameterized(function (name, ...fields)
 {
     return ESTreeBridge ([name]) (
-        ...fields,
-        leadingComments     => [nullable(array(Comment)), null],
-        innerComments       => [nullable(array(Comment)), null],
-        trailingComments    => [nullable(array(Comment)), null],
-        start               => [nullable(number), null],
-        end                 => [nullable(number), null],
-        loc                 => [nullable(SourceLocation), null] );
+        sourceData  => [nullable(SourceData), null],
+        ...fields );
 });
+
+Node.SourceData = SourceData;
 
 Node.Node = Node;
 
