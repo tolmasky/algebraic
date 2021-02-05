@@ -49,7 +49,10 @@ Object.assign(module.exports,
     Statement: or(...statements),
     ...require("./property-names"),
     ...require("./expressions"),
+
     ...require("./patterns"),
+    ...require("./assignment-targets"),
+
     ...require("./statements"),
     ...require("./program")
 });

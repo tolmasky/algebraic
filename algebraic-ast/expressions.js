@@ -7,10 +7,7 @@ const compute = require("./compute");
 
 
 exports.AssignmentExpression = Node `AssignmentExpression` (
-    left                =>  or (Node.IdentifierExpression,
-                                Node.MemberExpression/*,
-                                Node.ArrayPattern,
-                                Node.ObjectPattern*/),
+    left                =>  Node.AssignmentTarget,
     right               =>  Node.Expression,
     operator            =>  string,
     ([freeVariables])   =>  KeyPathsByName.compute (

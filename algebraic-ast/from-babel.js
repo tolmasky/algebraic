@@ -221,7 +221,7 @@ const trivial = (node, map) => node && (console.log("ATTEMPTING TRIVIAL FOR ", n
     const { data, string, number, type } = require("@algebraic/type");
     const { parameterized: { parameters } } = require("@algebraic/type/parameterized");
 
-
+Node.IdentifierReference = Node.IdentifierExpression;
 
 const fromBabel = require("./map-babel-node")(
     keys,
@@ -229,6 +229,13 @@ const fromBabel = require("./map-babel-node")(
         ({ ...node, sourceData: toSourceData(node) }, map))
 ({
     Identifier: node => Node.IdentifierExpression(node),
+
+    AssignmentExpression: node => Node.AssignmentExpression
+    ({
+        ...node,
+        left: toAssignmentTarget(node.left),
+        right: fromBabel(node.right)
+    }),
 
     MemberExpression: ({ computed, ...node }) => Node.MemberExpression(
     {
@@ -396,6 +403,49 @@ const toParameterBindings =
     toRestableArray(parameters =>
         [toDefaultableBinding, toRestElementBinding]);
 
+
+
+
+//
+
+
+const toArrayElementAssignmentTarget = node =>
+    node ? toDefaultableAssignmentTarget(node) : Node.Elision();
+
+const toArrayAssignmentTarget = given((
+    toElements = toRestableArray(elements =>
+        [toArrayElementAssignmentTarget, toRestElementAssignmentTarget])) =>
+    from.ArrayPattern(node => Node.ArrayAssignmentTarget
+    ({ ...node, ...toElements(node.elements) })));
+
+// FIXME: fromExpression?
+const toRestPropertyAssignmentTarget = fromBabel;
+
+const toObjectAssignmentTarget = given((
+    toProperties = toRestableArray(properties =>
+        [toPropertyAssignmentTarget, toRestPropertyAssignmentTarget])) =>
+    from.ObjectPattern(node => Node.ObjectAssignmentTarget
+    ({ ...node, ...toProperties(node.properties) })));
+
+const toDefaultedAssignmentTarget = from.AssignmentPattern(
+    node => Node.DefaultedAssignmentTarget
+    ({
+        ...node,
+        target: toAssignmentTarget(node.left),
+        fallback: fromBabel(node.right)
+    }));
+
+
+
+const toRestElementAssignmentTarget = fromBabel;
+
+const toAssignmentTarget = from
+    .Identifier(fromBabel)
+    .MemberExpression(fromBabel)
+    .ArrayPattern(toArrayAssignmentTarget)
+    .ObjectPattern(toObjectAssignmentTarget)
+const toDefaultableAssignmentTarget =
+    from.or(toDefaultedAssignmentTarget, toAssignmentTarget);
 
 /*
 

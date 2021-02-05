@@ -38,18 +38,18 @@ exports.ArrayPatternBinding = Node `ArrayPatternBinding` (
     elements            =>  array (Node.ArrayElementBinding),
     restElement         =>  nullable (Node.RestElementBinding) );
 
+exports.RestElementBinding = Node `RestElementBinding` (
+    argument            =>  Node.Binding );
+
 exports.RestPropertyBinding = Node `RestPropertyBinding` (
     argument            =>  Node.IdentifierBinding );
 
-exports.Elision         = Node `Elision` ();
+exports.Elision = Node `Elision` ();
 
 exports.PropertyBinding = Node `PropertyBinding` (
     shorthand           =>  [boolean, false],
     key                 =>  Node.PropertyName,
     binding             =>  Node.DefaultableBinding );
-
-exports.RestElementBinding = Node `RestElementBinding` (
-    argument            =>  Node.Binding );
 
 Node.ArrayPattern = Node.ArrayPatternBinding;
 Node.ObjectPattern = Node.ObjectPatternBinding;
