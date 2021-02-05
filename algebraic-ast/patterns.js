@@ -1,8 +1,6 @@
-const { is, data, or, string, array, nullable, parameterized, type, boolean } = require("@algebraic/type");
+const { data, or, string, array, nullable, boolean } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const Node = require("./node");
-
-
 
 
 // In order to maintain backwards compatibility with ESTree's spec, we set
@@ -50,6 +48,14 @@ exports.PropertyBinding = Node `PropertyBinding` (
     key                 =>  Node.PropertyName,
     binding             =>  Node.DefaultableBinding );
 
+exports.RestElementBinding = Node `RestElementBinding` (
+    argument            =>  Node.Binding );
+
+Node.ArrayPattern = Node.ArrayPatternBinding;
+Node.ObjectPattern = Node.ObjectPatternBinding;
+
+
+
 /*
 exports.PropertyBinding = union `PropertyBinding` (
     is                  =>  Node.ShorthandPropertyBinding,
@@ -69,14 +75,6 @@ exports.LonghandPropertyBinding = Node `LonghandPropertyBinding` (
 /*exports.DefaultableBinding = union `DefaultableBinding` (
     is                  =>  Node.DefaultableIdentifierBinding,
     or                  =>  Node.DefaultablePatternBinding );*/
-
-exports.RestElementBinding = Node `RestElementBinding` (
-    argument            =>  Node.Binding );
-
-Node.ArrayPattern = Node.ArrayPatternBinding;
-Node.ObjectPattern = Node.ObjectPatternBinding;
-
-
 /*
 const Defaulted = parameterized (T =>
     Node ([`Defaulted<${type.name(T)}>`]) (
