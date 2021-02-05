@@ -32,15 +32,18 @@ exports.ObjectPatternBinding = Node `ObjectPatternBinding` (
     properties          =>  array (Node.PropertyBinding),
     restProperty        =>  nullable (Node.RestPropertyBinding) );
 
+exports.ArrayElementBinding = union `ArrayElementBinding` (
+    is                  =>  Node.Elision,
+    or                  =>  Node.DefaultableBinding );
+
 exports.ArrayPatternBinding = Node `ArrayPatternBinding` (
-    elements            =>  or (Node.Elision,
-                                Node.DefaultableBinding),
+    elements            =>  array (Node.ArrayElementBinding),
     restElement         =>  nullable (Node.RestElementBinding) );
 
 exports.RestPropertyBinding = Node `RestPropertyBinding` (
     argument            =>  Node.IdentifierBinding );
 
-exports.Elision         = Node `Elision` ( x => string);
+exports.Elision         = Node `Elision` ();
 
 exports.PropertyBinding = Node `PropertyBinding` (
     shorthand           =>  [boolean, false],

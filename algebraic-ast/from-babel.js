@@ -367,7 +367,7 @@ const toIdentifierBinding = from
 
 const toArrayPatternBinding = consts((
     toElements = toRestableArray(elements =>
-        [toDefaultableBinding, toRestElementBinding])) =>
+        [toArrayElementBinding, toRestElementBinding])) =>
     from.ArrayPattern(node => Node.ArrayPatternBinding
     ({ ...node, ...toElements(node.elements) })));
 
@@ -383,6 +383,9 @@ const toBareBinding = from.or(
     toIdentifierBinding,
     toArrayPatternBinding,
     toObjectPatternBinding );
+
+const toArrayElementBinding = node =>
+    node ? toDefaultableBinding(node) : Node.Elision();
 
 const toDefaultedBinding = from.AssignmentPattern(
     node => Node.DefaultedBinding
