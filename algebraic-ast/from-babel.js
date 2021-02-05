@@ -273,7 +273,7 @@ const fromBabel = require("./map-babel-node")(
 }));
 
 
-const consts = Object.assign(
+const given = Object.assign(
     f => f(),
     {
         defer: (f, initialized = false) =>
@@ -296,27 +296,16 @@ const toRestableArray = (function ()
         .replace(/ies$/, "y")
         .replace(/^./, ch => `rest${ch.toUpperCase()}`);
 
-    return description => consts.defer((
+    return description => given.defer((
         [headProperty, [headConvert, tailConvert]] = extract(description),
         tailProperty = toTailProperty(headProperty)) =>
-            array => consts
+            array => given
                 (([head, tail] = split(array)) =>
                 ({
                     [headProperty]: head.map(headConvert),
                     [tailProperty]: tail && tailConvert(tail)
                 })));
 })();
-
-const toFormalParameters = ({ params }, { length } = params) =>
-    (tailIsRestElement =>
-    ({
-        parameters:
-            (tailIsRestElement ? params.slice(0, length - 1) : params)
-                .map(toDefaultableBinding),
-        restParameter : tailIsRestElement ?
-            toRestElementBinding(tail) :
-            null
-    }))(length > 0 && params[length - 1].type === "RestElement");
 
 const expect = (function ()
 {
@@ -349,23 +338,10 @@ const from = expect;
 
 from.or = (...froms) => from([].concat(...froms.map(from => from.predicates)));
 
-
-/*
-const toParameterBinding = expect
-    .
-
-const toPatternBinding = expect
-    .
-*/
-
-//const toBindingRestElement = expect
-//    .Identifier(({ argument }) => )
-
-
 const toIdentifierBinding = from
     .Identifier(Node.IdentifierBinding);
 
-const toArrayPatternBinding = consts((
+const toArrayPatternBinding = given((
     toElements = toRestableArray(elements =>
         [toArrayElementBinding, toRestElementBinding])) =>
     from.ArrayPattern(node => Node.ArrayPatternBinding
@@ -373,7 +349,7 @@ const toArrayPatternBinding = consts((
 
 const toRestPropertyBinding = toIdentifierBinding;
 
-const toObjectPatternBinding = consts((
+const toObjectPatternBinding = given((
     toProperties = toRestableArray(properties =>
         [toPropertyBinding, toRestPropertyBinding])) =>
     from.ObjectPattern(node => Node.ObjectPatternBinding
