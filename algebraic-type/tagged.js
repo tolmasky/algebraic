@@ -1,3 +1,7 @@
+const { getTypename } = require("./declaration");
+const typenameIfType = value =>
+    typeof value === "function" ? getTypename(value) : value;
+
 const has = hasOwnProperty.call.bind(hasOwnProperty);
 const tagged = Object.assign(f =>
     (...args) => tagged.is(args) ?
@@ -7,7 +11,7 @@ const tagged = Object.assign(f =>
         is: args => Array.isArray(args[0]) && has(args[0], "raw"),
         resolve: (strings, ...args) =>
             args.reduce((string, arg, index) =>
-                string + arg + strings[index + 1],
+                string + typenameIfType(arg) + strings[index + 1],
                 strings[0])
     });
 

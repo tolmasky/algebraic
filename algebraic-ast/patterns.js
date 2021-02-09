@@ -51,10 +51,6 @@ exports.PropertyBinding = Node `PropertyBinding` (
     key                 =>  Node.PropertyName,
     binding             =>  Node.DefaultableBinding );
 
-Node.ArrayPattern = Node.ArrayPatternBinding;
-Node.ObjectPattern = Node.ObjectPatternBinding;
-
-
 
 /*
 exports.PropertyBinding = union `PropertyBinding` (

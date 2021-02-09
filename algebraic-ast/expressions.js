@@ -236,12 +236,12 @@ exports.BranchExpression = Node `BranchExpression` (
                             take => `argument.freeVariables`,
                             take => KeyPathsByName.just("branch")) )
 
-exports.DeriveCallAndBranchExpression = Node `DeriveCallAndBranchExpression` (
+/*exports.DeriveCallAndBranchExpression = Node `DeriveCallAndBranchExpression` (
     callee              => Node.Expression,
     ds                  => array(number),
     arguments           => array(or (Node.Expression, Node.SpreadElement)),
     ([freeVariables])   => KeyPathsByName.compute (
                             take => `callee.freeVariables` ) );
-
+*/
 
 Object.assign(exports, require("./literals"));

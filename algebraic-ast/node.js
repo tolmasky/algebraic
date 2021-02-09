@@ -33,20 +33,22 @@ Node.Node = Node;
 
 module.exports = Node;
 
-const ExpressionRegExp = /(Reference|Expression|Literal)$/;
-const expressions = Object
-    .values(require("./expressions"))
-    .filter(T => ExpressionRegExp.test(type.name(T)));
-
-const StatementRegExp = /(Statement|Declaration)$/;
-const statements = Object
-    .values(require("./statements"))
-    .filter(T => StatementRegExp.test(type.name(T)));
+const NodeUnion = ([name]) =>
+    (filter, exports) =>
+        union2 `${name}` (...Object
+            .values(exports)
+            .filter(T => filter.test(type.name(T)))
+            .map(T => is => T));
 
 Object.assign(module.exports,
 {
-    Expression: or(...expressions),
-    Statement: or(...statements),
+    Expression: NodeUnion `Expression` (
+        /(Reference|Expression|Literal)$/,
+        require("./expressions")),
+    Statement: NodeUnion `Statement` (
+        /(Statement|Declaration)$/,
+        require("./statements")),
+
     ...require("./property-names"),
     ...require("./expressions"),
 
