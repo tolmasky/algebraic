@@ -223,7 +223,7 @@ const trivial = (node, map) => node && (console.log("ATTEMPTING TRIVIAL FOR ", n
 
 Node.IdentifierReference = Node.IdentifierExpression;
 
-const fromBabel = require("./map-babel-node")(
+const fromBabel2 = require("./map-babel-node")(
     keys,
     (mappings => (node, map) => (mappings[node.type] || trivial)
         ({ ...node, sourceData: toSourceData(node) }, map))
@@ -314,6 +314,385 @@ const toRestableArray = (function ()
                 })));
 })();
 
+const toKeyPath = path => !path || path.length <= 0 ?
+    "" :
+    `${path[1].length ? `${toKeyPath(path[1])}.` : ""}${path[0]}`
+const failToMap = error => fail(error instanceof Error ?
+    error :
+    Object
+        .assign(Object
+        .defineProperty(Error(), "message",
+        {
+            get: () =>
+                `Expected type ${type.name(error.expected)} at ` +
+                `\`${toKeyPath(error.path)}\`, but found: ` +
+                    (!error.value || typeof error.value !== "object" ?
+                        error.value :
+                    typeof error.value.type === "string" ?
+                        `[BabelNode ${error.value.type}]` :
+                    JSON.stringify(error.value))
+        }),
+        error));
+
+const maps = (function ()
+{
+    const given = f => f();
+    const { type, data, parameterized, tnull, array } = require("@algebraic/type");
+    const union = require("@algebraic/type/union-new");
+    const { fromEntries } = Object;
+    const Extra = require("./extra");
+
+    const recover = f => ({ on(recover)
+    {
+        try { return f() }
+        catch(error) { return recover(error) }
+    } });
+
+    const mapNull = (maps, path, value) =>
+        value === null ? null : failToMap({ path, expected: tnull, value });
+
+    const toMapExtra = ExtraT => given((
+        ValueT = parameters(ExtraT)[0]) =>
+    [
+        [],
+        (maps, path, value) => ExtraT(value)
+    ]);
+
+    const toMapNode = NodeT => given((
+        typename = type.name(NodeT),
+        fields = findMappableFields(NodeT)) =>
+        [
+            fields.map(([, , T]) => T),
+            (maps, path, value) =>
+                !value || value.type !== typename ?
+                    failToMap({ path, expected: NodeT, value }) :
+                    NodeT(
+                    {
+                        sourceData: toSourceData(value),
+                        ...value,
+                        ...fromEntries(fields
+                            .map(([key, typename]) =>
+                            [
+                                key,
+                                maps[typename](maps, [key, path], value[key])
+                            ])/*.map(pair => (console.log(pair), pair))*/)
+                    })
+        ]);
+
+    const toMapUnion = UnionT => given((
+        Ts = union.components(UnionT),
+        typenames = Ts.map(T => type.name(T)),
+        count = Ts.length) =>
+        [
+            Ts,
+            (maps, path, value) =>
+                typenames.reduce((T, typename, index) =>
+                    T ||
+                    recover(() => maps[typename](maps, path, value))
+                        .on(error => error.path === path ?
+                            false :
+                            failToMap(error)),
+                    false) || failToMap({ expected: UnionT, path, value })
+        ]);
+
+    const toMapArray = ArrayT => given((
+        ItemT = parameterized.parameters(ArrayT)[0],
+        ItemTypename = type.name(ItemT)) =>
+        [
+            [ItemT],
+            (maps, path, value) =>
+                !Array.isArray(value) ?
+                    failToMap({ expected: ArrayT, path, value }) :
+                    value.map((item, index) =>
+                        maps[ItemTypename](maps, [key, index], item))
+        ]);
+
+    const toMapType = T =>
+        T === tnull ? [[], mapNull] :
+        (parameterized.is(array, T) ? toMapArray :
+        parameterized.is(Node, T) ? toMapNode :
+        parameterized.is(Extra, T) ? toMapExtra :
+        type.kind(T) === union ? toMapUnion :
+        (console.error("wasn't expecting " + T), T => []))(T);
+
+    const toMapEntries = (Ts, visited = Ts) =>
+        Ts.size <= 0 ? [] : given((
+        results = Array.from(Ts, T => [type.name(T), toMapType(T)]),
+        discovered = new Set(results
+            .flatMap(([, [Ts]]) => Ts)
+            .filter(T => !visited.has(T)))) =>
+            results
+                .map(([name, [, map]]) => [name, map])
+                .concat(toMapEntries(
+                    (console.log("DISCOVERED:",discovered),discovered),
+                    Array
+                        .from(discovered)
+                        .reduce((visited, T) => visited.add(T), visited))));
+
+    const findMappableFields = NodeT => data
+        .fields(NodeT)
+        .filter(field =>
+            is (data.field.definition.supplied, field.definition))
+        .map(field => [field.name, parameters(field)[0]])
+        .filter(([name, T]) =>
+            !name.endsWith("Comments") && isNodeOrComposite(T))
+        .map(([name, T]) => [name, type.name(T), T]);
+    const isNodeOrComposite = T =>
+        parameterized.is(array, T) ||
+        parameterized.is(Node, T) ||
+        parameterized.is(Extra, T) ||
+        type.kind(T) === union &&
+            union.components(T).some(isNodeOrComposite);
+    console.log(Node);
+    const RootTypes = new Set(Object
+        .values(Node)
+        .filter(isNodeOrComposite));
+
+    const maps = fromEntries(toMapEntries(RootTypes));
+
+    console.log(Object.keys(maps));
+
+    return maps;
+/*
+            
+            visited.add())
+        newMaps = fromEntries(results.map(([name, [, map]]) => [name, map])) }),
+
+        callagain(new Set(results.flatMap(([, [Ts]]) => Ts)).remove(), newMaps)
+        
+        
+        
+    function (maps, T)
+    {
+        
+    }   
+    
+        results = Ts.map(T => [type.name(T), toMapType(T)],
+        newMaps = { ...maps, ...fromEntries(results.map(([name, [, map]]) => [name, map])) }),
+
+        callagain(new Set(results.flatMap(([, [Ts]]) => Ts)).remove(), newMaps)
+            
+        
+        remaining = new Set(results.flatMap(([, [Ts]]) => Ts)),
+        
+        
+         reduce(maps, assign(maps, fromEntries(pairs)))
+        
+    .reduce()
+            .reduce(([remaining, maps], T) => given((
+                typename = type.name(T),
+                [Ts, map] = toMapType(T)) =>
+                [
+                    Ts,
+                    Object.assign(maps, { [type.name(T)]: map })
+                ], [[], maps])
+                
+            } [type.name(T), toMapType(T)])
+            .assign(
+                converters,
+                { [type.name(T)]: toAlgebraic(converters, T) }),
+            { });
+                
+    
+                
+        convertT = (node, index) => index >= count ?
+            [false, type.name(T)] :
+            given((
+                [succeeded, result] = converters[index](node)) =>
+                succeeded ?
+                    [succeeded, result] :
+                    convertT(node, index + 1))) =>
+                        node => convertT(node, 0));
+
+
+
+
+                // Make sure to properly convert back...
+                given((converted = node.map(convertItemT)) =>
+                    converted.find(([succeeded]) => !succeeded) ?
+                        [false, type.name(T)] :
+                        [true, converted.map(([, value]) => value)]));
+                    
+                    
+                    fields = findMappableFields(NodeT) =>
+        (maps, node) => given((
+            [result, mapped] = mapAccum(
+                (result, [key, typename]) => result === true ? given((
+                    [result, value] = maps[typename](node[key])) =>
+                        result === true ?
+                            [result, value] :
+                            [[false, { type: NodeT, { key, value } }], false])
+                        [result, false],
+                true,
+                fields) =>
+                result === true ?
+                    [true, fromEntries(mapped)] :
+                    result)
+
+                [false, { type: NodeT, found: node }] :
+                given((
+                    sourceData = toSourceData(node),
+                    [result, children] = mapNodeChildren(maps, node)) =>
+                    result === false ?
+                        result :
+                        NodeT({ sourceData, ...children })));
+
+    const toMapNode = NodeT => given((
+        typename = type.name(NodeT),
+        mapNodeChildren = toMapNodeChildren(NodeT)) =>
+        (maps, node) =>
+            !node || node.type !== typename ?
+                [false, { type: NodeT, found: node }] :
+                given((
+                    sourceData = toSourceData(node),
+                    [result, children] = mapNodeChildren(maps, node)) =>
+                    result === false ?
+                        result :
+                        NodeT({ sourceData, ...children })));
+    
+    const toMapNodeChildren = NodeT => given((
+        fields = findMappableFields(NodeT) =>
+        (maps, node) => given((
+            [result, mapped] = mapAccum(
+                (result, [key, typename]) => result === true ? given((
+                    [result, value] = maps[typename](node[key])) =>
+                        result === true ?
+                            [result, value] :
+                            [[false, { type: NodeT, { key, value } }], false])
+                        [result, false],
+                true,
+                fields) =>
+                result === true ?
+                    [true, fromEntries(mapped)] :
+                    result)
+
+    const fromArray = T => given((
+        ItemT = parameterized.parameters(T)[0],
+        convertItemT = convert(ItemT)) =>
+            node =>
+                !Array.isArray(node) ? [false, type.name(T)] :
+                // Make sure to properly convert back...
+                given((converted = node.map(convertItemT)) =>
+                    converted.find(([succeeded]) => !succeeded) ?
+                        [false, type.name(T)] :
+                        [true, converted.map(([, value]) => value)]));
+
+    OrError(
+        e => [],
+
+Either A B
+
+Left A
+Left B
+
+
+    const toValueMigration = T =>
+        T === tnull ? toNullMigration :
+        (parameterized.is(array, T) ? toArrayMigration :
+        parameterized.is(Node, T) ? toNodeMigration :
+        type.kind(T) === union ? toUnionMigration :
+        (console.error("wasn't expecting " + T), T => []))(T); 
+
+        converters[type.name(T)](node)
+
+[key] -> [p] -> [key]
+
+
+    const convert = (converters, T) =>
+        defaults[type.name(T)] ||
+        (   T === tnull ? fromNull :
+            parameterized.is(array, T) ? fromArray :
+            parameterized.is(Node, T) ? fromNode :
+            type.kind(T) === union ? fromUnion :
+            (console.error("wasn't expecting " + T), converters => converters))
+            (converters;
+
+    const toAlgebraic = convert;
+    // Deal with union2.
+    // Deal with array<X>.
+    const isNodeOrComposite = T =>
+        parameterized.is(array, T) ||
+        parameterized.is(Node, T) ||
+        type.kind(T) === union &&
+            union.components(T).some(isNodeOrComposite);
+
+    const custom = {};
+
+    const AlgebraicTypes = Object.values(Node);
+console.log(AlgebraicTypes)
+    const fieldConverters = fromEntries(Object
+        .values(Node)
+        .filter(T => parameterized.is(Node, T))
+        .map(T => [type.name(T), data.fields(T)
+            .filter(field =>
+                is (data.field.definition.supplied, field.definition))
+            .map(field => [field.name, parameters(field)[0]])
+            .filter(([name, T]) =>
+                !name.endsWith("Comments") && isNodeOrComposite(T))
+            .map(([name, T]) => [name, convert(T)])]));
+
+//    return node => fromBabel(custom)
+    
+    return AlgebraicTypes
+        .reduce((converters, T) => Object
+            .assign(
+                converters,
+                { [type.name(T)]: toAlgebraic(converters, T) }),
+            { });
+    */
+})();
+
+/*
+to().from
+    .Identifier()
+    .Expression()
+    .Blah(...)
+
+to `Whatever`
+.from(x => y)
+.from(t => z)
+
+
+
+const toAlgebraic(
+{
+});
+
+/*
+
+
+    return
+
+    const fromCustom = predicates =>
+        
+    
+    const { TYPES } = require("@babel/types");
+    const extensions = Object
+        .fromEntries(TYPES
+        .map(name => [name, function (f)
+        {
+            return expect(this.predicates.concat([[name, f]]));
+        }]));
+
+    const types = predicates => predicates
+        .map(([type]) => JSON.stringify(type)).join(", ");
+
+    const _ = node => ({ ...node, sourceData: toSourceData(node) });
+
+    return Object.assign(predicates =>
+        Object.assign((node, ...rest) =>
+            node && (([, f]) => f(_(node), ...rest))
+                (predicates.find(([type]) => type === node.type) ||
+                fail (
+                    `Expected node of type ${types(predicates)}, ` +
+                    `but instead got ${node ? node.type : ">null<" }`)),
+            { predicates },
+            extensions),
+        { predicates: [] },
+        extensions);
+
+    console.log(fieldConverters);
+
 const expect = (function ()
 {
     const { TYPES } = require("@babel/types");
@@ -323,6 +702,48 @@ const expect = (function ()
         {
             return expect(this.predicates.concat([[name, f]]));
         }]));
+        
+    const types = predicates => predicates
+        .map(([type]) => JSON.stringify(type)).join(", ");
+
+    const _ = node => ({ ...node, sourceData: toSourceData(node) });
+
+    return Object.assign(predicates =>
+        Object.assign((node, ...rest) =>
+            node && (([, f]) => f(_(node), ...rest))
+                (predicates.find(([type]) => type === node.type) ||
+                fail (
+                    `Expected node of type ${types(predicates)}, ` +
+                    `but instead got ${node ? node.type : ">null<" }`)),
+            { predicates },
+            extensions),
+        { predicates: [] },
+        extensions);
+})(from =>
+{
+    FunctionDeclaration: from.FunctionDeclaration(
+    {
+            node => Node.FunctionDeclaration
+            ({
+                ...node,
+                ...toParameterBindings(node.params),
+                id: toIdentifierBinding(node.id),
+                body: fromBabel(node.body)
+            })
+        })
+);
+*/
+
+const expect = (function ()
+{
+    const { TYPES } = require("@babel/types");
+    const extensions = Object
+        .fromEntries(TYPES
+        .map(name => [name, function (f)
+        {
+            return expect(this.predicates.concat([[name, f]]));
+        }]));
+
     const types = predicates => predicates
         .map(([type]) => JSON.stringify(type)).join(", ");
 
@@ -344,7 +765,7 @@ const expect = (function ()
 const from = expect;
 
 from.or = (...froms) => from([].concat(...froms.map(from => from.predicates)));
-
+console.log(from);
 const toIdentifierBinding = from
     .Identifier(Node.IdentifierBinding);
 
@@ -379,11 +800,11 @@ const toDefaultedBinding = from.AssignmentPattern(
     }));
 
 // Should this be necessary?... vs. just doing fromBabel...
-const toLiteralPropertyNameValue = from
+/*const toLiteralPropertyNameValue = from
     .Identifier(Node.IdentifierName)
     .StringLiteral(fromBabel)
     .NumericLiteral(fromBabel);
-
+*/
 const toPropertyName = (computed, key) => computed ?
     Node.ComputedPropertyName({ expression: key }) :
     Node.LiteralPropertyName({ value: toLiteralPropertyNameValue(key) });
@@ -406,8 +827,27 @@ const toParameterBindings =
 
 
 
-//
-
+const to = new Proxy({},
+{
+    get: (_, typename) =>
+    ({
+        from: new Proxy({},
+        {
+            get: (_, from) => given((
+                NodeT = Node[typename]) =>
+                ({
+                    [typename]: (maps, path, value) =>
+                        !value || value.type !== from ?
+                            failToMap({ expected: NodeT, path, value }) :
+                            NodeT
+                            ({
+                                ...value,
+                                sourceData: toSourceData(value)
+                            })
+                }))
+        })
+    })
+});
 
 const toArrayElementAssignmentTarget = node =>
     node ? toDefaultableAssignmentTarget(node) : Node.Elision();
@@ -419,7 +859,7 @@ const toArrayAssignmentTarget = given((
     ({ ...node, ...toElements(node.elements) })));
 
 // FIXME: fromExpression?
-const toRestPropertyAssignmentTarget = fromBabel;
+//const toRestPropertyAssignmentTarget = fromBabel;
 
 const toObjectAssignmentTarget = given((
     toProperties = toRestableArray(properties =>
@@ -437,8 +877,8 @@ const toDefaultedAssignmentTarget = from.AssignmentPattern(
 
 
 
-const toRestElementAssignmentTarget = fromBabel;
-
+//const toRestElementAssignmentTarget = fromBabel;
+/*
 const toAssignmentTarget = from
     .Identifier(fromBabel)
     .MemberExpression(fromBabel)
@@ -521,6 +961,52 @@ const toIdentifierBinding = (node, map) => expect(
             Node.BindingIdentifier(node) :
             pattern;
 */
-module.exports = fromBabel;
 
+const fromBabel = given((
+    customMaps =
+{
+    ...maps,
+
+    FunctionDeclaration: (maps, path, value) => Node.FunctionDeclaration
+    ({
+        ...value,
+        ...toParameterBindings(value.params),
+        id: toIdentifierBinding(value.id),
+        body: fromBabel(Node.BlockStatement, value.body)
+    }),
+
+    ...to.IdentifierName.from.Identifier,
+    ...to.IdentifierExpression.from.Identifier
+}) => (T, value) => (console.log("ABOUT TO DO: " + JSON.stringify(T) + " " + type.name(T)),customMaps[type.name(T)](customMaps, [], value)));
+console.log("--->", to.IdentifierExpression.from.Identifier);
+module.exports = (...args) =>
+    args.length === 1 ?
+        (console.error("BAD: " + args[0].type + " " + Node[args[0].type]), fromBabel(Node[args[0].type], args[0])) :
+        fromBabel(...args);
+
+/*
+fromBabel = node => (console.log(node),maps[node.type](
+{
+    ...maps,
+
+    FunctionDeclaration: from.FunctionDeclaration(
+    {
+            node => Node.FunctionDeclaration
+            ({
+                ...node,
+                ...toParameterBindings(node.params),
+                id: toIdentifierBinding(node.id),
+                body: fromBabel(node.body)
+            })
+    })
+    
+
+            
+//    StringLiteral: (maps, path, value) =>
+//        console.log(value) || Node.StringLiteral({ value: value.value })
+}, [], node));
+
+
+//fromBabel;
+*/
 
