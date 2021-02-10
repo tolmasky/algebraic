@@ -354,34 +354,22 @@ const maps = (function ()
     const { fromEntries } = Object;
     const Extra = require("./extra");
 
-    const FieldKeyMappings =
-    {
-        FunctionDeclaration:
-        {
-            parameters: "params",
-            restParameter: "params"
-        },
-
-        ArrayPatternBinding:
-        {
-            restElement: "elements"
-        },
-
-        ObjectPatternBinding:
-        {
-            restProperty: "properties"
-        },
-
-        ArrayAssignmentTarget:
-        {
-            restElement: "elements"
-        },
-
-        ObjectAssignmentTarget:
-        {
-            restProperty: "properties"
-        }
-    };
+    const FieldKeyMappings = Object.fromEntries([
+        [[
+            "ArrowFunctionExpression",
+            "FunctionExpression",
+            "FunctionDeclaration"
+        ], { parameters: "params", restParameter: "params" }],
+        [[
+            "ArrayPatternBinding",
+            "ArrayAssignmentTarget"
+        ], { restElement: "elements" }],
+        [[
+            "ObjectPatternBinding",
+            "ObjectAssignmentTarget",
+        ], { restProperty: "properties" }]]
+        .flatMap(([BabelTNs, mappings]) =>
+            BabelTNs.map(BabelTN => [BabelTN, mappings])));
 
     const mapNull = (maps, path, value) =>
         value === null ? null : failToMap({ path, expected: tnull, value });
