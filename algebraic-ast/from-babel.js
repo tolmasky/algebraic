@@ -1177,11 +1177,22 @@ const fromBabel = given((
     to.ArrayPatternBinding.from.ArrayPattern,
     to.ObjectPatternBinding.from.ObjectPattern,
     to.RestPropertyBinding.from.RestElement,
-    to.PropertyBinding.from.ObjectProperty((maps, path, value) =>
-    ({
-        key: maps.PropertyName(maps, ["key", path], value.key),
-        binding: maps.DefaultableBinding(maps, ["value", path], value.value)
-    })),
+
+    to.LonghandPropertyBinding.from.ObjectProperty(
+        { shorthand: false },
+        (maps, path, value) =>
+        ({
+            key: maps.PropertyName(maps, ["key", path], value.key),
+            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
+        })),
+
+    to.ShorthandPropertyBinding.from.ObjectProperty(
+        { shorthand: true },
+        (maps, path, value) =>
+        ({
+            key: maps.IdentifierName(maps, ["key", path], value.key),
+            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
+        })),
 
     // Would be nice to have a "push down" operator, X => value: X
     given((ValueTN = type.name(

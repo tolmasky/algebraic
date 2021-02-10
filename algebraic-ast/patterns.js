@@ -1,4 +1,4 @@
-const { data, or, string, array, nullable, boolean } = require("@algebraic/type");
+const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const Node = require("./node");
 
@@ -46,11 +46,23 @@ exports.RestPropertyBinding = Node `RestPropertyBinding` (
 
 exports.Elision = Node `Elision` ();
 
-exports.PropertyBinding = Node `PropertyBinding` (
-    shorthand           =>  [boolean, false],
-    key                 =>  Node.PropertyName,
+exports.PropertyBinding = union `PropertyBinding` (
+    is                  =>  Node.ShorthandPropertyBinding,
+    or                  =>  Node.LonghandPropertyBinding );
+
+// FIXME: This should be DefaultableIdentifierBinding.
+exports.ShorthandPropertyBinding = Node `ShorthandPropertyBinding` (
+    ([shorthand])       =>  data.always(true),
+    ([computed])        =>  data.always(false),
+    key                 =>  Node.IdentifierName,
     binding             =>  Node.DefaultableBinding );
 
+exports.LonghandPropertyBinding = Node `LonghandPropertyBinding` (
+    ([shorthand])       =>  data.always(false),
+    ([computed])        =>  [boolean, key =>
+                                is(Node.ComputedPropertyName, key)],
+    key                 =>  Node.PropertyName,
+    binding             =>  Node.DefaultableBinding );
 
 /*
 exports.PropertyBinding = union `PropertyBinding` (
