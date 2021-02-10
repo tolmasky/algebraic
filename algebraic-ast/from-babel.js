@@ -1161,22 +1161,24 @@ const fromBabel = given((
     to.ObjectAssignmentTarget.from.ObjectPattern,
     to.RestPropertyAssignmentTarget.from.RestElement,
 
-    to.LonghandPropertyAssignmentTarget.from.ObjectProperty(
-        { shorthand: false },
-        (maps, path, value) =>
-        ({
-            key: maps.PropertyName(maps, ["key", path], value.key),
-            target:
-                maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
-        })),
-
-    to.ShorthandPropertyAssignmentTarget.from.ObjectProperty(
-        { shorthand: true },
-        (maps, path, value) =>
-        ({
-            key: maps.IdentifierName(maps, ["key", path], value.key),
-            binding: maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
-        })),
+    ...
+    [
+        [Node.PropertyBinding, Node.DefaultableBinding],
+        [Node.PropertyAssignmentTarget, Node.DefaultableAssignmentTarget]
+    ].flatMap(([NodeT, ValueT]) => given((
+        NodeTN = type.name(NodeT),
+        ValueTN = type.name(ValueT),
+        valueProperty = NodeTN.match(/([A-Z][a-z]*)$/)[1].toLowerCase()) =>
+        [
+            ["Longhand", "PropertyName", false, ],
+            ["Shorthand", "IdentifierName", true]
+        ].map(([prefix, KeyTN, shorthand]) =>
+            to[`${prefix}${NodeTN}`]
+            .from.ObjectProperty((maps, path, value) =>
+            ({
+                key: maps[KeyTN](maps, ["key", path], value.key),
+                [valueProperty]: maps[ValueTN](maps, ["value", path], value.value)
+            }))))),
 
     to.DefaultedAssignmentTarget
         .from.AssignmentPattern((maps, path, value) =>
@@ -1188,22 +1190,6 @@ const fromBabel = given((
     to.ArrayPatternBinding.from.ArrayPattern,
     to.ObjectPatternBinding.from.ObjectPattern,
     to.RestPropertyBinding.from.RestElement,
-
-    to.LonghandPropertyBinding.from.ObjectProperty(
-        { shorthand: false },
-        (maps, path, value) =>
-        ({
-            key: maps.PropertyName(maps, ["key", path], value.key),
-            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
-        })),
-
-    to.ShorthandPropertyBinding.from.ObjectProperty(
-        { shorthand: true },
-        (maps, path, value) =>
-        ({
-            key: maps.IdentifierName(maps, ["key", path], value.key),
-            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
-        })),
 
     to.LonghandObjectProperty.from.ObjectProperty(
         { shorthand: false },
@@ -1268,6 +1254,42 @@ module.exports = (...args) =>
         (console.error("BAD: " + args[0].type + " " + Node[args[0].type]), fromBabel(Node[args[0].type], args[0])) :
         fromBabel(...args);
 
+/*
+    to.LonghandPropertyBinding.from.ObjectProperty(
+        { shorthand: false },
+        (maps, path, value) =>
+        ({
+            key: maps.PropertyName(maps, ["key", path], value.key),
+            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
+        })),
+
+    to.ShorthandPropertyBinding.from.ObjectProperty(
+        { shorthand: true },
+        (maps, path, value) =>
+        ({
+            key: maps.IdentifierName(maps, ["key", path], value.key),
+            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
+        })),
+*/
+
+/*
+    to.LonghandPropertyAssignmentTarget.from.ObjectProperty(
+        { shorthand: false },
+        (maps, path, value) =>
+        ({
+            key: maps.PropertyName(maps, ["key", path], value.key),
+            target:
+                maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
+        })),
+
+    to.ShorthandPropertyAssignmentTarget.from.ObjectProperty(
+        { shorthand: true },
+        (maps, path, value) =>
+        ({
+            key: maps.IdentifierName(maps, ["key", path], value.key),
+            binding: maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
+        })),
+*/
 
 /*
 
