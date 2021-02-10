@@ -362,9 +362,19 @@ const maps = (function ()
             restParameter: "params"
         },
 
+        ArrayPatternBinding:
+        {
+            restElement: "elements"
+        },
+
         ObjectPatternBinding:
         {
             restProperty: "properties"
+        },
+
+        ArrayAssignmentTarget:
+        {
+            restElement: "elements"
         }
     };
 
@@ -518,30 +528,29 @@ const maps = (function ()
 
     return maps;
 /*
-            
             visited.add())
         newMaps = fromEntries(results.map(([name, [, map]]) => [name, map])) }),
 
         callagain(new Set(results.flatMap(([, [Ts]]) => Ts)).remove(), newMaps)
-        
-        
-        
+
+
+
     function (maps, T)
     {
-        
-    }   
-    
+
+    }
+
         results = Ts.map(T => [type.name(T), toMapType(T)],
         newMaps = { ...maps, ...fromEntries(results.map(([name, [, map]]) => [name, map])) }),
 
         callagain(new Set(results.flatMap(([, [Ts]]) => Ts)).remove(), newMaps)
-            
-        
+
+
         remaining = new Set(results.flatMap(([, [Ts]]) => Ts)),
-        
-        
+
+
          reduce(maps, assign(maps, fromEntries(pairs)))
-        
+
     .reduce()
             .reduce(([remaining, maps], T) => given((
                 typename = type.name(T),
@@ -550,15 +559,15 @@ const maps = (function ()
                     Ts,
                     Object.assign(maps, { [type.name(T)]: map })
                 ], [[], maps])
-                
+
             } [type.name(T), toMapType(T)])
             .assign(
                 converters,
                 { [type.name(T)]: toAlgebraic(converters, T) }),
             { });
-                
-    
-                
+
+
+
         convertT = (node, index) => index >= count ?
             [false, type.name(T)] :
             given((
@@ -576,8 +585,8 @@ const maps = (function ()
                     converted.find(([succeeded]) => !succeeded) ?
                         [false, type.name(T)] :
                         [true, converted.map(([, value]) => value)]));
-                    
-                    
+
+
                     fields = findMappableFields(NodeT) =>
         (maps, node) => given((
             [result, mapped] = mapAccum(
@@ -613,7 +622,7 @@ const maps = (function ()
                     result === false ?
                         result :
                         NodeT({ sourceData, ...children })));
-    
+
     const toMapNodeChildren = NodeT => given((
         fields = findMappableFields(NodeT) =>
         (maps, node) => given((
@@ -655,7 +664,7 @@ Left B
         (parameterized.is(array, T) ? toArrayMigration :
         parameterized.is(Node, T) ? toNodeMigration :
         type.kind(T) === union ? toUnionMigration :
-        (console.error("wasn't expecting " + T), T => []))(T); 
+        (console.error("wasn't expecting " + T), T => []))(T);
 
         converters[type.name(T)](node)
 
@@ -696,7 +705,7 @@ console.log(AlgebraicTypes)
             .map(([name, T]) => [name, convert(T)])]));
 
 //    return node => fromBabel(custom)
-    
+
     return AlgebraicTypes
         .reduce((converters, T) => Object
             .assign(
@@ -728,8 +737,8 @@ const toAlgebraic(
     return
 
     const fromCustom = predicates =>
-        
-    
+
+
     const { TYPES } = require("@babel/types");
     const extensions = Object
         .fromEntries(TYPES
@@ -766,7 +775,7 @@ const expect = (function ()
         {
             return expect(this.predicates.concat([[name, f]]));
         }]));
-        
+
     const types = predicates => predicates
         .map(([type]) => JSON.stringify(type)).join(", ");
 
@@ -1135,6 +1144,16 @@ const fromBabel = given((
             { init: null },
             (maps, path, value) => value.id),
 
+    to.ArrayAssignmentTarget.from.ArrayPattern,
+    to.RestElementAssignmentTarget.from.RestElement,
+
+    to.DefaultedAssignmentTarget
+        .from.AssignmentPattern((maps, path, value) =>
+        ({
+            target: maps.AssignmentTarget(maps, ["left", path], value.left),
+            fallback: maps.Expression(maps, ["right", path], value.right)
+        })),
+
     to.ArrayPatternBinding.from.ArrayPattern,
     to.ObjectPatternBinding.from.ObjectPattern,
     to.RestPropertyBinding.from.RestElement,
@@ -1205,7 +1224,7 @@ module.exports = (...args) =>
     }),
 
 
-fromKind = kind => 
+fromKind = kind =>
 [
     { kind: "var" },
     (maps, path, value) => value
@@ -1214,7 +1233,7 @@ fromKind = kind =>
             maps["DefaultedBinding"]
                 (maps, declaration, [index, ["declarations", [path]]]))
 ]
-    
+
 
 /*
 const nodeCheck = (maps, path, type, value) =>
@@ -1227,8 +1246,8 @@ const toVariableDeclaration = kind =>
     node.kind === kind
 
     []
-    
-    node => !node || node.type 
+
+    node => !node || node.type
 
         VariableDeclaration: ({ kind, declarations }) =>
             ({
@@ -1252,9 +1271,9 @@ fromBabel = node => (console.log(node),maps[node.type](
                 body: fromBabel(node.body)
             })
     })
-    
 
-            
+
+
 //    StringLiteral: (maps, path, value) =>
 //        console.log(value) || Node.StringLiteral({ value: value.value })
 }, [], node));
