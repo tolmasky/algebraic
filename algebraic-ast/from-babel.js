@@ -386,11 +386,14 @@ const maps = (function ()
     const mapNull = (maps, path, value) =>
         value === null ? null : failToMap({ path, expected: tnull, value });
 
+    // Extra<T> is a special case because the *incoming* nodes might have this
+    // set to null... mainly because we don't bother to assign it to null.
     const toMapExtra = ExtraT => given((
         ValueT = parameters(ExtraT)[0]) =>
     [
         [],
-        (maps, path, value) => ExtraT(value)
+        (maps, path, value) =>
+            value === undefined ? null : ExtraT(value)
     ]);
 
     const toMapNodeFields = fields =>
@@ -418,10 +421,14 @@ const maps = (function ()
             Object.assign((maps, path, value) =>
                 !value || value.type !== typename ?
                     failToMap({ path, expected: NodeT, value }) :
-                    NodeT(mapNodeFields(maps, path, value)),
+                    (console.log("CONVERTING ",value),NodeT(mapNodeFields(maps, path, value))),
             { fields: mapNodeFields })
         ]);
+const SAFENAME = x => { try { return type.name(x); } catch (e) { return x; } }
 
+    const NotFound = { };
+    const foundOr = (value, or) =>
+        value !== NotFound ? value : or();
     const toMapUnion = UnionT => given((
         Ts = union.components(UnionT),
         typenames = Ts.map(T => type.name(T)),
@@ -429,13 +436,14 @@ const maps = (function ()
         [
             Ts,
             (maps, path, value) =>
-                typenames.reduce((mapped, typename, index) =>
-                    mapped ||
-                    recover(() => maps[typename](maps, path, value))
-                        .on(error => error.path === path ?
-                            (console.log(toKeyPath(path) + " failed for " + error.expected),false) :
-                            (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error))),
-                    false) || failToMap({ expected: UnionT, path, value })
+                foundOr(typenames.reduce((mapped, typename, index) =>
+                    foundOr(mapped, () =>
+                        recover(() => maps[typename](maps, path, value))
+                            .on(error => error.path === path ?
+                                (console.log(toKeyPath(path) + " failed for " + SAFENAME(error.expected), value),NotFound) :
+                                (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error)))),
+                        NotFound),
+                    () => failToMap({ expected: UnionT, path, value }))
         ]);
 
     const isRestValue = item =>
@@ -1163,6 +1171,9 @@ const fromBabel = given((
 
     ...
     [
+//      If we can get Binding and AssignmentTarget to have the right Defaultables,
+//      Then we could merge all of these.
+//        [Node.ObjectProperty, Node.Expression, Node.IdentifierExpression, "value"],
         [Node.PropertyBinding, Node.DefaultableBinding],
         [Node.PropertyAssignmentTarget, Node.DefaultableAssignmentTarget]
     ].flatMap(([NodeT, ValueT]) => given((
