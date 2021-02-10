@@ -1137,6 +1137,11 @@ const fromBabel = given((
         ({
             binding: maps.IdentifierBinding(maps, ["id", path], value.id),
             fallback: maps.Expression(maps, ["init", path], value.init)
+        }))
+        .from.AssignmentPattern((maps, path, value) =>
+        ({
+            binding: maps.IdentifierBinding(maps, ["left", path], value.left),
+            fallback: maps.Expression(maps, ["right", path], value.right)
         })),
 
     ...[
