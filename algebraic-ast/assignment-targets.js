@@ -46,7 +46,7 @@ exports.ObjectAssignmentTarget = Node `ObjectAssignmentTarget` (
 exports.PropertyAssignmentTarget = Node `PropertyAssignmentTarget` (
     shorthand           =>  [boolean, false],
     key                 =>  Node.PropertyName,
-    assignment          =>  Node.DefaultableAssignmentTarget );
+    target              =>  Node.DefaultableAssignmentTarget );
 
 exports.RestPropertyAssignmentTarget = Node `RestPropertyAssignmentTarget` (
     argument            =>  Node.AssignableReference );

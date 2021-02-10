@@ -375,6 +375,11 @@ const maps = (function ()
         ArrayAssignmentTarget:
         {
             restElement: "elements"
+        },
+
+        ObjectAssignmentTarget:
+        {
+            restProperty: "properties"
         }
     };
 
@@ -1152,6 +1157,15 @@ const fromBabel = given((
 
     to.ArrayAssignmentTarget.from.ArrayPattern,
     to.RestElementAssignmentTarget.from.RestElement,
+
+    to.ObjectAssignmentTarget.from.ObjectPattern,
+    to.RestPropertyAssignmentTarget.from.RestElement,
+    to.PropertyAssignmentTarget.from.ObjectProperty((maps, path, value) =>
+    ({
+        key: maps.PropertyName(maps, ["key", path], value.key),
+        target:
+            maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
+    })),
 
     to.DefaultedAssignmentTarget
         .from.AssignmentPattern((maps, path, value) =>
