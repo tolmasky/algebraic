@@ -1,6 +1,6 @@
 const { is, data, nullable, array, or, maybe } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
-const union2 = require("@algebraic/type/union-new");
+const union = require("@algebraic/type/union-new");
 const Node = require("./node");
 const { KeyPathsByName } = require("./key-path");
 const compute = require("./compute");
@@ -192,36 +192,35 @@ exports.AwaitExpression = Node `AwaitExpression` (
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
-exports.ObjectPropertyShorthand = Node `ObjectPropertyShorthand` (
+exports.ShorthandObjectProperty = Node `ShorthandObjectProperty` (
     ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (true),
     ([computed])        =>  data.always (false),
 
-    ([key])             =>  [Node.PropertyName, value => Node.PropertyName(value)],
+    ([key])             =>  [Node.IdentifierName, value => Node.IdentifierName(value)],
     value               =>  Node.IdentifierExpression,
 
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `value.freeVariables`) )
 
-exports.ObjectPropertyLonghand = Node `ObjectPropertyLonghand` (
+exports.LonghandObjectProperty = Node `LonghandObjectProperty` (
     ([ESTreeType])      =>  data.always ("ObjectProperty"),
 
     ([shorthand])       =>  data.always (false),
     ([computed])        =>  [boolean, key =>
                                 is(Node.ComputedPropertyName, key)],
 
-    key                 =>  or (Node.ComputedPropertyName,
-                                Node.PropertyName,
-                                Node.StringLiteral),
+    key                 =>  Node.PropertyName,
     value               =>  Node.Expression,
+
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `key.freeVariables`,
                                 take => `value.freeVariables` ) );
 
-exports.ObjectProperty = union2 `ObjectProperty` (
-    is                  => Node.ObjectPropertyLonghand,
-    or                  => Node.ObjectPropertyShorthand );
+exports.ObjectProperty = union `ObjectProperty` (
+    is                  => Node.LonghandObjectProperty,
+    or                  => Node.ShorthandObjectProperty );
 
 exports.ObjectExpression = Node `ObjectExpression` (
     properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),

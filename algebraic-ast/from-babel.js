@@ -957,7 +957,7 @@ const toBabelMatchMap = given((
     BabelMatch = (type, entries) =>
         (console.log("here...", type, entries),({ toString: !entries ?
         () => { console.log("one"); return `[BabelNode ${type}]` } :
-        () => { console.log("two"); return "b";return `[BabelNode ${type}, where ${entries
+        () => { console.log("two"); return `[BabelNode ${type}, where ${entries
             .map(([key, value]) => `${key} = ${value}`)
             .join(", ")}]` }
     }))) =>
@@ -1193,6 +1193,21 @@ const fromBabel = given((
             key: maps.IdentifierName(maps, ["key", path], value.key),
             binding: maps.DefaultableBinding(maps, ["value", path], value.value)
         })),
+
+    to.LonghandObjectProperty.from.ObjectProperty(
+        { shorthand: false },
+        (maps, path, value) =>
+        ({
+            key: maps.PropertyName(maps, ["key", path], value.key),
+            value: maps.Expression(maps, ["value", path], value.value)
+        })),
+
+    to.ShorthandObjectProperty.from.ObjectProperty(
+        { shorthand: true },
+        (maps, path, value) =>
+        ({
+            value: maps.IdentifierExpression(maps, ["value", path], value.value)
+        }) }),
 
     // Would be nice to have a "push down" operator, X => value: X
     given((ValueTN = type.name(
