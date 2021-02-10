@@ -316,21 +316,27 @@ const toRestableArray = (function ()
 
 const toKeyPath = path => !path || path.length <= 0 ?
     "" :
-    `${path[1].length ? `${toKeyPath(path[1])}.` : ""}${path[0]}`
+    `${path[1].length ? `${toKeyPath(path[1])}.` : ""}${path[0]}`;
+const BabelTypeName = type => `[BabelNode ${type}]`;
+const toExpectationString = expectation =>
+    typeof expectation === "function" ?
+        `type ${type.name(expectation)}` :
+    expectation + "";
+
 const failToMap = error => fail(error instanceof Error ?
     error :
     Object
         .assign(Object
         .defineProperty(Error(), "message",
         {
-            get: () =>
-                `Expected type ${type.name(error.expected)} at ` +
+            get: () => (console.log(error),
+                `Expected ${toExpectationString(error.expected)} at ` +
                 `\`${toKeyPath(error.path)}\`, but found: ` +
                     (!error.value || typeof error.value !== "object" ?
                         error.value :
                     typeof error.value.type === "string" ?
-                        `[BabelNode ${error.value.type}]` :
-                    JSON.stringify(error.value))
+                        BabelTypeName(error.value.type) :
+                    JSON.stringify(error.value)))
         }),
         error));
 
@@ -349,7 +355,7 @@ const maps = (function ()
             parameters: "params",
             restParameter: "params"
         }
-    }
+    };
 
     const recover = f => ({ on(recover)
     {
@@ -408,7 +414,7 @@ const maps = (function ()
                     recover(() => maps[typename](maps, path, value))
                         .on(error => error.path === path ?
                             false :
-                            (console.log(path, "vs.", error.path), failToMap(error))),
+                            (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error))),
                     false) || failToMap({ expected: UnionT, path, value })
         ]);
 
@@ -880,23 +886,42 @@ const toParameterBindings =
 
 
 
-const to = new Proxy({},
-{
+const match = given((
+    BabelMatch = (type, entries) =>
+        (console.log("here...", type, entries),({ toString: !entries ?
+        () => { console.log("one"); return `[BabelNode ${type}]` } :
+        () => { console.log("two"); return "b";return `[BabelNode ${type}, where ${entries
+            .map(([key, value]) => `${key} = ${value}`)
+            .join(", ")}]` }
+    }))) =>
+    (NodeT, type, entries, mapFields) =>
+        (maps, path, value) =>
+            !value || value.type !== type ||
+            entries && entries
+                .some(([key, expected]) => value[key] !== expected) ?
+            failToMap({ expected: BabelMatch(type, entries), path, value }) :
+            NodeT(mapFields(maps, path, value)));
+
+const to = new Proxy({}, {
     get: (_, typename) =>
-    ({
-        from: new Proxy({},
-        {
-            get: (_, from) => given((
-                NodeT = Node[typename],
-                MapKey = `${typename}.fields`) =>
-                ({
-                    [typename]: (maps, path, value) =>
-                        !value || value.type !== from ?
-                            failToMap({ expected: NodeT, path, value }) :
-                            NodeT(maps[MapKey](maps, path, value))
-                }))
-        })
-    })
+    ({ from: new Proxy({}, {
+        get: (_, from) => given((
+            NodeT = Node[typename],
+            MapFieldKey = `${typename}.fields`) =>
+            Object.assign((pattern, mapFields) =>
+                ({  [typename]: match(
+                        NodeT,
+                        from,
+                        Object.entries(pattern),
+                        (maps, path, value) =>
+                        ({
+                            ...value,
+                            sourceData: toSourceData(value),
+                            ...mapFields(maps, path, value)
+                        })) }),
+                { [typename]: match(NodeT, from, false,
+                    (maps, path, value) =>
+                        maps[MapFieldKey](maps, path, value)) })) }) })
 });
 
 const toArrayElementAssignmentTarget = node =>
@@ -1012,6 +1037,8 @@ const toIdentifierBinding = (node, map) => expect(
             pattern;
 */
 
+const { or } = require("@algebraic/type");
+//console.log(to.IdentifierExpression.from.Identifier.IdentifierExpression({},[], {}));
 const fromBabel = given((
     customMaps =
 {
@@ -1027,16 +1054,75 @@ const fromBabel = given((
 */
     ...to.IdentifierName.from.Identifier,
     ...to.IdentifierExpression.from.Identifier,
+
     ...to.IdentifierBinding.from.Identifier,
 
-    ...to.RestElementBinding.from.RestElement
+    ...to.RestElementBinding.from.RestElement,
 
+    ...Object.assign(
+    ...[
+        [Node.VariableDeclaration,
+            "var", or (Node.IdentifierBinding, Node.DefaultedBinding)],
+        [Node.LetLexicalDeclaration,
+            "let", or (Node.IdentifierBinding, Node.DefaultedBinding)],
+        [Node.ConstLexicalDeclaration,
+            "const", Node.DefaultedBinding],
+    ].map(([NodeT, kind, BindingT]) => given((
+        BindingTName = type.name(BindingT)) => to
+            [type.name(NodeT)]
+            .from
+            .VariableDeclaration({ kind },
+                (maps, path, value) =>
+                ({
+                    bindings: value
+                    .declarations
+                    .map((declaration, index) =>
+                        maps[BindingTName](
+                            maps,
+                            [index, ["id", ["declarations", [path]]]],
+                            declaration.id))
+                })))))
 }) => (T, value) => (console.log("ABOUT TO DO: " + JSON.stringify(T) + " " + type.name(T)),customMaps[type.name(T)](customMaps, [], value)));
-console.log("--->", to.IdentifierExpression.from.Identifier);
+
+//console.log("--->", to.IdentifierExpression.from.Identifier);
 module.exports = (...args) =>
     args.length === 1 ?
         (console.error("BAD: " + args[0].type + " " + Node[args[0].type]), fromBabel(Node[args[0].type], args[0])) :
         fromBabel(...args);
+
+
+/*
+fromKind = kind => 
+[
+    { kind: "var" },
+    (maps, path, value) => value
+        .declarations
+        .map((declaration, index) =>
+            maps["DefaultedBinding"]
+                (maps, declaration, [index, ["declarations", [path]]]))
+]
+    
+
+/*
+const nodeCheck = (maps, path, type, value) =>
+    value && value.type === type ?
+        failToMap({ expected: BabelTypeName(type), path, value }) :
+        value;
+
+const toVariableDeclaration = kind =>
+    nodeCheck(node) &&
+    node.kind === kind
+
+    []
+    
+    node => !node || node.type 
+
+        VariableDeclaration: ({ kind, declarations }) =>
+            ({
+                var:    Node.VariableDeclaration,
+                const:  Node.ConstLexicalDeclaration,
+                let:    Node.LetLexicalDeclaration
+            })[kind]({ bindings: declarations.map(toBinding) }),
 
 /*
 fromBabel = node => (console.log(node),maps[node.type](
