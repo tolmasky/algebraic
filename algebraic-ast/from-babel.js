@@ -360,6 +360,11 @@ const maps = (function ()
         {
             parameters: "params",
             restParameter: "params"
+        },
+
+        ObjectPatternBinding:
+        {
+            restProperty: "properties"
         }
     };
 
@@ -413,7 +418,7 @@ const maps = (function ()
                     mapped ||
                     recover(() => maps[typename](maps, path, value))
                         .on(error => error.path === path ?
-                            false :
+                            (console.log(toKeyPath(path) + " failed for " + error.expected),false) :
                             (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error))),
                     false) || failToMap({ expected: UnionT, path, value })
         ]);
@@ -950,10 +955,9 @@ const toBabelMatchMap = given((
             failToMap({ expected: BabelMatch(type, entries), path, value }) :
             NodeT(mapFields(maps, path, value)));
 
-const { entries } = Object;
 const toBabelMatchFrom = (precedent, AlgebraicTN) =>
-    new Proxy({}, { get: (_, BabelTN) => { console.log("HERE! " + BabelTN);
-        return toBabelMatch(precedent, AlgebraicTN, BabelTN) } });
+    new Proxy({}, { get: (_, BabelTN) =>
+        toBabelMatch(precedent, AlgebraicTN, BabelTN) });
 const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
     given((
         NodeT = Node[AlgebraicTN],
@@ -968,7 +972,7 @@ const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
     }))) =>
     Object.assign((...args) =>
         toBabelMatchObject(
-            args.length > 1 && entries(args[0]),
+            args.length > 1 && Object.entries(args[0]),
             args.length > 1 ? args[1] : args[0]),
         toBabelMatchObject(false, maps[MapFieldKey])));
 
@@ -1115,8 +1119,7 @@ const toIdentifierBinding = (node, map) => expect(
 const { or } = require("@algebraic/type");
 //console.log(to.IdentifierExpression.from.Identifier.IdentifierExpression({},[], {}));
 
-console.log(to.IdentifierBinding
-        .from.Identifier)
+console.log(maps["PropertyName"]+"")
 const fromBabel = given((
     customMaps = Object.assign({},
     maps,
@@ -1131,6 +1134,27 @@ const fromBabel = given((
         .from.VariableDeclarator(
             { init: null },
             (maps, path, value) => value.id),
+
+    to.ArrayPatternBinding.from.ArrayPattern,
+    to.ObjectPatternBinding.from.ObjectPattern,
+    to.RestPropertyBinding.from.RestElement,
+    to.PropertyBinding.from.ObjectProperty((maps, path, value) =>
+    ({
+        key: maps.PropertyName(maps, ["key", path], value.key),
+        binding: maps.DefaultableBinding(maps, ["value", path], value.value)
+    })),
+
+    // Would be nice to have a "push down" operator, X => value: X
+    given((ValueTN = type.name(
+        or(
+            Node.IdentifierName,
+            Node.StringLiteral,
+            Node.NumericLiteral))) =>
+        ["Identifier", "StringLiteral", "NumericLiteral"]
+            .reduce((to, BabelTN) => to
+                .from[BabelTN]((maps, path, value) =>
+                    ({ value: maps[ValueTN](maps, path, value) })),
+                to.LiteralPropertyName)),
 
     to.DefaultedBinding
         .from.VariableDeclarator((maps, path, value) =>
