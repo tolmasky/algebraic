@@ -50,19 +50,22 @@ exports.PropertyBinding = union `PropertyBinding` (
     is                  =>  Node.ShorthandPropertyBinding,
     or                  =>  Node.LonghandPropertyBinding );
 
-// FIXME: This should be DefaultableIdentifierBinding.
-exports.ShorthandPropertyBinding = Node `ShorthandPropertyBinding` (
-    ([shorthand])       =>  data.always(true),
-    ([computed])        =>  data.always(false),
-    key                 =>  Node.IdentifierName,
-    binding             =>  Node.DefaultableBinding );
-
 exports.LonghandPropertyBinding = Node `LonghandPropertyBinding` (
     ([shorthand])       =>  data.always(false),
     ([computed])        =>  [boolean, key =>
                                 is(Node.ComputedPropertyName, key)],
     key                 =>  Node.PropertyName,
     binding             =>  Node.DefaultableBinding );
+
+// FIXME: This should be DefaultableIdentifierBinding, and then we would be able
+// to autogenerate the "key" field from the "binding" field, like we do in
+// ShorthandObjectProperty.
+exports.ShorthandPropertyBinding = Node `ShorthandPropertyBinding` (
+    ([shorthand])       =>  data.always(true),
+    ([computed])        =>  data.always(false),
+    key                 =>  Node.IdentifierName,
+    binding             =>  Node.DefaultableBinding );
+
 
 /*
 exports.PropertyBinding = union `PropertyBinding` (

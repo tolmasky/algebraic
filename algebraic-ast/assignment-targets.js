@@ -1,4 +1,4 @@
-const { data, or, string, array, nullable, boolean } = require("@algebraic/type");
+const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const Node = require("./node");
 
@@ -43,10 +43,25 @@ exports.ObjectAssignmentTarget = Node `ObjectAssignmentTarget` (
     properties          =>  array (Node.PropertyAssignmentTarget),
     restProperty        =>  nullable (Node.RestPropertyAssignmentTarget) );
 
-exports.PropertyAssignmentTarget = Node `PropertyAssignmentTarget` (
-    shorthand           =>  [boolean, false],
+exports.PropertyAssignmentTarget = union `PropertyAssignmentTarget` (
+    is                  =>  Node.LonghandPropertyAssignmentTarget,
+    or                  =>  Node.ShorthandPropertyAssignmentTarget );
+
+exports.LonghandPropertyAssignmentTarget = Node `LonghandPropertyAssignmentTarget` (
+    ([shorthand])       =>  data.always(false),
+    ([computed])        =>  [boolean, key =>
+                                is(Node.ComputedPropertyName, key)],
     key                 =>  Node.PropertyName,
     target              =>  Node.DefaultableAssignmentTarget );
+
+// FIXME: Should be DefaultableIdentifierAssignmentTarget, and then
+// to autogenerate the "key" field from the "target" field, like we do in
+// ShorthandObjectProperty.
+exports.ShorthandPropertyAssignmentTarget = Node `ShorthandPropertyAssignmentTarget` (
+    ([shorthand])       =>  data.always(true),
+    ([computed])        =>  data.always(false),
+    key                 =>  Node.IdentifierName,
+    binding             =>  Node.DefaultableAssignmentTarget)
 
 exports.RestPropertyAssignmentTarget = Node `RestPropertyAssignmentTarget` (
     argument            =>  Node.AssignableReference );

@@ -192,17 +192,9 @@ exports.AwaitExpression = Node `AwaitExpression` (
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
-exports.ShorthandObjectProperty = Node `ShorthandObjectProperty` (
-    ([ESTreeType])      =>  data.always ("ObjectProperty"),
-
-    ([shorthand])       =>  data.always (true),
-    ([computed])        =>  data.always (false),
-
-    ([key])             =>  [Node.IdentifierName, value => Node.IdentifierName(value)],
-    value               =>  Node.IdentifierExpression,
-
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `value.freeVariables`) )
+exports.ObjectProperty = union `ObjectProperty` (
+    is                  => Node.LonghandObjectProperty,
+    or                  => Node.ShorthandObjectProperty );
 
 exports.LonghandObjectProperty = Node `LonghandObjectProperty` (
     ([ESTreeType])      =>  data.always ("ObjectProperty"),
@@ -218,9 +210,17 @@ exports.LonghandObjectProperty = Node `LonghandObjectProperty` (
                                 take => `key.freeVariables`,
                                 take => `value.freeVariables` ) );
 
-exports.ObjectProperty = union `ObjectProperty` (
-    is                  => Node.LonghandObjectProperty,
-    or                  => Node.ShorthandObjectProperty );
+exports.ShorthandObjectProperty = Node `ShorthandObjectProperty` (
+    ([ESTreeType])      =>  data.always ("ObjectProperty"),
+
+    ([shorthand])       =>  data.always (true),
+    ([computed])        =>  data.always (false),
+
+    ([key])             =>  [Node.IdentifierName, value => Node.IdentifierName(value)],
+    value               =>  Node.IdentifierExpression,
+
+    ([freeVariables])   =>  KeyPathsByName.compute (
+                                take => `value.freeVariables`) );
 
 exports.ObjectExpression = Node `ObjectExpression` (
     properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),
