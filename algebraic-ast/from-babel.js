@@ -340,6 +340,12 @@ const failToMap = error => fail(error instanceof Error ?
         }),
         error));
 
+const recover = f => ({ on(recover)
+{
+    try { return f() }
+    catch(error) { return recover(error) }
+} });
+
 const maps = (function ()
 {
     const given = f => f();
@@ -356,12 +362,6 @@ const maps = (function ()
             restParameter: "params"
         }
     };
-
-    const recover = f => ({ on(recover)
-    {
-        try { return f() }
-        catch(error) { return recover(error) }
-    } });
 
     const mapNull = (maps, path, value) =>
         value === null ? null : failToMap({ path, expected: tnull, value });
@@ -884,9 +884,57 @@ const toParameterBindings =
         [toDefaultableBinding, toRestElementBinding]);
 
 
+const OrderedChoice = (expected, choices) =>
+    (maps, path, value) =>
+        choices.reduce((mapped, choice, index) =>
+            mapped ||
+            recover(() => choice(maps, path, value))
+                .on(error => error.path === path ?
+                    false :
+                    failToMap(error)),
+            false) ||
+            failToMap({ expected, path, value });
 
 
-const match = given((
+
+
+
+/*
+const toOneKeyObject = (key, value) => ({ [key]: value });
+const toChainedObject = (key, value) => ({ [key]: value })
+
+{ from: from(precedent, AlgebraicTN)
+
+const from: _(precedent, AlgebraicTN) =>
+    new Proxy({}, { get: (_, BabelTN) =>
+        toBabelMatch(precedent, AlgebraicTN, BabelTN) })
+
+const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
+    given((
+        NodeT = Node[AlgebraicTN],
+        MapFieldKey = `${AlgebraicTN}.fields`,
+        toBabelMatchObject = (...rest) => toOneKeyObject(
+            AlgebraicTN,
+            toOrderedChoice(predent,
+                toBabelMatchMap(NodeT, BabelTN, ...rest))) =>
+    Object.assign((...args) =>
+        toBabelMatchObject(
+            args.length > 1 && entries(args[0]), args[1])),
+        toBabelMatchObject(false, maps[MapFieldKey])));
+*/
+
+const { array } = require("@algebraic/type");
+
+const toOrderedChoice = (precedent, map) =>
+    (maps, path, value) =>
+        recover(() =>
+            precedent && precedent(maps, path, value))
+            .on(error => error.path === path ?
+                false :
+                failToMap(error)) ||
+        map(maps, path, value);
+
+const toBabelMatchMap = given((
     BabelMatch = (type, entries) =>
         (console.log("here...", type, entries),({ toString: !entries ?
         () => { console.log("one"); return `[BabelNode ${type}]` } :
@@ -902,6 +950,33 @@ const match = given((
             failToMap({ expected: BabelMatch(type, entries), path, value }) :
             NodeT(mapFields(maps, path, value)));
 
+const { entries } = Object;
+const toBabelMatchFrom = (precedent, AlgebraicTN) =>
+    new Proxy({}, { get: (_, BabelTN) => { console.log("HERE! " + BabelTN);
+        return toBabelMatch(precedent, AlgebraicTN, BabelTN) } });
+const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
+    given((
+        NodeT = Node[AlgebraicTN],
+        MapFieldKey = `${AlgebraicTN}.fields`,
+        toBabelMatchObject = (...rest) => given((
+            babelMatchMap = toOrderedChoice(
+                precedent,
+                toBabelMatchMap(NodeT, BabelTN, ...rest))) =>
+    ({
+        from: toBabelMatchFrom(babelMatchMap, AlgebraicTN),
+        [AlgebraicTN]: babelMatchMap
+    }))) =>
+    Object.assign((...args) =>
+        toBabelMatchObject(
+            args.length > 1 && entries(args[0]),
+            args.length > 1 ? args[1] : args[0]),
+        toBabelMatchObject(false, maps[MapFieldKey])));
+
+const to = new Proxy(
+    {},
+    { get: (_, AlgebraicTN) =>
+        ({ from: toBabelMatchFrom(false, AlgebraicTN) }) });
+/*
 const to = new Proxy({}, {
     get: (_, typename) =>
     ({ from: new Proxy({}, {
@@ -923,7 +998,7 @@ const to = new Proxy({}, {
                     (maps, path, value) =>
                         maps[MapFieldKey](maps, path, value)) })) }) })
 });
-
+*/
 const toArrayElementAssignmentTarget = node =>
     node ? toDefaultableAssignmentTarget(node) : Node.Elision();
 
@@ -1039,27 +1114,31 @@ const toIdentifierBinding = (node, map) => expect(
 
 const { or } = require("@algebraic/type");
 //console.log(to.IdentifierExpression.from.Identifier.IdentifierExpression({},[], {}));
+
+console.log(to.IdentifierBinding
+        .from.Identifier)
 const fromBabel = given((
-    customMaps =
-{
-    ...maps,
-/*
-    FunctionDeclaration: (maps, path, value) => Node.FunctionDeclaration
-    ({
-        ...value,
-        ...toParameterBindings(value.params),
-        id: fromBabel(Node.IdentifierBinding, value.id),
-        body: fromBabel(Node.BlockStatement, value.body)
-    }),
-*/
-    ...to.IdentifierName.from.Identifier,
-    ...to.IdentifierExpression.from.Identifier,
+    customMaps = Object.assign({},
+    maps,
 
-    ...to.IdentifierBinding.from.Identifier,
+    to.IdentifierName.from.Identifier,
+    to.IdentifierExpression.from.Identifier,
 
-    ...to.RestElementBinding.from.RestElement,
+    to.RestElementBinding.from.RestElement,
 
-    ...Object.assign(
+    to.IdentifierBinding
+        .from.Identifier
+        .from.VariableDeclarator(
+            { init: null },
+            (maps, path, value) => value.id),
+
+    to.DefaultedBinding
+        .from.VariableDeclarator((maps, path, value) =>
+        ({
+            binding: maps.IdentifierBinding(maps, ["id", path], value.id),
+            fallback: maps.Expression(maps, ["init", path], value.init)
+        })),
+
     ...[
         [Node.VariableDeclaration,
             "var", or (Node.IdentifierBinding, Node.DefaultedBinding)],
@@ -1068,21 +1147,15 @@ const fromBabel = given((
         [Node.ConstLexicalDeclaration,
             "const", Node.DefaultedBinding],
     ].map(([NodeT, kind, BindingT]) => given((
-        BindingTName = type.name(BindingT)) => to
-            [type.name(NodeT)]
-            .from
-            .VariableDeclaration({ kind },
-                (maps, path, value) =>
-                ({
-                    bindings: value
-                    .declarations
-                    .map((declaration, index) =>
-                        maps[BindingTName](
-                            maps,
-                            [index, ["id", ["declarations", [path]]]],
-                            declaration.id))
-                })))))
-}) => (T, value) => (console.log("ABOUT TO DO: " + JSON.stringify(T) + " " + type.name(T)),customMaps[type.name(T)](customMaps, [], value)));
+        ArrayBindingTN = type.name(array(BindingT))) =>
+            to[type.name(NodeT)]
+            .from.VariableDeclaration({ kind }, (maps, path, value) =>
+            ({
+                bindings: maps[ArrayBindingTN](
+                    maps,
+                    ["declarations", path],
+                    value.declarations)
+            })))))) => (T, value) => (console.log("ABOUT TO DO: " + JSON.stringify(T) + " " + type.name(T)),customMaps[type.name(T)](customMaps, [], value)));
 
 //console.log("--->", to.IdentifierExpression.from.Identifier);
 module.exports = (...args) =>
@@ -1092,6 +1165,17 @@ module.exports = (...args) =>
 
 
 /*
+
+/*
+    FunctionDeclaration: (maps, path, value) => Node.FunctionDeclaration
+    ({
+        ...value,
+        ...toParameterBindings(value.params),
+        id: fromBabel(Node.IdentifierBinding, value.id),
+        body: fromBabel(Node.BlockStatement, value.body)
+    }),
+
+
 fromKind = kind => 
 [
     { kind: "var" },
