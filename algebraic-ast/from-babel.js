@@ -956,7 +956,11 @@ const toBabelMatchMap = given((
             .map(([key, value]) => `${key} = ${value}`)
             .join(", ")}]` }
     }))) =>
-    (NodeT, type, entries, mapFields) =>
+    (NodeT, type, entries, mapFields) => type === "null" ?
+        (maps, path, value) =>
+            value === null ?
+                NodeT() :
+                failToMap({ expected: null, path, value }) :
         (maps, path, value) =>
             !value || value.type !== type ||
             entries && entries
@@ -1143,6 +1147,8 @@ const fromBabel = given((
         .from.VariableDeclarator(
             { init: null },
             (maps, path, value) => value.id),
+
+    to.Elision.from.null,
 
     to.ArrayAssignmentTarget.from.ArrayPattern,
     to.RestElementAssignmentTarget.from.RestElement,

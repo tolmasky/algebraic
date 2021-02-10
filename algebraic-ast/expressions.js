@@ -70,7 +70,10 @@ exports.FunctionExpression = Node `FunctionExpression` (
                                 subtract => `varBindings` ) );
 
 exports.ArrayExpression = Node `ArrayExpression` (
-    elements            =>  array(nullable(or (Node.Expression, Node.SpreadElement))),
+    elements            =>  array(or (
+                                Node.Elision,
+                                Node.Expression,
+                                Node.SpreadElement)),
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `elements.freeVariables`) );
 
