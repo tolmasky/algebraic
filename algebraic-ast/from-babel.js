@@ -282,8 +282,9 @@ const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
     }))) =>
     Object.assign((...args) =>
         toBabelMatchObject(
-            args.length > 1 && Object.entries(args[0]),
-            args.length > 1 ? args[1] : args[0]),
+            typeof args[0] === "object" && Object.entries(args[0]),
+            args.find(argument => typeof argument === "function") ||
+            firstMaps[MapFieldKey]),
         toBabelMatchObject(false, firstMaps[MapFieldKey])));
 
 const to = new Proxy(
@@ -298,6 +299,9 @@ const firstMaps = fromEntries(
 
 const maps = Object.assign({},
     firstMaps,
+
+    to.Module.from.Program({ sourceType: "module" }),
+    to.Script.from.Program({ sourceType: "script" }),
 
     to.IdentifierName.from.Identifier,
     to.IdentifierExpression.from.Identifier,
