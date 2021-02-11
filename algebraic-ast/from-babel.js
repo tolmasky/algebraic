@@ -1,16 +1,23 @@
 const given = f => f();
 const fromEntries = require("@climb/from-entries");
 
-const { data, string, number, type, or } = require("@algebraic/type");
-const { parameterized: { parameters } } = require("@algebraic/type/parameterized");
+const { array, data, string, number, type, or } = require("@algebraic/type");
+const { nullable, tnull } = require("@algebraic/type");
+const union = require("@algebraic/type/union-new");
+
+const { parameterized } = require("@algebraic/type/parameterized");
+const { parameters } = parameterized;
+const fail = require("@algebraic/type/fail");
+
 const Node = require("./node");
 
 Node.IdentifierReference = Node.IdentifierExpression;
 
 const Comment = require("./comment");
+const Extra = require("./extra");
 const { Position, SourceLocation } = require("./source-location");
 const { is } = require("@algebraic/type");
-const fail = require("@algebraic/type/fail");
+
 
 const isNullOrUndefined =
     object => object === null || object === void(0);
@@ -67,9 +74,6 @@ const recover = f => ({ on(recover)
 
 const maps = (function ()
 {
-    const { type, data, parameterized, tnull, array, nullable } = require("@algebraic/type");
-    const union = require("@algebraic/type/union-new");
-    const Extra = require("./extra");
 
     const FieldKeyMappings = fromEntries([
         [[
@@ -246,8 +250,6 @@ const SAFENAME = x => { try { return type.name(x); } catch (e) { return x; } }
 
     return maps;
 })();
-
-const { array } = require("@algebraic/type");
 
 const toOrderedChoice = (precedent, map) =>
     (maps, path, value) =>
