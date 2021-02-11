@@ -11,8 +11,6 @@ const fail = require("@algebraic/type/fail");
 
 const Node = require("./node");
 
-Node.IdentifierReference = Node.IdentifierExpression;
-
 const Comment = require("./comment");
 const Extra = require("./extra");
 const { Position, SourceLocation } = require("./source-location");
@@ -304,7 +302,7 @@ const maps = Object.assign({},
     to.Script.from.Program({ sourceType: "script" }),
 
     to.IdentifierName.from.Identifier,
-    to.IdentifierExpression.from.Identifier,
+    to.IdentifierReference.from.Identifier,
 
     to.RestElementBinding.from.RestElement,
 
@@ -326,7 +324,7 @@ const maps = Object.assign({},
     [
 //      If we can get Binding and AssignmentTarget to have the right Defaultables,
 //      Then we could merge all of these.
-//        [Node.ObjectProperty, Node.Expression, Node.IdentifierExpression, "value"],
+//        [Node.ObjectProperty, Node.Expression, Node.IdentifierReference, "value"],
         [Node.PropertyBinding, Node.DefaultableBinding],
         [Node.PropertyAssignmentTarget, Node.DefaultableAssignmentTarget]
     ].flatMap(([NodeT, ValueT]) => given((
@@ -367,7 +365,7 @@ const maps = Object.assign({},
         { shorthand: true },
         (maps, path, value) =>
         ({
-            value: maps.IdentifierExpression(maps, ["value", path], value.value)
+            value: maps.IdentifierReference(maps, ["value", path], value.value)
         })),
 
     // Would be nice to have a "push down" operator, X => value: X

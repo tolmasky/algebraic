@@ -25,7 +25,7 @@ exports.IntrinsicReference = Node `IntrinsicReference` (
     intrinsic           =>  Intrinsic,
     ([freeVariables])   =>  data.always (KeyPathsByName.None) );
 
-exports.IdentifierExpression = Node `IdentifierExpression` (
+exports.IdentifierReference = Node `IdentifierReference` (
     ([ESTreeType])      =>  data.always ("Identifier"),
     name                =>  string,
     ([freeVariables])   =>  KeyPathsByName.compute (
@@ -217,7 +217,7 @@ exports.ShorthandObjectProperty = Node `ShorthandObjectProperty` (
     ([computed])        =>  data.always (false),
 
     ([key])             =>  [Node.IdentifierName, value => Node.IdentifierName(value)],
-    value               =>  Node.IdentifierExpression,
+    value               =>  Node.IdentifierReference,
 
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `value.freeVariables`) );

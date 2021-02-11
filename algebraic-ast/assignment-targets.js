@@ -8,13 +8,13 @@ const Node = require("./node");
 // FIXME: We need parenthesized expression too...
 //
 exports.AssignmentTarget = union `AssignmentTarget` (
-    is                  =>  Node.IdentifierExpression/*Reference*/,
+    is                  =>  Node.IdentifierReference,
     or                  =>  Node.MemberExpression,
     or                  =>  Node.ArrayAssignmentTarget,
     or                  =>  Node.ObjectAssignmentTarget );
 
 exports.AssignableReference = union `AssignableReference` (
-    is                  =>  Node.IdentifierExpression/*Reference*/,
+    is                  =>  Node.IdentifierReference,
     or                  =>  Node.MemberExpression );
 
 exports.DefaultedAssignmentTarget = Node `DefaultedAssignmentTarget` (

@@ -48,7 +48,7 @@ function replace(replacements, names, node)
                     updated[index] = mapped,
                     updated))(replace(replacements, names, node)), nodes);
 
-    if (is (Node.IdentifierExpression, node) &&
+    if (is (Node.IdentifierReference, node) &&
         replacements.has(node.name))
         return replacements.get(node.name);
 
