@@ -1,7 +1,7 @@
 const given = f => f();
 const fromEntries = require("@climb/from-entries");
 
-const { array, data, string, number, type, or } = require("@algebraic/type");
+const { is, array, data, string, number, type, or } = require("@algebraic/type");
 const { nullable, tnull } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 
@@ -16,7 +16,6 @@ Node.IdentifierReference = Node.IdentifierExpression;
 const Comment = require("./comment");
 const Extra = require("./extra");
 const { Position, SourceLocation } = require("./source-location");
-const { is } = require("@algebraic/type");
 
 
 const isNullOrUndefined =
@@ -254,12 +253,12 @@ const toOrderedChoice = (precedent, map) =>
 
 const toBabelMatchMap = given((
     BabelMatch = (type, entries) =>
-        (console.log("here...", type, entries),({ toString: !entries ?
-        () => { console.log("one"); return `[BabelNode ${type}]` } :
-        () => { console.log("two"); return `[BabelNode ${type}, where ${entries
+    ({ toString: !entries ?
+        () => `[BabelNode ${type}]` :
+        () => `[BabelNode ${type}, where ${entries
             .map(([key, value]) => `${key} = ${value}`)
-            .join(", ")}]` }
-    }))) =>
+            .join(", ")}]`
+    })) =>
     (NodeT, type, entries, mapFields) => type === "null" ?
         (maps, path, value) =>
             value === null ?
