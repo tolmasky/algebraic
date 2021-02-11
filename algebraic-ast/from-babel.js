@@ -205,10 +205,11 @@ const toMapEntries = (Ts, visited = Ts) =>
                 .map(([key, map]) => [`${name}.${key}`, map])
                 .concat([[name, map]]))
             .concat(toMapEntries(
-                (console.log("DISCOVERED:",discovered),discovered),
+                discovered,
                 Array
                     .from(discovered)
-                    .reduce((visited, T) => visited.add(T), visited))));
+                    .reduce((visited, T) =>
+                        visited.add(T), visited))));
 
 const findMappableFields = NodeT => data
     .fields(NodeT)
@@ -235,7 +236,7 @@ const isNodeOrComposite = T =>
     parameterized.is(Extra, T) ||
     type.kind(T) === union &&
         union.components(T).some(isNodeOrComposite);
-console.log(Node);
+
 const RootTypes = new Set(Object
     .values(Node)
     .filter(isNodeOrComposite));
