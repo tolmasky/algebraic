@@ -23,7 +23,7 @@ const mapComment = ({ type, loc, ...rest }) =>
         ({ ...rest, loc: mapSourceLocation(loc) });
 const mapArrayOf = map => array => array.map(map);
 const mapComments = mapNullable(mapArrayOf(mapComment));
-const mapCommonNodeFields = node =>
+const toSourceData = node => Node.SourceData
 ({
     leadingComments: mapComments(node.leadingComments),
     innerComments: mapComments(node.innerComments),
@@ -32,8 +32,6 @@ const mapCommonNodeFields = node =>
     end: node.end || null,
     loc: mapSourceLocation(node.loc)
 });
-
-const toSourceData = node => Node.SourceData(mapCommonNodeFields(node));
 
 const toKeyPath = path => !path || path.length <= 0 ?
     "" :
