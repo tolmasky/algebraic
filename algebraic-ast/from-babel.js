@@ -126,8 +126,8 @@ const toMapNode = NodeT => given((
         Object.assign((maps, path, value) =>
             !value || value.type !== typename ?
                 failToMap({ path, expected: NodeT, value }) :
-                (console.log("CONVERTING ",value),NodeT(mapNodeFields(maps, path, value))),
-        { fields: mapNodeFields })
+                NodeT(mapNodeFields(maps, path, value)),
+            { fields: mapNodeFields })
     ]);
 
 const SAFENAME = x => { try { return type.name(x); } catch (e) { return x; } }
