@@ -236,12 +236,6 @@ const isNodeOrComposite = T =>
     type.kind(T) === union &&
         union.components(T).some(isNodeOrComposite);
 
-const RootTypes = new Set(Object
-    .values(Node)
-    .filter(isNodeOrComposite));
-
-const maps = fromEntries(toMapEntries(RootTypes));
-
 const toOrderedChoice = (precedent, map) =>
     (maps, path, value) =>
         recover(() =>
@@ -290,17 +284,20 @@ const toBabelMatch = (precedent, AlgebraicTN, BabelTN) =>
         toBabelMatchObject(
             args.length > 1 && Object.entries(args[0]),
             args.length > 1 ? args[1] : args[0]),
-        toBabelMatchObject(false, maps[MapFieldKey])));
+        toBabelMatchObject(false, firstMaps[MapFieldKey])));
 
 const to = new Proxy(
     {},
     { get: (_, AlgebraicTN) =>
         ({ from: toBabelMatchFrom(false, AlgebraicTN) }) });
 
-console.log(maps["PropertyName"]+"")
-const fromBabel = given((
-    customMaps = Object.assign({},
-    maps,
+const firstMaps = fromEntries(
+    toMapEntries(new Set(Object
+        .values(Node)
+        .filter(isNodeOrComposite))));
+
+const maps = Object.assign({},
+    firstMaps,
 
     to.IdentifierName.from.Identifier,
     to.IdentifierExpression.from.Identifier,
@@ -409,13 +406,9 @@ const fromBabel = given((
                     maps,
                     ["declarations", path],
                     value.declarations)
-            })))))) => (T, value) => (console.log("ABOUT TO DO: " + JSON.stringify(T) + " " + type.name(T)),customMaps[type.name(T)](customMaps, [], value)));
+            })))));
 
-//console.log("--->", to.IdentifierExpression.from.Identifier);
-module.exports = (...args) =>
-    args.length === 1 ?
-        (console.error("BAD: " + args[0].type + " " + Node[args[0].type]), fromBabel(Node[args[0].type], args[0])) :
-        fromBabel(...args);
+module.exports = (T, value) => maps[type.name(T)](maps, [], value);
 
 /*
     to.LonghandPropertyBinding.from.ObjectProperty(

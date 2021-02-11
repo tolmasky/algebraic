@@ -1,16 +1,10 @@
-const { IsSymbol } = require("@algebraic/type/declaration");
-const { isArray } = Array;
-const { is, of, data, union, nullable, array, number, or, getKind, type } = require("@algebraic/type");
-const union2 = require("@algebraic/type/union-new");
+const { is, of, data, nullable, array, number, or, type } = require("@algebraic/type");
+const union = require("@algebraic/type/union-new");
 const { parameterized } = require("@algebraic/type");
 const { parameters } = parameterized;
-const { Map, List } = require("@algebraic/collections");
-const tagged = require("@algebraic/type/tagged");
 const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
-const NodeSymbol = Symbol("Node");
-const { KeyPathsByName } = require("./key-path");
 
 const SourceData = data `SourceData` (
     leadingComments     => [nullable(array(Comment)), null],
@@ -35,7 +29,7 @@ module.exports = Node;
 
 const NodeUnion = ([name]) =>
     (filter, exports) =>
-        union2 `${name}` (...Object
+        union `${name}` (...Object
             .values(exports)
             .filter(T => filter.test(type.name(T)))
             .map(T => is => T));
@@ -61,13 +55,11 @@ Object.assign(module.exports,
 
 // Deal with union2.
 // Deal with array<X>.
-const isNodeOrComposite = type =>
-    type === Array ||
-    parameterized.is(Node, type) ||
-    getKind(type) === union2 &&
-        union2.components(type).some(isNodeOrComposite) ||
-    getKind(type) === union &&
-        union.components(type).some(isNodeOrComposite);
+const isNodeOrComposite = T =>
+    T === Array ||
+    parameterized.is(Node, T) ||
+    type.kind(T) === union &&
+        union.components(T).some(isNodeOrComposite);
 
 Node.isNodeOrCompose = isNodeOrComposite;
 
