@@ -72,184 +72,175 @@ const recover = f => ({ on(recover)
     catch(error) { return recover(error) }
 } });
 
-const maps = (function ()
-{
+const FieldKeyMappings = fromEntries([
+    [[
+        "ArrowFunctionExpression",
+        "FunctionExpression",
+        "FunctionDeclaration"
+    ], { parameters: "params", restParameter: "params" }],
+    [[
+        "ArrayPatternBinding",
+        "ArrayAssignmentTarget"
+    ], { restElement: "elements" }],
+    [[
+        "ObjectPatternBinding",
+        "ObjectAssignmentTarget",
+    ], { restProperty: "properties" }]]
+    .flatMap(([BabelTNs, mappings]) =>
+        BabelTNs.map(BabelTN => [BabelTN, mappings])));
 
-    const FieldKeyMappings = fromEntries([
-        [[
-            "ArrowFunctionExpression",
-            "FunctionExpression",
-            "FunctionDeclaration"
-        ], { parameters: "params", restParameter: "params" }],
-        [[
-            "ArrayPatternBinding",
-            "ArrayAssignmentTarget"
-        ], { restElement: "elements" }],
-        [[
-            "ObjectPatternBinding",
-            "ObjectAssignmentTarget",
-        ], { restProperty: "properties" }]]
-        .flatMap(([BabelTNs, mappings]) =>
-            BabelTNs.map(BabelTN => [BabelTN, mappings])));
+const mapNull = (maps, path, value) =>
+    value === null ? null : failToMap({ path, expected: tnull, value });
 
-    const mapNull = (maps, path, value) =>
-        value === null ? null : failToMap({ path, expected: tnull, value });
-
-    // Extra<T> is a special case because the *incoming* nodes might have this
-    // set to null... mainly because we don't bother to assign it to null.
-    const toMapExtra = ExtraT => given((
-        ValueT = parameters(ExtraT)[0]) =>
+// Extra<T> is a special case because the *incoming* nodes might have this
+// set to null... mainly because we don't bother to assign it to null.
+const toMapExtra = ExtraT => given((
+    ValueT = parameters(ExtraT)[0]) =>
     [
         [],
         (maps, path, value) =>
             value === undefined ? null : ExtraT(value)
     ]);
 
-    const toMapNodeFields = fields =>
-        (maps, path, value) =>
-        ({
-            ...value,
-            sourceData: toSourceData(value),
-            ...fromEntries(fields
-                .map(([toKey, fromKey, typename]) =>
-                [
-                    toKey,
-                    maps[typename](
-                        maps,
-                        [fromKey, path],
-                        value[fromKey])
-                ]))
-        });
+const toMapNodeFields = fields =>
+    (maps, path, value) =>
+    ({
+        ...value,
+        sourceData: toSourceData(value),
+        ...fromEntries(fields
+            .map(([toKey, fromKey, typename]) =>
+            [
+                toKey,
+                maps[typename](
+                    maps,
+                    [fromKey, path],
+                    value[fromKey])
+            ]))
+    });
 
-    const toMapNode = NodeT => given((
-        typename = type.name(NodeT),
-        fields = findMappableFields(NodeT),
-        mapNodeFields = toMapNodeFields(fields)) =>
-        [
-            fields.map(([, , , T]) => T),
-            Object.assign((maps, path, value) =>
-                !value || value.type !== typename ?
-                    failToMap({ path, expected: NodeT, value }) :
-                    (console.log("CONVERTING ",value),NodeT(mapNodeFields(maps, path, value))),
-            { fields: mapNodeFields })
-        ]);
+const toMapNode = NodeT => given((
+    typename = type.name(NodeT),
+    fields = findMappableFields(NodeT),
+    mapNodeFields = toMapNodeFields(fields)) =>
+    [
+        fields.map(([, , , T]) => T),
+        Object.assign((maps, path, value) =>
+            !value || value.type !== typename ?
+                failToMap({ path, expected: NodeT, value }) :
+                (console.log("CONVERTING ",value),NodeT(mapNodeFields(maps, path, value))),
+        { fields: mapNodeFields })
+    ]);
+
 const SAFENAME = x => { try { return type.name(x); } catch (e) { return x; } }
 
-    const NotFound = { };
-    const foundOr = (value, or) =>
-        value !== NotFound ? value : or();
-    const toMapUnion = UnionT => given((
-        Ts = union.components(UnionT),
-        typenames = Ts.map(T => type.name(T)),
-        count = Ts.length) =>
-        [
-            Ts,
-            (maps, path, value) =>
-                foundOr(typenames.reduce((mapped, typename, index) =>
-                    foundOr(mapped, () =>
-                        recover(() => maps[typename](maps, path, value))
-                            .on(error => error.path === path ?
-                                (console.log(toKeyPath(path) + " failed for " + SAFENAME(error.expected), value),NotFound) :
-                                (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error)))),
-                        NotFound),
-                    () => failToMap({ expected: UnionT, path, value }))
-        ]);
+const NotFound = { };
+const foundOr = (value, or) =>
+    value !== NotFound ? value : or();
+const toMapUnion = UnionT => given((
+    Ts = union.components(UnionT),
+    typenames = Ts.map(T => type.name(T)),
+    count = Ts.length) =>
+    [
+        Ts,
+        (maps, path, value) =>
+            foundOr(typenames.reduce((mapped, typename, index) =>
+                foundOr(mapped, () =>
+                    recover(() => maps[typename](maps, path, value))
+                        .on(error => error.path === path ?
+                            (console.log(toKeyPath(path) + " failed for " + SAFENAME(error.expected), value),NotFound) :
+                            (console.log(error),console.log(toKeyPath(path), "vs.", toKeyPath(error.path)), failToMap(error)))),
+                    NotFound),
+                () => failToMap({ expected: UnionT, path, value }))
+    ]);
 
-    const isRestValue = item =>
-        item &&
-        item.type &&
-        item.type.startsWith("Rest");
-    const toMapArray = ArrayT => given((
-        ItemT = parameterized.parameters(ArrayT)[0],
-        ItemTypename = type.name(ItemT)) =>
-        [
-            [ItemT],
-            (maps, path, value) =>
-                !Array.isArray(value) ?
-                    failToMap({ expected: ArrayT, path, value }) :
-                    (isRestValue(value[value.length - 1]) ?
-                        value.slice(0, -1) :
-                        value).map((item, index) =>
-                            maps[ItemTypename](maps, [index, path], item))
-        ]);
+const isRestValue = item =>
+    item &&
+    item.type &&
+    item.type.startsWith("Rest");
+const toMapArray = ArrayT => given((
+    ItemT = parameterized.parameters(ArrayT)[0],
+    ItemTypename = type.name(ItemT)) =>
+    [
+        [ItemT],
+        (maps, path, value) =>
+            !Array.isArray(value) ?
+                failToMap({ expected: ArrayT, path, value }) :
+                (isRestValue(value[value.length - 1]) ?
+                    value.slice(0, -1) :
+                    value).map((item, index) =>
+                        maps[ItemTypename](maps, [index, path], item))
+    ]);
 
-    const toMapNullableRest = NullableT => given((
-        RestT = parameters(NullableT)[0],
-        RestTypename = type.name(RestT)) =>
-        [
-            [RestT],
-            (maps, path, values) => given((
-                index = values.length - 1,
-                last = values[index]) =>
-                isRestValue(last) ?
-                    maps[RestTypename](maps, [index, path], last) :
-                    null)
-        ]);
+const toMapNullableRest = NullableT => given((
+    RestT = parameters(NullableT)[0],
+    RestTypename = type.name(RestT)) =>
+    [
+        [RestT],
+        (maps, path, values) => given((
+            index = values.length - 1,
+            last = values[index]) =>
+            isRestValue(last) ?
+                maps[RestTypename](maps, [index, path], last) :
+                null)
+    ]);
 
-    const toMapType = T =>
-        T === tnull ? [[], mapNull] :
-        (parameterized.is(array, T) ? toMapArray :
-        parameterized.is(Node, T) ? toMapNode :
-        parameterized.is(Extra, T) ? toMapExtra :
-        isNullableRest(T) ? toMapNullableRest :
-        type.kind(T) === union ? toMapUnion :
-        (console.error("wasn't expecting " + T), T => []))(T);
+const toMapType = T =>
+    T === tnull ? [[], mapNull] :
+    (parameterized.is(array, T) ? toMapArray :
+    parameterized.is(Node, T) ? toMapNode :
+    parameterized.is(Extra, T) ? toMapExtra :
+    isNullableRest(T) ? toMapNullableRest :
+    type.kind(T) === union ? toMapUnion :
+    (console.error("wasn't expecting " + T), T => []))(T);
 
-    const toMapEntries = (Ts, visited = Ts) =>
-        Ts.size <= 0 ? [] : given((
-        results = Array.from(Ts, T => [type.name(T), toMapType(T)]),
-        discovered = new Set(results
-            .flatMap(([, [Ts]]) => Ts)
-            .filter(T => !visited.has(T)))) =>
-            results
-                .flatMap(([name, [, map]]) => Object
-                    .entries(map)
-                    .map(([key, map]) => [`${name}.${key}`, map])
-                    .concat([[name, map]]))
-                .concat(toMapEntries(
-                    (console.log("DISCOVERED:",discovered),discovered),
-                    Array
-                        .from(discovered)
-                        .reduce((visited, T) => visited.add(T), visited))));
+const toMapEntries = (Ts, visited = Ts) =>
+    Ts.size <= 0 ? [] : given((
+    results = Array.from(Ts, T => [type.name(T), toMapType(T)]),
+    discovered = new Set(results
+        .flatMap(([, [Ts]]) => Ts)
+        .filter(T => !visited.has(T)))) =>
+        results
+            .flatMap(([name, [, map]]) => Object
+                .entries(map)
+                .map(([key, map]) => [`${name}.${key}`, map])
+                .concat([[name, map]]))
+            .concat(toMapEntries(
+                (console.log("DISCOVERED:",discovered),discovered),
+                Array
+                    .from(discovered)
+                    .reduce((visited, T) => visited.add(T), visited))));
 
-    const findMappableFields = NodeT => data
-        .fields(NodeT)
-        .filter(field =>
-            is (data.field.definition.supplied, field.definition))
-        .map(field => [field.name, parameters(field)[0]])
-        .filter(([name, T]) =>
-            !name.endsWith("Comments") && isNodeOrComposite(T))
-        .map(([name, T]) =>
-        [
-            name,
-            (FieldKeyMappings[type.name(NodeT)] || {})[name] || name,
-            type.name(T),
-            T
-        ]);
+const findMappableFields = NodeT => data
+    .fields(NodeT)
+    .filter(field =>
+        is (data.field.definition.supplied, field.definition))
+    .map(field => [field.name, parameters(field)[0]])
+    .filter(([name, T]) =>
+        !name.endsWith("Comments") && isNodeOrComposite(T))
+    .map(([name, T]) =>
+    [
+        name,
+        (FieldKeyMappings[type.name(NodeT)] || {})[name] || name,
+        type.name(T),
+        T
+    ]);
 
-    const isNullableRest = T =>
-        parameterized.is(nullable, T) &&
-        type.name(parameters(T)[0]).startsWith("Rest");
+const isNullableRest = T =>
+    parameterized.is(nullable, T) &&
+    type.name(parameters(T)[0]).startsWith("Rest");
 
-    const isNodeOrComposite = T =>
-        parameterized.is(array, T) ||
-        parameterized.is(Node, T) ||
-        parameterized.is(Extra, T) ||
-        type.kind(T) === union &&
-            union.components(T).some(isNodeOrComposite);
-    console.log(Node);
-    const RootTypes = new Set(Object
-        .values(Node)
-        .filter(isNodeOrComposite));
+const isNodeOrComposite = T =>
+    parameterized.is(array, T) ||
+    parameterized.is(Node, T) ||
+    parameterized.is(Extra, T) ||
+    type.kind(T) === union &&
+        union.components(T).some(isNodeOrComposite);
+console.log(Node);
+const RootTypes = new Set(Object
+    .values(Node)
+    .filter(isNodeOrComposite));
 
-    const maps = fromEntries(toMapEntries(RootTypes));
-
-    console.log("oki", maps);
-//    console.log(JSON.stringify(Object.keys(maps), null, 2));
-//    console.log(union.components(Node.Binding).map(type.name) + "");
-
-    return maps;
-})();
+const maps = fromEntries(toMapEntries(RootTypes));
 
 const toOrderedChoice = (precedent, map) =>
     (maps, path, value) =>
