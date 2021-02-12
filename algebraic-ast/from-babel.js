@@ -82,12 +82,20 @@ const FieldKeyMappings = fromEntries([
     [[
         "ObjectPatternBinding",
         "ObjectAssignmentTarget",
-    ], { restProperty: "properties" }]]
+    ], { restProperty: "properties" }],
+    [["ObjectProperty"], { prefersShorthand: "shorthand" }],
+    [["PropertyBinding"],
+    {
+        prefersShorthand: "shorthand",
+        binding: "value"
+    }],
+    [["PropertyAssignmentTarget"],
+    {
+        prefersShorthand: "shorthand",
+        target: "value"
+    }]]
     .flatMap(([BabelTNs, mappings]) =>
         BabelTNs.map(BabelTN => [BabelTN, mappings])));
-
-const mapNull = (maps, path, value) =>
-    value === null ? null : failToMap({ path, expected: tnull, value });
 
 // Extra<T> is a special case because the *incoming* nodes might have this
 // set to null... mainly because we don't bother to assign it to null.
@@ -181,9 +189,17 @@ const toMapNullableRest = NullableT => given((
                 null)
     ]);
 
-const toMapType = T =>
-    T === tnull ? [[], mapNull] :
-    (parameterized.is(array, T) ? toMapArray :
+const toMapPrimitive = T =>
+[
+    [],
+    (maps, path, value) => is (T, value) ?
+        value :
+        failToMap({ path, expected: T, value })
+];
+
+const toMapType = T => (
+    T === tnull || T === type.boolean ? toMapPrimitive :
+    parameterized.is(array, T) ? toMapArray :
     parameterized.is(Node, T) ? toMapNode :
     parameterized.is(Extra, T) ? toMapExtra :
     isNullableRest(T) ? toMapNullableRest :
@@ -208,20 +224,23 @@ const toMapEntries = (Ts, visited = Ts) =>
                     .reduce((visited, T) =>
                         visited.add(T), visited))));
 
-const findMappableFields = NodeT => data
+const findMappableFields = NodeT => given((
+    NodeTN = type.name(NodeT),
+    NodeFieldKeyMappings = FieldKeyMappings[NodeTN] || {}) => data
     .fields(NodeT)
     .filter(field =>
         is (data.field.definition.supplied, field.definition))
     .map(field => [field.name, parameters(field)[0]])
     .filter(([name, T]) =>
+        NodeFieldKeyMappings[name] ||
         !name.endsWith("Comments") && isNodeOrComposite(T))
     .map(([name, T]) =>
     [
         name,
-        (FieldKeyMappings[type.name(NodeT)] || {})[name] || name,
+        NodeFieldKeyMappings[name] || name,
         type.name(T),
         T
-    ]);
+    ]));
 
 const isNullableRest = T =>
     parameterized.is(nullable, T) &&
@@ -320,27 +339,8 @@ const maps = Object.assign({},
     to.ObjectAssignmentTarget.from.ObjectPattern,
     to.RestPropertyAssignmentTarget.from.RestElement,
 
-    ...
-    [
-//      If we can get Binding and AssignmentTarget to have the right Defaultables,
-//      Then we could merge all of these.
-//        [Node.ObjectProperty, Node.Expression, Node.IdentifierReference, "value"],
-        [Node.PropertyBinding, Node.DefaultableBinding],
-        [Node.PropertyAssignmentTarget, Node.DefaultableAssignmentTarget]
-    ].flatMap(([NodeT, ValueT]) => given((
-        NodeTN = type.name(NodeT),
-        ValueTN = type.name(ValueT),
-        valueProperty = NodeTN.match(/([A-Z][a-z]*)$/)[1].toLowerCase()) =>
-        [
-            ["Longhand", "PropertyName", false, ],
-            ["Shorthand", "IdentifierName", true]
-        ].map(([prefix, KeyTN, shorthand]) =>
-            to[`${prefix}${NodeTN}`]
-            .from.ObjectProperty((maps, path, value) =>
-            ({
-                key: maps[KeyTN](maps, ["key", path], value.key),
-                [valueProperty]: maps[ValueTN](maps, ["value", path], value.value)
-            }))))),
+    to.PropertyBinding.from.ObjectProperty,
+    to.PropertyAssignmentTarget.from.ObjectProperty,
 
     to.DefaultedAssignmentTarget
         .from.AssignmentPattern((maps, path, value) =>
@@ -352,21 +352,6 @@ const maps = Object.assign({},
     to.ArrayPatternBinding.from.ArrayPattern,
     to.ObjectPatternBinding.from.ObjectPattern,
     to.RestPropertyBinding.from.RestElement,
-
-    to.LonghandObjectProperty.from.ObjectProperty(
-        { shorthand: false },
-        (maps, path, value) =>
-        ({
-            key: maps.PropertyName(maps, ["key", path], value.key),
-            value: maps.Expression(maps, ["value", path], value.value)
-        })),
-
-    to.ShorthandObjectProperty.from.ObjectProperty(
-        { shorthand: true },
-        (maps, path, value) =>
-        ({
-            value: maps.IdentifierReference(maps, ["value", path], value.value)
-        })),
 
     // Would be nice to have a "push down" operator, X => value: X
     given((ValueTN = type.name(

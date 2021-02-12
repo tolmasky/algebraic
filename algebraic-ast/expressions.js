@@ -192,16 +192,40 @@ exports.AwaitExpression = Node `AwaitExpression` (
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `argument.freeVariables`) );
 
-exports.ObjectProperty = union `ObjectProperty` (
-    is                  => Node.LonghandObjectProperty,
-    or                  => Node.ShorthandObjectProperty );
+// NOTE: I originally split ObjectProperty up into Longhand and Shorthand
+// variants to try to make it impossible to construct impossible properties
+// (like "shorthand" properties where the binding *isn't* an identifier
+// binding), but this becomes cumbersome to interact with when actually
+// manipulating the AST. The root of the problem is that shorthand properties
+// (and their Binding and AssignmentTarget relatives) appear to have the
+// (unique?) distinction of being a purely syntactic features with no semantic
+// differences from normal properties. As such, it is strange to give them a
+// semantic desgination in the AST.
+//
+// In order to balance the desire to not have impossible ASTs *and* provide
+// an ergonomic interface, I settled on having a user-settable
+// "prefersShorthand" property, with "canBeShorthand" and "shorthand" *computed*
+// properties. When prefersShorthand is true and canBeShorthand evaluates to
+// true, the code pritner will generate shorthand properties, but otherwise
+// there is no real difference with interacting with these objects. We default
+// the "prefersShorthand" property to true so that by default we always generate
+// compact properties whenever possible. Upon parsing, "prefersShorthand" will
+// be true when the target source's author chose the shorthand, so that if you
+// perform a series of operations that lead to it still being shorthandable, it
+// will be.
 
-exports.LonghandObjectProperty = Node `LonghandObjectProperty` (
-    ([ESTreeType])      =>  data.always ("ObjectProperty"),
+exports.ObjectProperty = Node `ObjectProperty` (
+    ([computed])        =>  [boolean, key => is(Node.ComputedPropertyName, key)],
 
-    ([shorthand])       =>  data.always (false),
-    ([computed])        =>  [boolean, key =>
-                                is(Node.ComputedPropertyName, key)],
+    ([canBeShorthand])  =>  [boolean, (key, value) =>
+                                is (Node.IdentifierName, key) &&
+                                is (Node.IdentifierReference, value) &&
+                                key.name === value.name],
+
+    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
+                                canBeShorthand && prefersShorthand],
+
+    prefersShorthand    =>  [boolean, true],
 
     key                 =>  Node.PropertyName,
     value               =>  Node.Expression,
@@ -209,18 +233,6 @@ exports.LonghandObjectProperty = Node `LonghandObjectProperty` (
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `key.freeVariables`,
                                 take => `value.freeVariables` ) );
-
-exports.ShorthandObjectProperty = Node `ShorthandObjectProperty` (
-    ([ESTreeType])      =>  data.always ("ObjectProperty"),
-
-    ([shorthand])       =>  data.always (true),
-    ([computed])        =>  data.always (false),
-
-    ([key])             =>  [Node.IdentifierName, value => Node.IdentifierName(value)],
-    value               =>  Node.IdentifierReference,
-
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `value.freeVariables`) );
 
 exports.ObjectExpression = Node `ObjectExpression` (
     properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),

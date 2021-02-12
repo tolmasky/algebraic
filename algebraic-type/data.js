@@ -102,6 +102,17 @@ const data = declaration(function data (type, fieldDeclarations)
         return this;
     });
 
+    type.prototype.Δ = function (mutation)
+    {
+        const key = (mutation + "").match(/([^\s=])*/)[0];
+        const original = this[key];
+        const updated = mutation(original);
+
+        return original === updated ?
+            this :
+            type({ ...this, [key]: updated });
+    }
+
     type.prototype.toString = function () { return inspect(this) };
     type[DataMetadata] = { fields, fieldsCompiled, toFieldDeclarations };
 

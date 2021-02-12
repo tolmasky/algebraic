@@ -1,6 +1,7 @@
 const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const Node = require("./node");
+const given = f => f();
 
 
 // In order to maintain backwards compatibility with ESTree's spec, we set
@@ -46,26 +47,34 @@ exports.RestPropertyBinding = Node `RestPropertyBinding` (
 
 exports.Elision = Node `Elision` ();
 
-exports.PropertyBinding = union `PropertyBinding` (
-    is                  =>  Node.ShorthandPropertyBinding,
-    or                  =>  Node.LonghandPropertyBinding );
+const getUndefaultedBinding = binding =>
+    is (Node.DefaultedBinding, binding) ?
+        binding.binding : binding;
 
-exports.LonghandPropertyBinding = Node `LonghandPropertyBinding` (
-    ([shorthand])       =>  data.always(false),
+exports.PropertyBinding = Node `PropertyBinding` (
     ([computed])        =>  [boolean, key =>
                                 is(Node.ComputedPropertyName, key)],
+
+    ([canBeShorthand])  =>  [boolean, (key, binding) => given((
+                                receiver = getUndefaultedBinding(binding)) =>
+                                is (Node.IdentifierName, key) &&
+                                is (Node.IdentifierBinding, receiver) &&
+                                key.name === receiver.name)],
+
+    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
+                                canBeShorthand && prefersShorthand],
+    prefersShorthand    =>  [boolean, true],
+
     key                 =>  Node.PropertyName,
     binding             =>  Node.DefaultableBinding );
 
-// FIXME: This should be DefaultableIdentifierBinding, and then we would be able
-// to autogenerate the "key" field from the "binding" field, like we do in
-// ShorthandObjectProperty.
-exports.ShorthandPropertyBinding = Node `ShorthandPropertyBinding` (
-    ([shorthand])       =>  data.always(true),
-    ([computed])        =>  data.always(false),
-    key                 =>  Node.IdentifierName,
-    binding             =>  Node.DefaultableBinding );
-
+/*
+    ([canBeShorthand])  =>  [boolean, (key, binding) =>
+                                is (Node.IdentifierName, key) && given((
+                                receiver = getUndefaultedBinding(binding)) =>
+                                is (Node.IdentifierBinding, receiver) &&
+                                receiver.name === key.name),
+*/
 
 /*
 exports.PropertyBinding = union `PropertyBinding` (

@@ -1,6 +1,7 @@
 const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const Node = require("./node");
+const given = f => f();
 
 // https://tc39.es/ecma262/#prod-DestructuringAssignmentTarget
 // https://tc39.es/ecma262/#sec-static-semantics-assignmenttargettype
@@ -47,21 +48,26 @@ exports.PropertyAssignmentTarget = union `PropertyAssignmentTarget` (
     is                  =>  Node.LonghandPropertyAssignmentTarget,
     or                  =>  Node.ShorthandPropertyAssignmentTarget );
 
-exports.LonghandPropertyAssignmentTarget = Node `LonghandPropertyAssignmentTarget` (
-    ([shorthand])       =>  data.always(false),
-    ([computed])        =>  [boolean, key =>
-                                is(Node.ComputedPropertyName, key)],
+const getUndefaultedTarget = target =>
+    is (Node.DefaultedAssignmentTarget, target) ?
+        target.target : target;
+
+exports.PropertyAssignmentTarget = Node `PropertyAssignmentTarget` (
+    ([computed])        =>  [boolean, key => is(Node.ComputedPropertyName, key)],
+
+    ([canBeShorthand])  =>  [boolean, (key, target) => given((
+                                receiver = getUndefaultedTarget(target)) =>
+                                is (Node.IdentifierName, key) &&
+                                is (Node.IdentifierReference, receiver) &&
+                                key.name === receiver.name)],
+
+    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
+                                canBeShorthand && prefersShorthand],
+
+    prefersShorthand    =>  [boolean, true],
+
     key                 =>  Node.PropertyName,
     target              =>  Node.DefaultableAssignmentTarget );
-
-// FIXME: Should be DefaultableIdentifierAssignmentTarget, and then
-// to autogenerate the "key" field from the "target" field, like we do in
-// ShorthandObjectProperty.
-exports.ShorthandPropertyAssignmentTarget = Node `ShorthandPropertyAssignmentTarget` (
-    ([shorthand])       =>  data.always(true),
-    ([computed])        =>  data.always(false),
-    key                 =>  Node.IdentifierName,
-    binding             =>  Node.DefaultableAssignmentTarget)
 
 exports.RestPropertyAssignmentTarget = Node `RestPropertyAssignmentTarget` (
     argument            =>  Node.AssignableReference );
