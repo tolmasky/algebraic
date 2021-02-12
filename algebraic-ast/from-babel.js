@@ -93,7 +93,12 @@ const FieldKeyMappings = fromEntries([
     {
         prefersShorthand: "shorthand",
         target: "value"
-    }]]
+    }],
+    [[
+        "VariableDeclaration",
+        "LetLexicalDeclaration",
+        "ConstLexicalDeclaration"
+    ], { bindings: "declarations" }]]
     .flatMap(([BabelTNs, mappings]) =>
         BabelTNs.map(BabelTN => [BabelTN, mappings])));
 
@@ -377,7 +382,7 @@ const maps = Object.assign({},
             fallback: maps.Expression(maps, ["right", path], value.right)
         })),
 
-    ...[
+    /*...[
         [Node.VariableDeclaration,
             "var", or (Node.IdentifierBinding, Node.DefaultedBinding)],
         [Node.LetLexicalDeclaration,
@@ -393,46 +398,10 @@ const maps = Object.assign({},
                     maps,
                     ["declarations", path],
                     value.declarations)
-            })))));
+            }))))*/
+);
 
 module.exports = (T, value) => maps[type.name(T)](maps, [], value);
-
-/*
-    to.LonghandPropertyBinding.from.ObjectProperty(
-        { shorthand: false },
-        (maps, path, value) =>
-        ({
-            key: maps.PropertyName(maps, ["key", path], value.key),
-            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
-        })),
-
-    to.ShorthandPropertyBinding.from.ObjectProperty(
-        { shorthand: true },
-        (maps, path, value) =>
-        ({
-            key: maps.IdentifierName(maps, ["key", path], value.key),
-            binding: maps.DefaultableBinding(maps, ["value", path], value.value)
-        })),
-*/
-
-/*
-    to.LonghandPropertyAssignmentTarget.from.ObjectProperty(
-        { shorthand: false },
-        (maps, path, value) =>
-        ({
-            key: maps.PropertyName(maps, ["key", path], value.key),
-            target:
-                maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
-        })),
-
-    to.ShorthandPropertyAssignmentTarget.from.ObjectProperty(
-        { shorthand: true },
-        (maps, path, value) =>
-        ({
-            key: maps.IdentifierName(maps, ["key", path], value.key),
-            binding: maps.DefaultableAssignmentTarget(maps, ["value", path], value.value)
-        })),
-*/
 
 /*
 const given = Object.assign(
