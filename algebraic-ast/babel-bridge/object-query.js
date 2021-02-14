@@ -19,13 +19,14 @@ module.exports = given((
     ][0],
     RenameFieldRegExp = /^([^\s=]+)\s*=>\s*([^\s]+)/,
     QueryProxy = options => given((
-        { pattern, keyPath = [], rename = [] } = options,
-        query = { pattern, keyPath, rename }) => new Proxy(function(){},
+        { type, pattern, keyPath = [], rename = [] } = options,
+        query = { type, pattern, keyPath, rename }) => new Proxy(function(){},
     {
         apply: (_, __, args) => given((
             hasPattern = typeof args[0] === "object") =>
             QueryProxy
             ({
+                type,
                 pattern: { ...pattern, ...args[0] },
                 keyPath,
                 rename: rename
@@ -33,13 +34,16 @@ module.exports = given((
                         .map(f => (f + "").match(RenameFieldRegExp))
                         .map(([_, from, to]) => [from, to]))
             })),
-        get: (_, key, migration) =>
+        get: (_, key, self) =>
             key === toObject || key === ":magic" ?
                 query :
             key === toPrimitive ?
-                () => toBitMask(migration) :
-                QueryProxy({ pattern, rename, keyPath: keyPath.concat(key) })
+                () => toBitMask(self) :
+            QueryProxy({ type, pattern, rename, keyPath: [...keyPath, key] })
     })),
+    Queries = fromEntries(
+        ["object", "array", "null", "undefined", "number", "string"]
+            .map(type => [type, QueryProxy({ type })])),
     QuerySet = new Proxy({},
     {
         set: (queries, key, value) =>            
@@ -50,4 +54,4 @@ module.exports = given((
                 .map(query => query[toObject]),
         get: (queries, key) => queries[key],
         ownKeys: queries => Object.keys(queries)
-    })) => ({ QuerySet, Query: QueryProxy }));
+    })) => ({ QuerySet, Query: Queries }));

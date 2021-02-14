@@ -15,10 +15,10 @@ Node.RestElementBinding
 
 Node.IdentifierBinding
     = Babel.Identifier
-    | Babel.VariableDeclarator({ init: null }).id.x.a
+    | Babel.VariableDeclarator({ init: null }).id
 
-//Node.Elision
-//    = Babel.null;
+Node.Elision
+    = Babel.null;
 
 Node.ArrayAssignmentTarget
     = Babel.ArrayPattern(
