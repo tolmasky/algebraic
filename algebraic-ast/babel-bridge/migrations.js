@@ -1,4 +1,20 @@
-const { Node, Babel } = require("./babel-query");//require("./migration.js");
+const { fromEntries } = Object;
+const { QuerySet: Node, Query, toObject } = require("./object-query");
+
+const Babel = fromEntries(require("@babel/types")
+    .TYPES
+    .map(type => [type, Query.object({ type })
+    (({
+        leadingComments,
+        innerComments,
+        trailingComments,
+        start,
+        end,
+        loc
+    }) => sourceData)]));
+
+Node.SourceData
+    = Query.object(loc => location)
 
 Node.Program
     = Babel.Program({ sourceType: "module" })
@@ -18,7 +34,7 @@ Node.IdentifierBinding
     | Babel.VariableDeclarator({ init: null }).id
 
 Node.Elision
-    = Babel.null;
+    = Query.null;
 
 Node.ArrayAssignmentTarget
     = Babel.ArrayPattern(
@@ -60,8 +76,10 @@ Node.ObjectPatternBinding
 Node.RestPropertyBinding
     = Babel.RestElement;
 
-//Node.LiteralPropertyName
-//    = ({ value: Node.IdentifierName | Node.StringLiteral | Node.NumericLiteral });
+Node.LiteralPropertyName
+    = ({ value: Node.IdentifierName |
+                Node.StringLiteral |
+                Node.NumericLiteral });
 
 Node.DefaultedBinding
     = Babel.VariableDeclarator(id => binding, init => fallback)
@@ -73,6 +91,17 @@ Node.ArrowFunctionExpression
         params => parameters,
         params => restParameter);
 
+/*
+Node.ArrowFunctionExpression
+    = Babel.ArrowFunctionExpression
+        [deriving] `.parameters`    [from] `.params`
+        [deriving] `.restParameter` [from] `.params`
+        [deriving] `.sourceData`    [from]  ({ loc, pos })`this`
+
+        [mapping] `.params` [to] `.parameters`
+        [mapping] `.params` [to] `.restParameter`;
+        [mapping] `this`    [to] `.sourceData`;
+*/
 Node.FunctionExpression
     = Babel.FunctionExpression(
         params => parameters,
@@ -99,4 +128,4 @@ Node.ConstLexicalDeclaration
         declarations    =>  bindings );
 
 
-module.exports = { ...Node };
+module.exports = { ...Node, toDefaultTranslation: type => toObject(Babel[type]) };
