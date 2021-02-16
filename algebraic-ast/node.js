@@ -8,14 +8,19 @@ const ESTreeBridge = require("./estree-bridge");
 
 
 /*
+
+Source (
+    comments    => [nullable(Comments), null];
+    location    => [nullable(SourceLocation), null] );
+
 const Comments = data `Comments` (
     inner       => [nullable(array(Comment)), null],
     leading     => [nullable(array(Comment)), null],
     trailing    => [nullable(array(Comment)), null] );
 
+({ }) => source.comments
+({ }) => source.location
 
-comments    => [nullable(Comments), null];
-location    => [nullable(SourceLocation), null];
 */
 
 const SourceData = data `SourceData` (

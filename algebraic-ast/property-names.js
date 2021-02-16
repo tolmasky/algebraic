@@ -28,10 +28,10 @@ exports.PropertyName = union `PropertyName` (
 exports.IdentifierName = Node `IdentifierName` (
     name                =>  string );
 
-exports.LiteralPropertyName = Node `LiteralPropertyName` (
-    value               =>  or (Node.IdentifierName,
-                                Node.StringLiteral,
-                                Node.NumericLiteral ) );
+exports.LiteralPropertyName = union `LiteralPropertyName` (
+    is                  =>  Node.IdentifierName,
+    or                  =>  Node.StringLiteral,
+    or                  =>  Node.NumericLiteral );
 
 exports.ComputedPropertyName = Node `ComputedPropertyName` (
     expression          =>  Node.Expression );

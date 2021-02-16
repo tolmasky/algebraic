@@ -1,146 +1,158 @@
 const { fromEntries } = Object;
-const { QuerySet: Node, Query, toObject } = require("./object-query");
+const { QuerySet: AAST, Query, toObject, mapping, casting } = require("./object-query");
+const Node = require("../node");
 
-const Babel = fromEntries(require("@babel/types")
-    .TYPES
-    .concat(["Intrinsic", "IntrinsicReference"])
-    .map(type => [type, Query.object({ type })
-    (({
+
+const Babel = name =>
+    Query.object({ type: name })
+        [mapping] (({
         leadingComments,
         innerComments,
         trailingComments,
         start,
         end,
         loc
-    }) => sourceData)]));
+        }) => sourceData);
 
-Node.SourceData//["nullable <SourceData>"]
+Object.assign(Babel, fromEntries(require("@babel/types")
+    .TYPES
+    .concat(["Intrinsic", "IntrinsicReference"])
+    .map(name => [name, Babel(name)])));
+
+AAST.SourceData//["nullable <SourceData>"]
 //    = Query.object({})
-    = Query.object(loc => location)
+    = Query.object
+        [mapping] (loc      =>  location)
 
-Node.Module
+AAST.Module
     = Babel.Program({ sourceType: "module" });
 
-Node.Script
+AAST.Script
     = Babel.Program({ sourceType: "script" });
 
 
-Node.IdentifierName
+AAST.IdentifierName
     = Babel.Identifier;
 
-Node.IdentifierReference
+AAST.IdentifierReference
     = Babel.Identifier;
 
-Node.RestElementBinding
+AAST.RestElementBinding
     = Babel.RestElement;
 
-Node.IdentifierBinding
+AAST.IdentifierBinding
     = Babel.Identifier
     | Babel.VariableDeclarator({ init: null }).id
 
-Node.Elision
+AAST.Elision
     = Query.null;
 
-Node.ArrayAssignmentTarget
-    = Babel.ArrayPattern(
-        elements => restElement);
+AAST.ArrayAssignmentTarget
+    = Babel.ArrayPattern
+        [mapping] (elements => restElement);
 
-Node.RestElementAssignmentTarget
+AAST.RestElementAssignmentTarget
     = Babel.RestElement;
 
-Node.ObjectAssignmentTarget = Babel.ObjectPattern (
-    properties  => restProperty);
+AAST.ObjectAssignmentTarget
+    = Babel.ObjectPattern
+        [mapping] (properties  => restProperty);
 
-Node.RestPropertyAssignmentTarget
+AAST.RestPropertyAssignmentTarget
     = Babel.RestElement;
+
+
+AAST.ComputedPropertyName
+    = ({ expression: Babel.Expression });
 
 // Remember, on the way back it's shorthand
-Node.PropertyBinding
-    = Babel.ObjectProperty (
-        shorthand   => prefersShorthand,
-        value       => binding);
+AAST.PropertyBinding
+    = Babel.ObjectProperty ({ computed: true })
+        [casting] (key          =>  Node.ComputedPropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding)
+    | Babel.ObjectProperty ({ computed: false })
+        [casting] (key          =>  Node.PropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding);
 
-Node.PropertyAssignmentTarget
-    = Babel.ObjectProperty(
-        shorthand   => prefersShorthand,
-        value       => target);
+AAST.PropertyAssignmentTarget
+    = Babel.ObjectProperty ({ computed: true })
+        [casting] (key          =>  Node.ComputedPropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding)
+    | Babel.ObjectProperty ({ computed: false })
+        [casting] (key          =>  Node.PropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding);
 
-Node.DefaultedAssignmentTarget
-    = Babel.AssignmentPattern(
-        left    =>  target,
-        right   =>  fallback);
+AAST.DefaultedAssignmentTarget
+    = Babel.AssignmentPattern
+        [mapping] (left         =>  target)
+        [mapping] (right        =>  fallback);
 
-Node.ArrayPatternBinding
-    = Babel.ArrayPattern(
-        elements => restElements);
+AAST.ArrayPatternBinding
+    = Babel.ArrayPattern
+        [mapping] (elements     =>  restElement);
 
-Node.ObjectPatternBinding
-    = Babel.ObjectPattern(
-        properties => restProperty);
+AAST.ObjectPatternBinding
+    = Babel.ObjectPattern
+        [mapping] (properties   =>  restProperty);
 
-Node.RestPropertyBinding
+AAST.RestPropertyBinding
     = Babel.RestElement;
 
-Node.LiteralPropertyName
-    = Babel.RestElement/*({ value: Node.IdentifierName |
-                Node.StringLiteral |
-                Node.NumericLiteral })*/;
+AAST.MemberExpression
+    = Babel.MemberExpression({ computed: true })
+        [casting] (property     =>  Node.Expression)
+    | Babel.MemberExpression({ computed: false })
+        [casting] (property     =>  Node.IdentifierName)
 
-Node.ComputedPropertyName
+// BAD!
+AAST.ComputedPropertyName
     = Babel.RestElement;
 
-Node.Label
+AAST.Label
     = Babel.RestElement;
     
 Node["TemplateElement.Value"]
     = Babel.RestElement;
 
-Node.DefaultedBinding
-    = Babel.VariableDeclarator(id => binding, init => fallback)
-    | Babel.AssignmentPattern(left => binding, right => fallback);
+AAST.DefaultedBinding
+    = Babel.VariableDeclarator
+        [mapping] (id           =>  binding)
+        [mapping] (init         =>  fallback)
+    | Babel.AssignmentPattern
+        [mapping] (left         =>  binding)
+        [mapping] (right        =>  fallback);
 
 
-Node.ArrowFunctionExpression
-    = Babel.ArrowFunctionExpression(
-        params => parameters,
-        params => restParameter);
-
-/*
-Node.ArrowFunctionExpression
+AAST.ArrowFunctionExpression
     = Babel.ArrowFunctionExpression
-        [deriving] `.parameters`    [from] `.params`
-        [deriving] `.restParameter` [from] `.params`
-        [deriving] `.sourceData`    [from]  ({ loc, pos })`this`
+        [mapping] (params       =>  parameters)
+        [mapping] (params       =>  restParameter);
 
-        [mapping] `.params` [to] `.parameters`
-        [mapping] `.params` [to] `.restParameter`;
-        [mapping] `this`    [to] `.sourceData`;
-*/
-Node.FunctionExpression
-    = Babel.FunctionExpression(
-        params => parameters,
-        params => restParameter);
+AAST.FunctionExpression
+    = Babel.FunctionExpression
+        [mapping] (params       =>  parameters)
+        [mapping] (params       =>  restParameter);
         
-Node.FunctionDeclaration
-    = Babel.FunctionDeclaration(
-        params => parameters,
-        params => restParameter);
+AAST.FunctionDeclaration
+    = Babel.FunctionDeclaration
+        [mapping] (params       =>  parameters)
+        [mapping] (params       =>  restParameter);
 
-Node.VariableDeclaration
-    = Babel.VariableDeclaration(
-        { kind: "var" },
-        declarations    =>  bindings );
+AAST.VariableDeclaration
+    = Babel.VariableDeclaration({ kind: "var" })
+        [mapping] (declarations =>  bindings);
 
-Node.LetLexicalDeclaration
-    = Babel.VariableDeclaration(
-        { kind: "let" },
-        declarations    =>  bindings );
+AAST.LetLexicalDeclaration
+    = Babel.VariableDeclaration({ kind: "let" })
+        [mapping] (declarations =>  bindings);
 
-Node.ConstLexicalDeclaration
-    = Babel.VariableDeclaration(
-        { kind: "const" },
-        declarations    =>  bindings );
-
-
-module.exports = { ...Node, toDefaultTranslation:
+AAST.ConstLexicalDeclaration
+    = Babel.VariableDeclaration({ kind: "const" })
+        [mapping] (declarations =>  bindings);
+console.log("PIZZA", AAST.Module, AAST.MemberExpression[0]);
+module.exports = { ...AAST, toDefaultTranslation:
     type => Babel[type] ? toObject(Babel[type]) : toObject(Query.object({})) };

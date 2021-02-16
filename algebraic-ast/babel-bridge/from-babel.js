@@ -1,7 +1,7 @@
-const { isArray } = Array;
-const { fromEntries } = Object;
+const [{ isArray }, { fromEntries }] = [Array, Object];
+const findMap = require("@climb/find-map");
 
-const { array, is, parameterized, data, type, nullable } = require("@algebraic/type");
+const { is, parameterized, data, type, nullable } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const fail = require("@algebraic/type/fail");
 const { parameters } = parameterized;
@@ -41,9 +41,11 @@ const toSpecificationTranslate = (TargetT, specifications) => given((
             fields.map(([name, FieldT, FieldTN]) =>
             [
                 name,
-                specification.fields[name] || name,
-                FieldTN,
-                is(nullable, FieldTN)
+                specification.mapping[name] || name,
+                specification.casting[name] ?
+                    type.name(specification.casting[name]) :
+                    FieldTN,
+                is(nullable, FieldT) //hmmmm... this may clash with what we do right above here...
             ]),
             toSpecificationPredicate(specification))),
         TargetT)
@@ -56,10 +58,10 @@ const toSpecificationPredicate = ({ pattern, type: T }) =>
             !is (T, value) ?
                 translate.fail(T, keyPath, value) :
             predicates
-                .some(([name, expected]) =>
-                    value[name] !== expected) ?
-                // FIXME: This should throw for the individual field?
-                translate.fail(T, keyPath, value) :
+                .find(([name, expected]) =>
+                    value[name] !== expected &&
+                    translate.fail(expected, keyPath, value[name])) ?
+            false :
             true);
 
 const attempt = f =>
@@ -70,6 +72,7 @@ const attempt = f =>
         catch (error) { return recover(error, ...args); }
     } });
 
+// When is it a committed choice?
 const toOrderedChoice = (candidates, ExpectedT) =>
     candidates.length <= 1 ?
         candidates[0] :
@@ -122,19 +125,10 @@ const toToTranslate = T =>
 
 const toTranslate = T => (
     type.kind(T) === type.primitive ? toPrimitiveTranslate :
-    //parameterized.is(Node, T) ? toNodeTranslate :
-    type.kind(T) === array ? toArrayTranslate :
+    type.kind(T) === type.array ? toArrayTranslate :
     type.kind(T) === data ? toDataTranslate :
     type.kind(T) === union ? toTranlsateUnion :
     (console.error("wasn't expecting " + T), T => [[]]))(T);
-
-//console.log(mappings["DefaultedAssignmentTarget"][0]);
-
-//console.log(mappings["DefaultedAssignmentTarget"]);
-
-
-
-
 
 const toKeyPath = path => !path || path.length <= 0 ?
     "" :
@@ -164,10 +158,6 @@ translate.fail = (...args) =>
                         JSON.stringify(value)))
             }),
             { expected, keyPath, value })));
-
-const findMap = (f, array) =>
-    given((result = [false]) =>
-        (array.find(item => (result = f(item))[0]), result));
 
 const toTranslateEntries = (Ts, visited = Ts) =>
     Ts.size <= 0 ? [] : given((
@@ -199,7 +189,7 @@ const toArrayTranslate = ArrayT => given((
             (isRestValue(value[value.length - 1]) ?
                 value.slice(0, -1) :
                 value).map((item, index) =>
-                    translate(ItemTypename, [index, keyPath], item))
+                    translate(ItemTypename, [keyPath, index], item))
 ]);
 
 
@@ -230,167 +220,10 @@ console.log("--->",
 console.log("--->", toDataTranslate(Node.WhileStatement));
 */
 
-const { program } = require("@babel/core").parse("5+5");
+const { program } = require("@babel/core").parse("x.a");//"const x = 5+5");
 
 const fromBabel = (TargetT, node) => translate(type.name(TargetT), [[], "top"], node);
  
  
-console.log(fromBabel(Node.Module, program));
-/*
-        .filter(([name, FieldT]) =>
-            mappings[name] || 
-            type.kind(FieldT) !== type.primitive)
-        .map(([name, FieldT]) =>
-        [
-            name,
-            fromEntries(
-                customized[TargetTN]
-                    .map(from => [from.pattern.type, from.fields])),
-            type.name(FieldT),
-            FieldT
-        ]));
-*/
-
-
-
-/*
-
-
-const findMapWhile = given(
-    NotFound = Symbol()) =>
-    (f, array, sentinel) =>
-{
-    var result;
-
-    array.find(item => (result = f(item)) !== sentinel);
-
-    return [found, result];
-}
-
-const findMap = given((
-    NotFound = Symbol()) =>
-    (f, accum, array) =>
-        array.reduce(
-            (accum, item) => item === accum ? f(item) : item,
-            accum);
-    
-    
-    (f, array) => array.reduce(NotFound, array)
-
-
-            fields.map(([toKey, from, FieldTN]) =>
-                [
-                    toKey,
-                    isArray(from) ?
-                        translate(FieldTN, keyPath, value) :
-                        translate(FieldTN, value : value[from])
-                ]))))
-
-
-            ({
-        ...value,
-        sourceData: toSourceData(value),
-        ...fromEntries(fields
-            .map(([toKey, fromKey, typename]) =>
-            [
-                toKey,
-                maps[typename](
-                    maps,
-                    [fromKey, path],
-                    value[fromKey])
-            ]))
-    });
-                
-            fieldMappings.map()
-{
-    
-}
-
-
-
-
-const toInferredUnion = (TargetT, candidates) =>
-    fields = data
-        .fields(TargetT)
-        .filter(field =>
-            is (data.field.definition.supplied, field.definition))
-        .map(field => [field.name, parameters(field)[0]]),
-    TargetTN = type.name(TargetT),
-    candidatesTN = candidates[TargetTN]) =>
-    candidatesTN || [toDefaultTranslation(TargetTN)]
-        ({ pattern, fields: fieldRemappings })
-        
-  
-const toMapNodeFields
-    (maps, path, value) =>
-    ({
-        ...value,
-        sourceData: toSourceData(value),
-        ...fromEntries(fields
-            .map(([toKey, fromKey, typename]) =>
-            [
-                toKey,
-                maps[typename](
-                    maps,
-                    [fromKey, path],
-                    value[fromKey])
-            ]))
-    });
-  
-const toMapData = TargetT => given((
-    typename = type.name(TargetT),
-    fields = toFieldMappings(NodeT),
-    mapNodeFields = toMapNodeFields(fields)) =>
-    [
-        fields.map(([, , , T]) => T),
-        Object.assign((maps, path, value) =>
-            !value || value.type !== typename ?
-                failToMap({ path, expected: NodeT, value }) :
-                TargetT(mapNodeFields(maps, path, value)),
-            { fields: mapNodeFields })
-    ]);
-        
-
-
-
-
-// Don't forget explicitly transferred fields
-const toFieldMappings = (TargetT, translations) => given((
-    fields = data
-        .fields(TargetT)
-        .filter(field =>
-            is (data.field.definition.supplied, field.definition))
-        .map(field => [field.name, parameters(field)[0]]),
-    TargetTN = type.name(TargetT),
-    translationsTN = translations[TargetTN]) =>
-        fromEntries((translationsTN || [toDefaultTranslation(TargetTN)])
-            .map(({ pattern, fields: fieldRemappings }) =>
-            [
-                pattern.type,
-                fields
-                    .filter(([name, FieldT]) =>
-                        fieldRemappings[name] ||
-                        type.kind(FieldT) !== type.primitive)
-                    .map(([name, FieldT]) =>
-                    [
-                        name,
-                        fieldRemappings[name] || name,
-                        type.name(FieldT),
-                        FieldT
-                    ])
-            ])));
-  
-
-
-const Success = value =>
-    [true, alue];
-const Failure = (ExpectedT, keyPath, value) =>
-    [false, ({ ExpectedT, keyPath, value })];
-
-CallM ([name], receiver) => { or: onError => onError(error) }
-
-, then, orElse) => 
-    
-
-
-*/
+console.log(fromBabel(Node.Module, program).body[0]);
+console.log("WHAT");//.bindings);
