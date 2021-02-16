@@ -4,7 +4,11 @@ const { declaration, declare, getTypename, fNamed } = require("./declaration");
 const primitive = declaration(function primitive(type, [serialize, deserialize])
 {
     const typename = getTypename(type);
-    const is = fNamed(`[is ${typename}]`, value => typeof value === typename);
+    const is = fNamed(`[is ${typename}]`,
+        typename === "object" ? value => !!value && typeof value === "object" :
+        typename === "null" ? value => value === null :
+        typename === "undefined" ? value => value === void(0) :
+        value => typeof value === typename);
     const create = function ()
     {
         throw TypeError(`${typename} is not a constructor`);
@@ -50,18 +54,9 @@ const primitives =
         [value => { throw TypeError("Cannot serialize function") }, false],
         serialized => { throw TypeError("Cannot deserialize function") } ),
 
-    tnull: declare(
-    {
-        typename: "[primitive null]",
-        is: fNamed("[is null]", value => value === null),
-    }),
+    tnull: primitive `null` ([]),
+    tundefined: primitive `undefined` ([]),
 
-    tundefined: declare(
-    {
-        typename: "[primitive undefined]",
-        is: fNamed("[is undefined]", value => value === void(0))
-    }),
-    
     symbol: primitive `symbol` ([]),
 
     object: primitive `object` (
@@ -95,5 +90,9 @@ if (global.URL)
 
 primitives.primitive = primitive;
 primitives.primitives = primitives;
+
+primitives.null = primitives.tnull;
+primitives.undefined = primitives.tundefined;
+
 
 module.exports = primitives;

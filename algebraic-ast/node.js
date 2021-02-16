@@ -6,6 +6,18 @@ const SourceLocation = require("./source-location");
 const Comment = require("./comment");
 const ESTreeBridge = require("./estree-bridge");
 
+
+/*
+const Comments = data `Comments` (
+    inner       => [nullable(array(Comment)), null],
+    leading     => [nullable(array(Comment)), null],
+    trailing    => [nullable(array(Comment)), null] );
+
+
+comments    => [nullable(Comments), null];
+location    => [nullable(SourceLocation), null];
+*/
+
 const SourceData = data `SourceData` (
     leadingComments     => [nullable(array(Comment)), null],
     innerComments       => [nullable(array(Comment)), null],

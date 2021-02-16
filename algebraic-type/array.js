@@ -7,5 +7,5 @@ module.exports = parameterized(T => declare
     typename: `array <${getTypename(T)}>`,
     serialize: null,
     deserialize: null,
-    kind: Array
+    kind: module.exports
 }));

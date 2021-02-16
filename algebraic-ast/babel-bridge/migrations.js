@@ -3,22 +3,27 @@ const { QuerySet: Node, Query, toObject } = require("./object-query");
 
 const Babel = fromEntries(require("@babel/types")
     .TYPES
+    .concat(["Intrinsic", "IntrinsicReference"])
     .map(type => [type, Query.object({ type })
-    (({
+    /*(({
         leadingComments,
         innerComments,
         trailingComments,
         start,
         end,
         loc
-    }) => sourceData)]));
+    }) => sourceData)*/]));
 
-Node.SourceData
+Node.SourceData//["nullable <SourceData>"]
+//    = Query.object({})
     = Query.object(loc => location)
 
-Node.Program
-    = Babel.Program({ sourceType: "module" })
-    | Babel.Program({ sourceType: "script" });
+Node.Module
+    = Babel.Program({ sourceType: "module" });
+
+Node.Script
+    = Babel.Program({ sourceType: "script" });
+
 
 Node.IdentifierName
     = Babel.Identifier;
@@ -77,9 +82,18 @@ Node.RestPropertyBinding
     = Babel.RestElement;
 
 Node.LiteralPropertyName
-    = ({ value: Node.IdentifierName |
+    = Babel.RestElement/*({ value: Node.IdentifierName |
                 Node.StringLiteral |
-                Node.NumericLiteral });
+                Node.NumericLiteral })*/;
+
+Node.ComputedPropertyName
+    = Babel.RestElement;
+
+Node.Label
+    = Babel.RestElement;
+    
+Node["TemplateElement.Value"]
+    = Babel.RestElement;
 
 Node.DefaultedBinding
     = Babel.VariableDeclarator(id => binding, init => fallback)
@@ -128,4 +142,5 @@ Node.ConstLexicalDeclaration
         declarations    =>  bindings );
 
 
-module.exports = { ...Node, toDefaultTranslation: type => toObject(Babel[type]) };
+module.exports = { ...Node, toDefaultTranslation:
+    type => Babel[type] ? toObject(Babel[type]) : toObject(Query.object({})) };

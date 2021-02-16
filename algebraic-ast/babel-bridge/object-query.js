@@ -1,5 +1,6 @@
 const { fromEntries } = Object;
 const { toPrimitive } = Symbol;
+const type = require("@algebraic/type");
 const TRegExp = require("templated-regular-expression");
 
 const given = f => f();
@@ -27,6 +28,7 @@ const toFieldMapping = f => given((
     ]);
 
 module.exports = given((
+    Empty = Object.freeze(Object.create(null)),
     toObject = Symbol(),
     bitMasks = new Map(),
     toBitMask = query => bitMasks.has(query) ?
@@ -40,7 +42,7 @@ module.exports = given((
         bitMasks.clear()
     ][0],
     QueryProxy = options => given((
-        { type, pattern, keyPath = [], fields = {} } = options,
+        { type, pattern = Empty, keyPath = [], fields = Empty } = options,
         query = { type, pattern, keyPath, fields }) => new Proxy(function(){},
     {
         apply: (_, __, args) => given((
@@ -66,8 +68,8 @@ module.exports = given((
             QueryProxy({ type, pattern, fields, keyPath: [...keyPath, key] })
     })),
     Queries = fromEntries(
-        ["object", "array", "null", "undefined", "boolean", "number", "string"]
-            .map(type => [type, QueryProxy({ type })])),
+        ["object", "null", "undefined", "boolean", "number", "string"]
+            .map(typename => [typename, QueryProxy({ type: type[typename] })])),
     QuerySet = new Proxy({},
     {
         set: (queries, key, value) => queries[key] =
