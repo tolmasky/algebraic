@@ -5,14 +5,14 @@ const Babel = fromEntries(require("@babel/types")
     .TYPES
     .concat(["Intrinsic", "IntrinsicReference"])
     .map(type => [type, Query.object({ type })
-    /*(({
+    (({
         leadingComments,
         innerComments,
         trailingComments,
         start,
         end,
         loc
-    }) => sourceData)*/]));
+    }) => sourceData)]));
 
 Node.SourceData//["nullable <SourceData>"]
 //    = Query.object({})

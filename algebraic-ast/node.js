@@ -24,7 +24,7 @@ const SourceData = data `SourceData` (
     trailingComments    => [nullable(array(Comment)), null],
     start               => [nullable(number), null],
     end                 => [nullable(number), null],
-    loc                 => [nullable(SourceLocation), null] );
+    location            => [nullable(SourceLocation), null] );
 
 const Node = parameterized(function (name, ...fields)
 {
