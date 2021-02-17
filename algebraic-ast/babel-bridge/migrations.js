@@ -16,7 +16,7 @@ const Babel = name =>
 
 Object.assign(Babel, fromEntries(require("@babel/types")
     .TYPES
-    .concat(["Intrinsic", "IntrinsicReference"])
+    .concat("IntrinsicReference")
     .map(name => [name, Babel(name)])));
 
 AAST.SourceData//["nullable <SourceData>"]

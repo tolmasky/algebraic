@@ -209,7 +209,7 @@ const toArrayTranslate = ArrayT => given((
 const translates = fromEntries(toTranslateEntries(new Set(Object
     .values(Node)
     .concat(require("../source-location"))
-    .filter(toToTranslate))));
+    /*.filter(toToTranslate)*/)));
 
 console.log(translates);
 

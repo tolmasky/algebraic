@@ -35,8 +35,8 @@ exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
     body                =>  or (Node.BlockStatement, Node.Expression),
     ([id])              =>  data.always (null),
 
-    parameters              =>  [array (Node.DefaultableBinding), []],
-    restParameter           =>  [nullable (Node.RestElementBinding), null],
+    parameters          =>  [array (Node.DefaultableBinding), []],
+    restParameter       =>  [nullable (Node.RestElementBinding), null],
 
     ([generator])       =>  data.always (false),
     async               =>  [boolean, false],
@@ -119,31 +119,6 @@ exports.MemberExpression = Node `MemberExpression` (
     optional            =>  [nullable(boolean), null],
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `object.freeVariables`) );
-/*
-exports.StaticMemberExpression = Node `StaticMemberExpression` (
-    ([ESTreeType])      =>  data.always ("MemberExpression"),
-    ([computed])        =>  data.always (false),
-
-    object              =>  Node.Expression,
-    property            =>  Node.PropertyName,
-    optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `object.freeVariables`) );
-
-exports.ComputedMemberExpression = Node `ComputedMemberExpression` (
-    ([ESTreeType])      =>  data.always ("MemberExpression"),
-    ([computed])        =>  data.always (true),
-
-    object              =>  Node.Expression,
-    property            =>  Node.Expression,
-    optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `object.freeVariables`,
-                                take => `property.freeVariables` ) );*/
-
-//exports.MemberExpression = union2 `MemberExpression` (
-//    is                  => Node.StaticMemberExpression,
-//    or                  => Node.ComputedMemberExpression );
 
 exports.NewExpression = Node `NewExpression` (
     callee              =>  Node.Expression,
@@ -243,19 +218,5 @@ exports.SpreadElement = Node `SpreadElement` (
     argument            => Node.Expression,
     ([freeVariables])   => KeyPathsByName.compute (
                             take => `argument.freeVariables`) );
-
-/*exports.BranchExpression = Node `BranchExpression` (
-    argument            => Node.Expression,
-    ([freeVariables])   => KeyPathsByName.compute (
-                            take => `argument.freeVariables`,
-                            take => KeyPathsByName.just("branch")) )
-
-exports.DeriveCallAndBranchExpression = Node `DeriveCallAndBranchExpression` (
-    callee              => Node.Expression,
-    ds                  => array(number),
-    arguments           => array(or (Node.Expression, Node.SpreadElement)),
-    ([freeVariables])   => KeyPathsByName.compute (
-                            take => `callee.freeVariables` ) );
-*/
 
 Object.assign(exports, require("./literals"));
