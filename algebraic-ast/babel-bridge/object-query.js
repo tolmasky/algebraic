@@ -13,6 +13,10 @@ const Query = data `Query` (
     mapping =>  [type.object, Empty],
     casting =>  [type.object, Empty] );
 
+const Wrapping = Object.assign(
+    data `Wrapping` (
+        entries =>  type.array(type.object) ),
+    { parse: object => Wrapping({ entries: Object.entries(object) }) });
 
 const FieldRegExps = TRegExp(
 {
@@ -57,7 +61,7 @@ module.exports = given((
     QueryProxy = query => new Proxy(function(){},
     {
         apply: (_, __, [newPattern]) => 
-            QueryProxy(query.Δ(pattern => { if(typeof newPattern !== "object") throw Error();  return newPattern })),
+            QueryProxy(query.Δ(pattern => newPattern)),
 
         get: (_, key, self) =>
             key === mapping ? f =>
@@ -83,11 +87,11 @@ module.exports = given((
     QuerySet = new Proxy({},
     {
         set: (queries, key, value) => queries[key] =
-                (typeof value === "number" ?
-                    fromBitMask(value) :
-                value && typeof value === "object" ?
-                    [QueryProxy(value)] :
-                    [value])
+            value && typeof value === "object" ?
+                [Wrapping.parse(value)] :
+            (typeof value === "number" ?
+                fromBitMask(value) :
+                [value])
                     .map(query => (console.log(query),query[toObject])),
         get: (queries, key) => queries[key],
         ownKeys: queries => Object.keys(queries)

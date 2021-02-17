@@ -26,6 +26,15 @@ const toPredicatedTranslate = (TargetT, fields, predicate) =>
                     translate(FieldTN, keyPath, value)
             ])));
 
+const toWrappingTranslate = (TargetT, specification) => given((
+    entries = specification
+        .entries
+        .map(([key, EntryT]) => [key, type.name(EntryT)])) =>
+        (tranlsate, keyPath, value) =>
+            TargetT(fromEntries(entries
+                .map(([key, EntryTN]) =>
+                    [key, translate(EntryTN, keyPath, value)]))));
+
 const toSpecificationTranslate = (TargetT, specifications) => given((
     fields = data
         .fields(TargetT)
@@ -36,7 +45,10 @@ const toSpecificationTranslate = (TargetT, specifications) => given((
 [
     fields.map(([, FieldT]) => FieldT),
     toOrderedChoice(specifications
-        .map(specification => toPredicatedTranslate(
+        .map(specification => 
+            specification.entries ?
+            toWrappingTranslate(TargetT, specification) :
+        toPredicatedTranslate(
             TargetT,
             fields.map(([name, FieldT, FieldTN]) =>
             [
@@ -220,10 +232,10 @@ console.log("--->",
 console.log("--->", toDataTranslate(Node.WhileStatement));
 */
 
-const { program } = require("@babel/core").parse("x.a");//"const x = 5+5");
+const { program } = require("@babel/core").parse(`({ ["computed"]: 10, "uncomputed": 12 })`);//"const x = 5+5");
 
 const fromBabel = (TargetT, node) => translate(type.name(TargetT), [[], "top"], node);
  
  
-console.log(fromBabel(Node.Module, program).body[0]);
+console.log(fromBabel(Node.Module, program).body[0].expression.properties);
 console.log("WHAT");//.bindings);

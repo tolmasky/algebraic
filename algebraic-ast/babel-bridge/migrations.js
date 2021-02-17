@@ -63,7 +63,7 @@ AAST.RestPropertyAssignmentTarget
 
 
 AAST.ComputedPropertyName
-    = ({ expression: Babel.Expression });
+    = ({ expression: Node.Expression });
 
 // Remember, on the way back it's shorthand
 AAST.PropertyBinding
@@ -86,6 +86,17 @@ AAST.PropertyAssignmentTarget
         [mapping] (shorthand    =>  prefersShorthand)
         [mapping] (value        =>  binding);
 
+AAST.ObjectProperty
+    = Babel.ObjectProperty ({ computed: true })
+        [casting] (key          =>  Node.ComputedPropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding)
+    | Babel.ObjectProperty ({ computed: false })
+        [casting] (key          =>  Node.PropertyName)
+        [mapping] (shorthand    =>  prefersShorthand)
+        [mapping] (value        =>  binding);
+
+
 AAST.DefaultedAssignmentTarget
     = Babel.AssignmentPattern
         [mapping] (left         =>  target)
@@ -107,10 +118,6 @@ AAST.MemberExpression
         [casting] (property     =>  Node.Expression)
     | Babel.MemberExpression({ computed: false })
         [casting] (property     =>  Node.IdentifierName)
-
-// BAD!
-AAST.ComputedPropertyName
-    = Babel.RestElement;
 
 AAST.Label
     = Babel.RestElement;
@@ -153,6 +160,6 @@ AAST.LetLexicalDeclaration
 AAST.ConstLexicalDeclaration
     = Babel.VariableDeclaration({ kind: "const" })
         [mapping] (declarations =>  bindings);
-console.log("PIZZA", AAST.Module, AAST.MemberExpression[0]);
+
 module.exports = { ...AAST, toDefaultTranslation:
     type => Babel[type] ? toObject(Babel[type]) : toObject(Query.object({})) };
