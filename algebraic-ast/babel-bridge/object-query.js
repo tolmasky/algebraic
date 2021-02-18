@@ -41,6 +41,10 @@ const toFieldMapping = f => given((
         matchSingle[1] :
         matchComposite[1].split(FieldRegExps.delimiter)
 }));
+
+const fMapping = fromKeyPaths => ({ [to]: toKeyPath => [fromKeyPaths, toKeyPath] });
+const fCasting = fromKey => ({ [as]: T => [fromKey, T] });
+
 Error.stackTraceLimit = 1000000;
 module.exports = given((
     casting = Symbol("casting"),

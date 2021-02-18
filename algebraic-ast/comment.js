@@ -1,20 +1,19 @@
-const { data, number, string } = require("@algebraic/type");
+const { data, array, string, nullable } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
-const SourceLocation = require("./source-location");
-const ESTreeBridge = require("./estree-bridge");
+const Node = require("./node");
 
 
-module.exports = union `Comment` (
-    is  => ESTreeBridge `Block` (
-        ([ESTreeType])      => data.always ("CommentBlock"),
-        value               => string,
-        start               => number,
-        end                 => number,
-        loc                 => SourceLocation ),
+exports.Comment = union `Comment` (
+    is                      =>  Node.SingleLineComment,
+    or                      =>  Node.MultiLineComment );
 
-    or  => ESTreeBridge `Line` (
-        ([ESTreeType])      => data.always ("CommentLine"),
-        value               => string,
-        start               => number,
-        end                 => number,
-        loc                 => SourceLocation ) );
+exports.SingleLineComment = Node `SingleLineComment` (
+    value                   =>  string );
+
+exports.MultiLineComment = Node `MultiLineComment` (
+    value                   =>  string );
+
+exports.Comments = data `Comments` (
+    leading                 =>  [nullable(array(Node.Comment)), null],
+    inner                   =>  [nullable(array(Node.Comment)), null],
+    trailing                =>  [nullable(array(Node.Comment)), null] );

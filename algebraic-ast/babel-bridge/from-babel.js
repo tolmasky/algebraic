@@ -9,21 +9,20 @@ const given = f => f();
 
 
 const Node = require("../node");
-const { toDefaultTranslation, ...mappings } = require("./migrations");
+const { Babel, JS, ...mappings } = require("./migrations");
 const specifications = mappings;
+const toDefaultTranslation = type => Babel[type] ? Babel[type].toObject : JS.object.toObject;
 
 const toPredicatedTranslate = (TargetT, fields, predicate) =>
     (translate, keyPath, value) =>
         predicate(translate, keyPath, value) &&
         TargetT(fromEntries(
-            fields.map(([toKey, from, FieldTN, isOptional]) =>
+            fields.map(([toKey, fromKey, compute, FieldTN, isOptional]) =>
             [
                 toKey,
-                !isArray(from) ?
-                    translate(FieldTN, [keyPath, from], value[from]) :
-                isOptional && from.every(key => value[key] === void(0)) ?
+                /*isOptional && from.every(key => value[key] === void(0)) ?
                     null :
-                    translate(FieldTN, keyPath, value)
+                    */translate(FieldTN, [keyPath, fromKey], compute(value))
             ])));
 
 const toWrappingTranslate = (TargetT, specification) => given((
@@ -47,18 +46,27 @@ const toSpecificationTranslate = (TargetT, specifications) => given((
     toOrderedChoice(specifications
         .map(specification => 
             specification.entries ?
-            toWrappingTranslate(TargetT, specification) :
+            (console.log("DOING WRAPPING ", TargetT, specification),toWrappingTranslate(TargetT, specification)) :
         toPredicatedTranslate(
             TargetT,
-            fields.map(([name, FieldT, FieldTN]) =>
+            fields.map(([name, FieldT, FieldTN]) => given((
+                fieldSetting = specification.fieldSettings[name],
+                fieldCasting = specification.fieldCastings[name]) =>
             [
                 name,
-                specification.mapping[name] || name,
-                specification.casting[name] ?
-                    type.name(specification.casting[name]) :
+                !fieldSetting ?
+                    name :
+                !fieldSetting.dependencies.length < 2 ?
+                    fieldSetting.dependencies[0] :
+                    `${fieldSetting.dependencies.join(",")}`,
+                fieldSetting ?
+                    fieldSetting.compute :
+                    ({ [name]: value }) => value,
+                fieldCasting ?
+                    type.name(fieldCasting) :
                     FieldTN,
                 is(nullable, FieldT) //hmmmm... this may clash with what we do right above here...
-            ]),
+            ])),
             toSpecificationPredicate(specification))),
         TargetT)
 ]);
@@ -231,11 +239,15 @@ console.log("--->",
 
 console.log("--->", toDataTranslate(Node.WhileStatement));
 */
+//const x = `/*oh*/({ ["computed"]: 10, "uncomputed": 12 })`);
+const test = "/*hi*/5+5";
+const { program } = require("@babel/core").parse(test);
 
-const { program } = require("@babel/core").parse(`({ ["computed"]: 10, "uncomputed": 12 })`);//"const x = 5+5");
+
 
 const fromBabel = (TargetT, node) => translate(type.name(TargetT), [[], "top"], node);
  
- 
-console.log(fromBabel(Node.Module, program).body[0].expression.properties);
+console.log(program.body[0]);
+//process.exit(1);
+console.log(fromBabel(Node.Module, program).body[0].comments)//.body[0].expression.properties);
 console.log("WHAT");//.bindings);

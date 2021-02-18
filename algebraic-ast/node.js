@@ -3,42 +3,18 @@ const union = require("@algebraic/type/union-new");
 const { parameterized } = require("@algebraic/type");
 const { parameters } = parameterized;
 const SourceLocation = require("./source-location");
-const Comment = require("./comment");
-const ESTreeBridge = require("./estree-bridge");
+const DeferredComments = () => require("./comment").Comments;
 
+const Node = parameterized((name, ...fields) =>
+    data ([name])
+    (...[
+        name.endsWith("Comment") ?
+            false :
+            comments    =>  [DeferredComments(), DeferredComments()()],
+        location        =>  [nullable(SourceLocation), null],
+        ...fields
+    ].filter(field => !!field)));
 
-/*
-
-Source (
-    comments    => [nullable(Comments), null];
-    location    => [nullable(SourceLocation), null] );
-
-const Comments = data `Comments` (
-    inner       => [nullable(array(Comment)), null],
-    leading     => [nullable(array(Comment)), null],
-    trailing    => [nullable(array(Comment)), null] );
-
-({ }) => source.comments
-({ }) => source.location
-
-*/
-
-const SourceData = data `SourceData` (
-    leadingComments     => [nullable(array(Comment)), null],
-    innerComments       => [nullable(array(Comment)), null],
-    trailingComments    => [nullable(array(Comment)), null],
-    start               => [nullable(number), null],
-    end                 => [nullable(number), null],
-    location            => [nullable(SourceLocation), null] );
-
-const Node = parameterized(function (name, ...fields)
-{
-    return ESTreeBridge ([name]) (
-        sourceData  => [nullable(SourceData), null],
-        ...fields );
-});
-
-Node.SourceData = SourceData;
 
 Node.Node = Node;
 
@@ -67,7 +43,9 @@ Object.assign(module.exports,
     ...require("./assignment-targets"),
 
     ...require("./statements"),
-    ...require("./program")
+    ...require("./program"),
+    
+    ...require("./comment")
 });
 
 // Deal with union2.
@@ -87,8 +65,7 @@ Object
         .filter(field =>
             is (data.field.definition.supplied, field.definition))
         .map(field => [field.name, parameters(field)[0]])
-        .filter(([name, type]) =>
-            !name.endsWith("Comments") && isNodeOrComposite(type))
+        .filter(([name, T]) => isNodeOrComposite(T))
         .map(([name]) => name)])
     .map(([type, keys]) => type.traversable = keys);
 
