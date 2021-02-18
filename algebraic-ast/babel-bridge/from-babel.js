@@ -63,7 +63,7 @@ const toSpecificationTranslate = (TargetT, specifications) => given((
                     fieldSetting.compute :
                     ({ [name]: value }) => value,
                 fieldCasting ?
-                    type.name(fieldCasting) :
+                    (console.log("FOR " + name, fieldCasting.TargetT),type.name(fieldCasting.TargetT)) :
                     FieldTN,
                 is(nullable, FieldT) //hmmmm... this may clash with what we do right above here...
             ])),
@@ -239,15 +239,15 @@ console.log("--->",
 
 console.log("--->", toDataTranslate(Node.WhileStatement));
 */
-//const x = `/*oh*/({ ["computed"]: 10, "uncomputed": 12 })`);
-const test = "/*hi*/5+5";
+const test = `/*oh*/({ ["computed"]: 10, "uncomputed": 12 })`;
+const test2 = "/*hi*/5+5"; // .body[0].comments
 const { program } = require("@babel/core").parse(test);
 
 
 
 const fromBabel = (TargetT, node) => translate(type.name(TargetT), [[], "top"], node);
  
-console.log(program.body[0]);
+//console.log(program.body[0]);
 //process.exit(1);
-console.log(fromBabel(Node.Module, program).body[0].comments)//.body[0].expression.properties);
+console.log(fromBabel(Node.Module, program).body[0].expression.properties);
 console.log("WHAT");//.bindings);

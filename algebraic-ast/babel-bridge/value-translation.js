@@ -55,6 +55,9 @@ const toProxy = (get, apply) => new Proxy(function(){},
     get: (_, key) => get(key)
 });
 
+const WrappingTranslation = data `WrappingTranslation` (
+    entries =>  type.array(type.object) );
+
 const ValueTranslation = data `ValueTranslation` (
     type                =>  Function,
     pattern             =>  [type.object, Empty],
@@ -108,7 +111,7 @@ function ValueTranslationSet()
         set: (translations, key, value) =>
             translations[key] =
                 value && typeof value === "object" ?
-                    [Wrapping.parse(value)] :
+                    [WrappingTranslation({ entries: Object.entries(value) })] :
                 typeof value === "number" ?
                     BitMask
                         .from(value)

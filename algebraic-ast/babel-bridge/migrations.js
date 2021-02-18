@@ -67,16 +67,16 @@ AST.ObjectAssignmentTarget
 AST.RestPropertyAssignmentTarget
     = Babel.RestElement;
 
-//AST.ComputedPropertyName
-//    = ({ expression: Node.Expression });
+AST.ComputedPropertyName
+    = ({ expression: Node.Expression });
 
 // Remember, on the way back it's shorthand
 AST.PropertyBinding
-    = (Babel.ObjectProperty ({ computed: true })
+    = Babel.ObjectProperty ({ computed: true })
         [casting] (key              =>  Node.ComputedPropertyName)
         [setting] (prefersShorthand =>  shorthand)
         [setting] (binding          =>  value)
-    )| (Babel.ObjectProperty ({ computed: false })
+    | (Babel.ObjectProperty ({ computed: false })
         [casting] (key              =>  Node.PropertyName)
         [setting] (prefersShorthand =>  shorthand)
         [setting] (binding          =>  value))
