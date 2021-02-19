@@ -10,8 +10,8 @@
   "author": "Francisco Ryan Tolmasky I",
   "license": "MIT",
   "dependencies": {
-    "@babel/generator": "^7.5.0",
-    "@babel/parser": "^7.5.0",
+    "@babel/generator": "^7.12.17",
+    "@babel/parser": "^7.12.17",
     "@babel/types": "^7.5.0",
     "@climb/from-entries": "1.0.0-alpha.5",
     "@climb/partition": "1.0.0-alpha.5"
