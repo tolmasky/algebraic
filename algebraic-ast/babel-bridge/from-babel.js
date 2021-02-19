@@ -46,28 +46,29 @@ const toSpecificationTranslate = (TargetT, specifications) => given((
     toOrderedChoice(specifications
         .map(specification => 
             specification.entries ?
-            (console.log("DOING WRAPPING ", TargetT, specification),toWrappingTranslate(TargetT, specification)) :
-        toPredicatedTranslate(
-            TargetT,
-            fields.map(([name, FieldT, FieldTN]) => given((
-                fieldSetting = specification.fieldSettings[name],
-                fieldCasting = specification.fieldCastings[name]) =>
-            [
-                name,
-                !fieldSetting ?
-                    name :
-                !fieldSetting.dependencies.length < 2 ?
-                    fieldSetting.dependencies[0] :
-                    `${fieldSetting.dependencies.join(",")}`,
-                fieldSetting ?
-                    fieldSetting.compute :
-                    ({ [name]: value }) => value,
-                fieldCasting ?
-                    (console.log("FOR " + name, fieldCasting.TargetT),type.name(fieldCasting.TargetT)) :
-                    FieldTN,
-                is(nullable, FieldT) //hmmmm... this may clash with what we do right above here...
-            ])),
-            toSpecificationPredicate(specification))),
+            toWrappingTranslate(TargetT, specification) :
+            toPredicatedTranslate(
+                TargetT,
+                fields.map(([name, FieldT, FieldTN]) => given((
+                    fieldSetting = specification.fieldSettings[name],
+                    fieldCasting = specification.fieldCastings[name]) =>
+                [
+                    name,
+                    !fieldSetting ?
+                        name :
+                    !fieldSetting.dependencies.length < 2 ?
+                        fieldSetting.dependencies[0] :
+                        `${fieldSetting.dependencies.join(",")}`,
+                    fieldSetting ?
+                        fieldSetting.compute :
+                        ({ [name]: value }) => value,
+                    fieldCasting ?
+                        type.name(fieldCasting.TargetT) :
+                        FieldTN,
+                    //hmmmm... this may clash with what we do right above here...
+                    is(nullable, FieldT)
+                ])),
+                toSpecificationPredicate(specification))),
         TargetT)
 ]);
 
@@ -223,8 +224,9 @@ console.log(translates);
 
 function translate(TN, keyPath, value)
 {
-    console.log("BEING ASKED TO TRANSLATE TO " + TN + " " , toKeyPath(keyPath), value);
-console.log(translates[TN] + "");
+    // console.log("BEING ASKED TO TRANSLATE TO " + TN + " " , toKeyPath(keyPath), value);
+    // console.log(translates[TN] + "");
+
     return translates[TN](translate, keyPath, value);
 }
 
@@ -240,8 +242,8 @@ console.log("--->",
 console.log("--->", toDataTranslate(Node.WhileStatement));
 */
 const test = `/*oh*/({ ["computed"]: 10, "uncomputed": 12 })`;
-const test2 = "/*hi*/5+5"; // .body[0].comments
-const { program } = require("@babel/core").parse(test);
+const test2 = "/*hi*/5+5+f `hi${x}`"; // .body[0].comments
+const { program } = require("@babel/core").parse(test2);
 
 
 
@@ -249,5 +251,11 @@ const fromBabel = (TargetT, node) => translate(type.name(TargetT), [[], "top"], 
  
 //console.log(program.body[0]);
 //process.exit(1);
-console.log(fromBabel(Node.Module, program).body[0].expression.properties);
+console.log(fromBabel(Node.Module, program).body[0].expression);//.properties);
 console.log("WHAT");//.bindings);
+
+
+console.log(fromBabel(Node.Module, require("@babel/core").parse("{ a: 1 }").program).body[0].body);
+
+console.log(fromBabel(Node.Module, require("@babel/core").parse("f `hi${1}`").program).body[0].expression.quasi.quasis);
+
