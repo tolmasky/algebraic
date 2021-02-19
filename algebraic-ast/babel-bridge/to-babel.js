@@ -1,16 +1,8 @@
 const { array, type, or, data, maybe, nullable } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
-const { TYPES, VISITOR_KEYS, NODE_FIELDS, FLIPPED_ALIAS_KEYS } = require("@babel/types");
+const fail = require("@algebraic/type/fail");
+const { TYPES, NODE_FIELDS, FLIPPED_ALIAS_KEYS } = require("@babel/types");
 
-const ArrayType = types => ({ kind: "array", types });
-const NodeType = type => ({ kind:"node", type });
-const UnionType = types => ({ kind: "union", types });
-const PrimitiveType = type => ({ kind:"primitive", type });
-const PrimitiveOrNodeType = type => (/[A-Z]/.test(type) ? NodeType : PrimitiveType)(type);
-
-const fail = e => { throw e };
-const { hasOwnProperty } = Object;
-var i = 0;
 const toType = (TN, field, validate) =>
     !validate ?
         fail("FAILED FOR " + TN + " " + field) :
@@ -41,23 +33,24 @@ const toType = (TN, field, validate) =>
     validate.shapeOf ? type.any :
     (console.log(type, field, {...validate}),fail(TN + " " + field + " " + Object.keys(validate)));
 
-//console.log({...NODE_FIELDS["ClassPrivateProperty"]["static"] }, NODE_FIELDS["ClassPrivateProperty"]["static"] +"");
-// ({ ...NODE_FIELDS["File"]["comments"].validate })
+console.log({...NODE_FIELDS["ClassPrivateProperty"]["static"] }, NODE_FIELDS["ClassPrivateProperty"]["static"] +"");
+
 Error.stackTraceLimit = 100000;
-const IGNORED_KEYS = { ClassPrivateProperty: { static: true } };
 
 const given = f => f();
 const Babel = Object.fromEntries(TYPES
     .filter(type => type !== "File")
-    .map(type => [(console.log("DOING " + type + " " + FLIPPED_ALIAS_KEYS[type]),type),
+    .map(type => [type,
         FLIPPED_ALIAS_KEYS[type] ?
-            (console.log("UNION. " + type),union `${type}`
-                (...FLIPPED_ALIAS_KEYS[type].map(TN => is => Babel[TN]))) :
+            union `${type}`
+                (...FLIPPED_ALIAS_KEYS[type].map(TN => is => Babel[TN])) :
             data ([type]) (...Object
                 .keys(NODE_FIELDS[type] || {})
-                .filter(key =>  !IGNORED_KEYS[type] ||
-                                !IGNORED_KEYS[type][key])
                 .map(name => [name, NODE_FIELDS[type][name]])
+
+                // As of this writing, ClassPrivateProperty.static is just
+                // { default: null } with no validate.
+                .filter(([, { validate }]) => !!validate)
                 .map(([name, { validate, optional, default: fallback }]) =>
                     data.field.deferred
                     ({
@@ -70,31 +63,12 @@ const Babel = Object.fromEntries(TYPES
                                         maybe(TF).nothing :
                                         maybe(TF).just({ value: fallback }) }))
                     })))]));
-
-//console.log(Babel);
-
-//console.log(Babel.LVal);
-//console.log(union.components(Babel.LVal));
+/*
+console.log(Babel);
+*/
+console.log(Babel.LVal);
+console.log(union.components(Babel.LVal));
 console.log(Babel.Identifier);
 
 console.log(data.fields(Babel.Identifier));
 console.log(data.fields(Babel.MemberExpression));
-
-/*
-                
-        .map(type => [type,  || {})])
-        
-        .map(([type, keys]) =>
-        [
-            type,
-            IGNORED_KEYS[type] ?
-                keys.filter(key => !IGNORED_KEYS[type][key]) :
-                keys])
-        .map(([type, fields = []]) => [type, data ([type])
-            (...fields
-                .filter(field => field !== "extends" && field !== "default" && field !== "const")
-                .map(field =>
-                    new Function("T", `return ${field} => T`)
-                    (toType(type, field, NODE_FIELDS[type][field].validate))))])
-]);
-*/
