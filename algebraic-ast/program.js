@@ -17,7 +17,6 @@ exports.InterpreterDirective = Node `InterpreterDirective` (
     value               => string );
 
 exports.Script = Node `Script` (
-    ([ESTreeType])      => data.always ("Program"),
     ([sourceType])      => data.always ("script"),
 
     body                => array (Node.Statement),
@@ -35,7 +34,6 @@ exports.Script = Node `Script` (
                                 subtract => `blockBindings` ) );
 
 exports.Module = Node `Module` (
-    ([ESTreeType])      => data.always ("Program"),
     ([sourceType])      => data.always ("module"),
 
     body                => array (or (/*Node.ImportDeclaration,

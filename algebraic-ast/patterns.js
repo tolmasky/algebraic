@@ -4,11 +4,7 @@ const Node = require("./node");
 const given = f => f();
 
 
-// In order to maintain backwards compatibility with ESTree's spec, we set
-// the type property to "Identifier". This makes this portion of the tree
-// appear unchanged to Babel and other ESTree compatible tools.
 exports.IdentifierBinding = Node `IdentifierBinding` (
-    ([ESTreeType])      =>  data.always ("Identifier"),
     name                =>  string );
 
 exports.Binding = union `Binding` (
