@@ -67,10 +67,11 @@ const Babel = Object.fromEntries(TYPES
 module.exports = Babel;
 /*
 console.log(Babel);
-*/
+
 console.log(Babel.LVal);
 console.log(union.components(Babel.LVal));
 console.log(Babel.Identifier);
 
 console.log(data.fields(Babel.Identifier));
 console.log(data.fields(Babel.MemberExpression));
+*/
