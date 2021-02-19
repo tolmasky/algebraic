@@ -39,7 +39,7 @@ Object.assign(module.exports,
     ...require("./property-names"),
     ...require("./expressions"),
 
-    ...require("./patterns"),
+    ...require("./bindings"),
     ...require("./assignment-targets"),
 
     ...require("./statements"),
