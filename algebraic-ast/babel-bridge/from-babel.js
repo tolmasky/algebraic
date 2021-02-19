@@ -4,5 +4,4 @@ const Node = require("../node");
 
 module.exports = toTranslate(new Set(Object
     .values(Node)
-    .filter(T => T !== Node)
-    .concat(require("../source-location"))));
+    .filter(T => T !== Node)));
