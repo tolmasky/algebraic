@@ -1,6 +1,6 @@
 const { is, data, nullable, array, or } = require("@algebraic/type");
 const { boolean, number, string } = require("@algebraic/type/primitive");
-const union2 = require("@algebraic/type/union-new");
+const union = require("@algebraic/type/union-new");
 const Node = require("./node");
 const { KeyPathsByName } = require("./key-path");
 const Extra = require("./extra");
@@ -52,6 +52,6 @@ exports.Module = Node `Module` (
                                 subtract => `varBindings`,
                                 subtract => `blockBindings` ) );
 
-exports.Program = union2 `Program` (
+exports.Program = union `Program` (
     is                  => Node.Module,
     or                  => Node.Script );

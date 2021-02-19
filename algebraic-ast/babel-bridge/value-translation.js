@@ -137,18 +137,3 @@ module.exports =
                     ValueTranslation({ type: type[typename] }))
             ]))
 }
-
-console.log(module.exports.JS.object({ cheese: "pizza" })
-    [setting](key => key2)
-    [setting](key => key3)
-    [setting](key3 => ({x,y}))
-    [casting](key5 => (function X(){}))({andMore:"t"}).id.x.y.z[toObject].fieldSettings);
-
-
-/*
-console.log(module.exports.JS.object({ cheese: "pizza" })
-    [setting].key [to].key2
-    [setting].key [to].key3
-    [setting].key3 [to] ((x,y) =>x+y)
-    [casting].key5 [to] (function X(){})({andMore:"t"}).id.x.y.z[toObject]);
-*/
