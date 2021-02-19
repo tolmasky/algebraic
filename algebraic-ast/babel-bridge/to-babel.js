@@ -1,4 +1,4 @@
-const { array, type, or, data } = require("@algebraic/type");
+const { array, type, or, data, maybe, nullable } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const { TYPES, VISITOR_KEYS, NODE_FIELDS, FLIPPED_ALIAS_KEYS } = require("@babel/types");
 
@@ -25,13 +25,11 @@ const toType = (TN, field, validate) =>
     validate.type ?
         type[validate.type] :
     validate.oneOfNodeTypes ?
-        union `${i++}` (validate.oneOfNodeTypes.map(name => is => Babel[name])) :
+        or (...validate.oneOfNodeTypes.map(name => Babel[name])) :
     validate.oneOfNodeOrValueTypes ?
-        union `${i++}` (validate
+        or (...validate
             .oneOfNodeOrValueTypes
-            .map(name => /[A-Z]/.test(name) ?
-                is  => Babel[name] :
-                is  => type[name])) :
+            .map(name => (/[A-Z]/.test(name) ? Babel : type)[name])) :
     
     // This is "value enums", for example [true, false], or "+", "-", etc.
     // typeof true === "boolean", which is good.
@@ -45,9 +43,10 @@ const toType = (TN, field, validate) =>
 
 //console.log({...NODE_FIELDS["ClassPrivateProperty"]["static"] }, NODE_FIELDS["ClassPrivateProperty"]["static"] +"");
 // ({ ...NODE_FIELDS["File"]["comments"].validate })
-
+Error.stackTraceLimit = 100000;
 const IGNORED_KEYS = { ClassPrivateProperty: { static: true } };
 
+const given = f => f();
 const Babel = Object.fromEntries(TYPES
     .filter(type => type !== "File")
     .map(type => [(console.log("DOING " + type + " " + FLIPPED_ALIAS_KEYS[type]),type),
@@ -58,15 +57,19 @@ const Babel = Object.fromEntries(TYPES
                 .keys(NODE_FIELDS[type] || {})
                 .filter(key =>  !IGNORED_KEYS[type] ||
                                 !IGNORED_KEYS[type][key])
-                .filter(field =>    field !== "extends" &&
-                                    field !== "default" &&
-                                    field !== "const" &&
-                                    field !== "decorators" &&
-                                    field !== "typeAnnotation")
-                .map(field =>(console.log(new Function("T", `return ${field} => T`)
-                    (toType(type, field, NODE_FIELDS[type][field].validate))+"",NODE_FIELDS[type][field].validate,toType(type, field, NODE_FIELDS[type][field].validate)),
-                    new Function("T", `return ${field} => T`)
-                    (toType(type, field, NODE_FIELDS[type][field].validate)))))]));
+                .map(name => [name, NODE_FIELDS[type][name]])
+                .map(([name, { validate, optional, default: fallback }]) =>
+                    data.field.deferred
+                    ({
+                        name,
+                        λdefinition: () => given((
+                            TB = toType(type, name, validate),
+                            TF = optional ? nullable(TB) : TB) =>
+                            data.field.definition.supplied(TF)
+                                ({ fallback: fallback === null && !optional ?
+                                        maybe(TF).nothing :
+                                        maybe(TF).just({ value: fallback }) }))
+                    })))]));
 
 //console.log(Babel);
 
