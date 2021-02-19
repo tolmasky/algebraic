@@ -1,3 +1,4 @@
+const { Δ } = require("@algebraic/type");
 const { array, type, or, data, maybe, nullable } = require("@algebraic/type");
 const union = require("@algebraic/type/union-new");
 const fail = require("@algebraic/type/fail");
@@ -65,6 +66,89 @@ const Babel = Object.fromEntries(TYPES
                     })))]));
 
 module.exports = Babel;
+
+
+const { parseExpression } = require("@babel/parser");
+const { default: generate } = require("@babel/generator");
+const entrypoint = parseExpression("start");
+const AST = parseExpression("a.b");
+const t = require("@babel/types");        
+
+const toRestructuredM = (entrypoint, expression, f = xyz => xyz) =>
+    toRestructured(entrypoint, expression)
+        .map(([result, accum]) => [result, f(accum)]);
+
+const toRestructured = (entrypoint, expression, { type } = expression) =>
+    Array.isArray(expression) ?
+        expression.flatMap(value => toRestructuredM(entrypoint, value)) :
+    type === "Identifier" ?
+        [[expression.name, entrypoint]] :
+    type === "MemberExpression" ?
+        toRestructuredM(
+            entrypoint,
+            expression.object,
+            accum => t.ObjectExpression([t.ObjectProperty(expression.property, accum)])) :
+    type === "SpreadElement" ?
+        toRestructuredM(
+            entrypoint,
+            expression.argument) :
+    type === "ObjectExpression" ?
+        toRestructuredM(
+            entrypoint,
+            expression.properties) :
+    type === "ObjectProperty" ?
+        toRestructuredM(
+            entrypoint,
+            expression.value,
+            accum => t.MemberExpression(accum, expression.key)) :
+        (()=>{throw "NOPE " + type})();
+
+const reverse = fString => given((
+    { params: [entrypoint], body } = parseExpression(fString),
+    results = toRestructured(entrypoint, body)) =>
+        results.map(([result, expression]) =>
+            [result, `({ ${entrypoint.name} }) => (${generate(expression).code})`]));
+
+
+const { JS, FieldSetting } = require("./value-translation");
+const specifications = require("./migrations");
+const Node = require("../node");
+
+
+const reverseT = function (T, translation)
+{
+    const rule = JS.is(T).toObject;
+
+    // Patterns trivially just become constant field settings.
+    const fromPatternFieldSettings = Object
+        .entries(translation.pattern)
+        .map(([name, value]) =>
+            [name, FieldSetting({ dependencies:[], compute: () => value })]);
+
+    return rule.Δ(fieldSettings => fromPatternFieldSettings);
+/*
+    const reversedFieldSettings = Object
+        .entries(translation.fieldSettings)
+        .map(([name, fieldSetting]) => );*/
+}
+
+const fromBabel = require("./from-babel");
+const toTranslate = require("./to-translate");
+
+const result = fromBabel(Node.Expression, parseExpression("x"));
+//const translate = toTranslate(Babel);
+console.log(result);
+
+
+console.log(reverseT(Node.IdentifierReference, specifications["IdentifierReference"][0]));
+
+//reverse("start => a.b");
+
+//`a => ${generate(restructured).code}`
+//const [name, restructured] = toRestructured(x=>x,entrypoint, AST);
+//console.log("hi");
+//`${name} => ${generate(restructured).code}`
+
 /*
 console.log(Babel);
 

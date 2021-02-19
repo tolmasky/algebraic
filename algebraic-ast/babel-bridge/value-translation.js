@@ -127,8 +127,13 @@ module.exports =
     toObject,
     setting,
     casting,
+    FieldSetting,
     Set: ValueTranslationSet,
-    JS: Object.fromEntries(
+    JS:
+    {
+        is: T => toValueTranslationProxy(ValueTranslation({ type: T })),
+
+        ...Object.fromEntries(
         ["object", "null", "undefined", "boolean", "number", "string"]
             .map(typename =>
             [
@@ -136,4 +141,5 @@ module.exports =
                 toValueTranslationProxy(
                     ValueTranslation({ type: type[typename] }))
             ]))
+    }
 }

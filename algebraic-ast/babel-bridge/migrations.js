@@ -162,4 +162,6 @@ AST.ConstLexicalDeclaration
     = Babel.VariableDeclaration({ kind: "const" })
         [setting] (bindings         => declarations);
 
-module.exports = { ...AST, Babel, JS };
+// toDefaultTranslation is not who should handle this!
+module.exports = { ...AST, Babel,
+    toDefaultTranslation: type => Babel[type] ? Babel[type].toObject : JS.object.toObject };

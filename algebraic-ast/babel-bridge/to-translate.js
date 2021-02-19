@@ -6,12 +6,8 @@ const union = require("@algebraic/type/union-new");
 const fail = require("@algebraic/type/fail");
 const { parameters } = parameterized;
 const given = f => f();
-
-
 const Node = require("../node");
-const { Babel, JS, ...mappings } = require("./migrations");
-const specifications = mappings;
-const toDefaultTranslation = type => Babel[type] ? Babel[type].toObject : JS.object.toObject;
+
 
 const toPredicatedTranslate = (TargetT, fields, predicate) =>
     (translate, keyPath, value) =>
@@ -109,11 +105,12 @@ const toOrderedChoice = (candidates, ExpectedT) =>
         (...args) => findMap(f => f(...args), recoverable)[1]);
 
 
-const toDataTranslate = TargetT => given((
+const toDataTranslate = (specifications, TargetT) => given((
     TargetTN = type.name(TargetT)) =>
     toSpecificationTranslate(
         TargetT,
-        specifications[TargetTN] || [toDefaultTranslation(TargetTN)]));
+        specifications[TargetTN] ||
+        [specifications.toDefaultTranslation(TargetTN)]));
 
 const toPrimitiveTranslate = T => 
 [
@@ -137,17 +134,10 @@ const toTranlsateUnion = UnionT => given((
         UnionT)
 ]);
 
-const toToTranslate = T =>
+const toTranslate = (specifications, T) => (
     type.kind(T) === type.primitive ? toPrimitiveTranslate :
     type.kind(T) === type.array ? toArrayTranslate :
-    type.kind(T) === data ? toDataTranslate :
-    type.kind(T) === union ? toTranlsateUnion :
-    false;   
-
-const toTranslate = T => (
-    type.kind(T) === type.primitive ? toPrimitiveTranslate :
-    type.kind(T) === type.array ? toArrayTranslate :
-    type.kind(T) === data ? toDataTranslate :
+    type.kind(T) === data ? T => toDataTranslate(specifications, T) :
     type.kind(T) === union ? toTranlsateUnion :
     (console.error("wasn't expecting " + T), T => [[]]))(T);
 
@@ -180,15 +170,17 @@ translateFail = (...args) =>
             }),
             { expected, keyPath, value })));
 
-const toTranslateEntries = (Ts, visited = Ts) =>
+const toTranslateEntries = (specifications, Ts, visited = Ts) =>
     Ts.size <= 0 ? [] : given((
-    results = Array.from(Ts, T => [type.name(T), toTranslate(T)]),
+    results = Array.from(Ts, T =>
+        [type.name(T), toTranslate(specifications, T)]),
     discovered = new Set(results
         .flatMap(([, [Ts]]) => Ts)
         .filter(T => !visited.has(T)))) =>
             results
                 .map(([name, [, translate]]) => [name, translate])
                 .concat(toTranslateEntries(
+                    specifications,
                     discovered,
                     Array
                         .from(discovered)
@@ -213,9 +205,9 @@ const toArrayTranslate = ArrayT => given((
                     translate(ItemTypename, [keyPath, index], item))
 ]);
 
-module.exports = function (types)
+module.exports = function (types, specifications)
 {
-    const translates = fromEntries(toTranslateEntries(types));
+    const translates = fromEntries(toTranslateEntries(specifications, types));
     const translate = (TN, keyPath, value) =>
         translates[TN](translate, keyPath, value);
 
