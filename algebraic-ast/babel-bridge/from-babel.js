@@ -217,10 +217,11 @@ const toArrayTranslate = ArrayT => given((
 
 const translates = fromEntries(toTranslateEntries(new Set(Object
     .values(Node)
+    .filter(T => T !== Node)
     .concat(require("../source-location"))
     /*.filter(toToTranslate)*/)));
 
-console.log(translates);
+// console.log(translates);
 
 function translate(TN, keyPath, value)
 {
@@ -230,7 +231,7 @@ function translate(TN, keyPath, value)
     return translates[TN](translate, keyPath, value);
 }
 
-console.log("hey", translates);
+// console.log("hey", translates);
 
 /*
 console.log(specifications[type.name(Node.DefaultedAssignmentTarget)]);

@@ -56,7 +56,7 @@ const isNodeOrComposite = T =>
     type.kind(T) === union &&
         union.components(T).some(isNodeOrComposite);
 
-Node.isNodeOrCompose = isNodeOrComposite;
+// Node.isNodeOrCompose = isNodeOrComposite;
 
 Object
     .values(Node)
