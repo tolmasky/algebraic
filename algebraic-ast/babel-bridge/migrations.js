@@ -122,13 +122,10 @@ AST.MemberExpression
         [casting] (property         =>  Node.Expression)
     | Babel.MemberExpression({ computed: false })
         [casting] (property         =>  Node.IdentifierName)
-/*
+
 AST.Label
-    = Babel.RestElement;
-    
-Node["TemplateElement.Value"]
-    = Babel.RestElement;
-*/
+    = Babel.Identifier;
+
 AST.DefaultedBinding
     = Babel.VariableDeclarator
         [setting] (binding          =>  id)

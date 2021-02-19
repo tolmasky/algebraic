@@ -6,7 +6,6 @@ const { KeyPathsByName } = require("./key-path");
 
 
 exports.Label = Node `Label` (
-    ([ESTreeType])          =>  data.always ("Identifier"),
     name                    =>  string,
     ([varBindingNames])     =>  data.always (KeyPathsByName.None),
     ([blockBindingNames])   =>  data.always (KeyPathsByName.None),

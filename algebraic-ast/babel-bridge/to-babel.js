@@ -63,6 +63,8 @@ const Babel = Object.fromEntries(TYPES
                                         maybe(TF).nothing :
                                         maybe(TF).just({ value: fallback }) }))
                     })))]));
+
+module.exports = Babel;
 /*
 console.log(Babel);
 */

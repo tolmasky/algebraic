@@ -26,7 +26,6 @@ exports.IntrinsicReference = Node `IntrinsicReference` (
     ([freeVariables])   =>  data.always (KeyPathsByName.None) );
 
 exports.IdentifierReference = Node `IdentifierReference` (
-    ([ESTreeType])      =>  data.always ("Identifier"),
     name                =>  string,
     ([freeVariables])   =>  KeyPathsByName.compute (
                                 take => `name`) );
@@ -110,7 +109,6 @@ exports.LogicalExpression = Node `LogicalExpression` (
                                 take => `right.freeVariables` ) );
 
 exports.MemberExpression = Node `MemberExpression` (
-    ([ESTreeType])      =>  data.always ("MemberExpression"),
     ([computed])        =>  [boolean, property =>
                                         is(Node.Expression, property)],
 
