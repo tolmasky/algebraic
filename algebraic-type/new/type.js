@@ -6,8 +6,8 @@ const template = require("./template");
 const given = f => f();
 
 const fNamed = (name, f) => Object.defineProperty(f, "name", { value: name });
-const fPrototyped = (prototype, name, properties, f) =>
-    Object.assign(fNamed(name, Object.setPrototypeOf(f, prototype)), properties);
+const fPrototyped = (prototype, name, f) =>
+    fNamed(name, Object.setPrototypeOf(f, prototype));
 
 const TypeDefine = Symbol("Type.Internal.Define");
 
@@ -17,24 +17,23 @@ const TypeDefinition = Symbol("Type.Internal.Definition");
 const construct = T => new T(TypeConstruct);
 const unsatisfied = () => false;
 
-const define = definition => given((
+const define = attributes => given((
     T = fPrototyped(
         type.prototype,
-        definition.name,
-        { [TypeDefinition]: {
-            satisfies: unsatisfied,
-            ...definition
-        } },
+        attributes.name,
         function (...args)
         {
             return  args[0] === TypeConstruct ? this :
                     template.isTaggedCall(args[0]) ? modify(T, template.resolve(args)) :
-                    !definition.apply ?
+                    !attributes.apply ?
                         fail.type(`${name} is not a constructable type.`) :
-                    definition
+                    attributes
                         .apply
-                        .call(this, T, construct, definition, args);
-        })) => T);
+                        .call(this, T, construct, attributes, args);
+        })) => Object.defineProperty(
+            T,
+            TypeDefinition,
+            { value: { satisfies: unsatisfied, ...attributes } }));
 
 const NoConfiguration = {};
 const toInferredDefinition = configuration =>
