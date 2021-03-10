@@ -48,7 +48,7 @@ const toInferredDefinition = configuration =>
     configuration instanceof type ?
         toAliasAttributes(configuration) :
     typeof configuration === "function" ?
-        toFunctionAttributes(configuration) :
+        (console.log("here with...", configuration+""), toFunctionAttributes(configuration)) :
         fail.type(`Can't configure type with ${configuration}`)
 
 
@@ -109,11 +109,11 @@ const toAliasAttributes = T => given((
     aliasof: T,
     apply:
         TAttributes.apply &&
-        function apply(NominalT, attributes, ...rest)
+        function apply(NominalT, _, ...rest)
         {
             return TAttributes.apply.call(this, NominalT, T, ...rest);
         }
-}))
+}));
 
 const toDataAttributes = require("./attributes/data");
 const toFunctionAttributes = require("./attributes/function");

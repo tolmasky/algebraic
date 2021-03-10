@@ -11,6 +11,22 @@ const Tree = type `Tree` (([T] = type) => T);
 
 const TreeAppliedWithName = Tree `NewName` (test);
 
+const Pizza = type `Pizza` (TreeAppliedWithName);
+const Pizza2 = type `Pizza2` (([T] = type) => Tree `NewName` (test));
+
+const aliases = T => [T,
+    ...(!type.attributes(T).aliasof ?
+        [] :
+        aliases(type.attributes(T).aliasof))];
+
+console.log(aliases(Pizza));
+console.log(aliases(Pizza2));
+console.log(aliases(Pizza2(test)));
+
+
+console.log(aliases(TreeAppliedWithName));
+//console.log("HI", type.attributes(type.attributes(TreeAppliedWithName).aliasof));
+
 console.log(type.satisfies(type, Tree));
 
 console.log(TreeAppliedWithName);
