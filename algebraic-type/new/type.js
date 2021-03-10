@@ -42,6 +42,8 @@ const toInferredDefinition = configuration =>
         fail.type(`FIXME: unary types not supported yet`) :
     !configuration ?
         fail.type(`Can't configure type with ${configuration}`) :
+    typeof configuration === "function" ?
+        toFunctionAttributes(configuration) :
     typeof configuration === "object" ?
         toDataDefinition(configuration) :
         fail.type(`Can't configure type with ${configuration}`)
@@ -84,6 +86,8 @@ type.satisfies = function (T, value)
     return satisfies(T, type.of(value));
 }
 
+type.typename = T => T[TypeDefinition].name;
+
 type.of = value =>
     type[value === null ? "null" : typeof value] ||
     Object.getPrototypeOf(value).constructor;
@@ -95,3 +99,4 @@ Object.assign(
             .map(name => [name, define({ name })])));
 
 const toDataDefinition = require("./to-data-definition");
+const toFunctionAttributes = require("./attributes/function");
