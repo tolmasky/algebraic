@@ -36,3 +36,9 @@ console.log(Tree(test));
 
 console.log(Tree(test) + "");
 console.log(Tree(test)({x:4}));
+
+const TreeTest = Tree(test);
+
+
+console.log(type.satisfies(TreeTest, TreeTest({x:4})));
+console.log(type.satisfies(test, TreeTest({x:4})));

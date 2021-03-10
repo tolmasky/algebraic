@@ -12,7 +12,7 @@ const fPrototyped = (prototype, name, f) =>
 const TypeDefine = Symbol("Type.Internal.Define");
 
 const TypeConstruct = Symbol("Type.Internal.Construct");
-const TypeDefinition = Symbol("Type.Internal.Definition");
+const TypeAttributes = Symbol("type.attributes");
 
 const construct = T => new T(TypeConstruct);
 const unsatisfied = () => false;
@@ -32,7 +32,7 @@ const define = attributes => given((
                         .call(this, T, T, construct, args);
         })) => Object.defineProperty(
             T,
-            TypeDefinition,
+            TypeAttributes,
             { value: { satisfies: unsatisfied, ...attributes } }));
 
 const NoConfiguration = {};
@@ -78,20 +78,30 @@ function type(...args)
 
 module.exports = type;
 
-const satisfies = (criterion, candidate) =>
-    criterion === candidate ||
-    criterion[TypeDefinition].satisfies(criterion, candidate)/* ||
-    candidate instanceof Type.Expression.Invocation &&
-    satisfies(criterion, candidate[Definition].effective)*/;
+function satisfies(predicate, candidate)
+{
+    if (predicate === candidate)
+        return true;
+
+    const pAttributes = type.attributes(predicate);
+
+    if (pAttributes.satisfies(predicate, candidate))
+        return true;
+
+    const cAttributes = type.attributes(candidate);
+
+    return  cAttributes.aliasof &&
+            satisfies(predicate, cAttributes.aliasof);
+}
 
 type.satisfies = function (T, value)
 {//console.log(value, type.of(value), type.of(value)[Definition]);
     return satisfies(T, type.of(value));
 }
 
-type.attributes = T => T[TypeDefinition];
+type.attributes = T => T[TypeAttributes];
 
-type.typename = T => T[TypeDefinition].name;
+type.typename = T => type.attributes(T).name;
 
 type.of = value =>
     type[value === null ? "null" : typeof value] ||
@@ -103,15 +113,17 @@ Object.assign(
         ["null", "undefined", "number", "string", "boolean"]
             .map(name => [name, define({ name })])));
 
-const toAliasAttributes = T => given((
-    TAttributes = T[TypeDefinition]) =>
+const toAliasAttributes = aliasof => given((
+    aliasofAttributes = type.attributes(aliasof)) =>
 ({
-    aliasof: T,
+    aliasof,
     apply:
-        TAttributes.apply &&
+        aliasofAttributes.apply &&
         function apply(NominalT, _, ...rest)
         {
-            return TAttributes.apply.call(this, NominalT, T, ...rest);
+            return aliasofAttributes
+                .apply
+                .call(this, NominalT, aliasof, ...rest);
         }
 }));
 
