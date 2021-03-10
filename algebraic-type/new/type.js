@@ -29,7 +29,7 @@ const define = attributes => given((
                         fail.type(`${name} is not a constructable type.`) :
                     attributes
                         .apply
-                        .call(this, T, attributes, construct, args);
+                        .call(this, T, T, construct, args);
         })) => Object.defineProperty(
             T,
             TypeDefinition,
@@ -41,12 +41,14 @@ const toInferredDefinition = configuration =>
         fail.type(`FIXME: unary types not supported yet`) :
     !configuration ?
         fail.type(`Can't configure type with ${configuration}`) :
-    configuration instanceof type ?
-        (console.log("WHAAA!"),toAliasAttributes(configuration)) :
-    typeof configuration === "function" ?
-        toFunctionAttributes(configuration) :
     typeof configuration === "object" ?
         toDataAttributes(configuration) :
+    // This has to come before the function check, if not it will trigger for
+    // that first.
+    configuration instanceof type ?
+        toAliasAttributes(configuration) :
+    typeof configuration === "function" ?
+        toFunctionAttributes(configuration) :
         fail.type(`Can't configure type with ${configuration}`)
 
 
@@ -87,6 +89,8 @@ type.satisfies = function (T, value)
     return satisfies(T, type.of(value));
 }
 
+type.attributes = T => T[TypeDefinition];
+
 type.typename = T => T[TypeDefinition].name;
 
 type.of = value =>
@@ -107,7 +111,7 @@ const toAliasAttributes = T => given((
         TAttributes.apply &&
         function apply(NominalT, attributes, ...rest)
         {
-            return TAttributes.apply.call(this, NominalT, TAttributes, ...rest);
+            return TAttributes.apply.call(this, NominalT, T, ...rest);
         }
 }))
 

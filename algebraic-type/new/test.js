@@ -4,10 +4,14 @@ const test = type `test` ({ x: of => type.number });
 
 console.log(test({x:4}));
 
-const Tree = type `Tree` (([T] = type) => { console.log("IN HERE!", T); return T });
+// We have this issue of satisfies(instance vs. type)
+
+const Tree = type `Tree` (([T] = type) => T);
 
 
 const TreeAppliedWithName = Tree `NewName` (test);
+
+console.log(type.satisfies(type, Tree));
 
 console.log(TreeAppliedWithName);
 console.log(TreeAppliedWithName({x:4}));

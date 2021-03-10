@@ -7,20 +7,26 @@ const given = f => f();
 
 const EmptyArguments = Object.freeze(Object.create(null));
 
-const toFields = definition =>
-    definition.fields ?
-        definition.fields :
-        definition.fields = Object
-            .entries(definition.fFields)
-            .map(([key, value]) => [key, value()])
+const CachedFields = new WeakMap();
 
-const apply = (NominalT, definition, construct, args) => given((
+const toFields = T => Object
+    .entries(type.attributes(T).fFields)
+    .map(([key, value]) => [key, value()]);
+
+const toFieldsCached = T =>
+    CachedFields.has(T) ?
+        CachedFields.get(T) :
+        given((fields = toFields(T)) =>
+            (CachedFields.set(T, fields), fields));
+
+
+const apply = (NominalT, T, construct, args) => given((
     values = args.length <= 0 ? EmptyArguments : args[0]) =>
     Object.assign(
         this instanceof NominalT ?
             this :
             construct(NominalT),
-        fromEntries(toFields(definition)
+        fromEntries(toFieldsCached(T)
             .map(([key, FieldT]) =>
                 !hasOwnProperty.call(values, key) ?
                     fail.type(``) :
