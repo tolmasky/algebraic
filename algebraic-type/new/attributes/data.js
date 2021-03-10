@@ -1,7 +1,7 @@
 const { hasOwnProperty } = Object;
 const fromEntries = require("@climb/from-entries");
-const fail = require("../fail");
-const type = require("./type");
+const fail = require("../../fail");
+const type = require("../type");
 const given = f => f();
 
 

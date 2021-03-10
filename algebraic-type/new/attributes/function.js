@@ -2,7 +2,7 @@ const template = require("../template");
 const type = require("../type");
 
 const applied = (name, implementation, arguments) =>
-    type(name, implementation(...arguments));
+    type(name, implementation(...arguments.map(argument => [argument])));
 
 const apply = (NominalT, construct, { implementation }, arguments) =>
     /* tagged */

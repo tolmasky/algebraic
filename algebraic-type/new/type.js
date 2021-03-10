@@ -44,7 +44,7 @@ const toInferredDefinition = configuration =>
     typeof configuration === "function" ?
         toFunctionAttributes(configuration) :
     typeof configuration === "object" ?
-        toDataDefinition(configuration) :
+        toDataAttributes(configuration) :
         fail.type(`Can't configure type with ${configuration}`)
 
 
@@ -97,5 +97,5 @@ Object.assign(
         ["null", "undefined", "number", "string", "boolean"]
             .map(name => [name, define({ name })])));
 
-const toDataDefinition = require("./to-data-definition");
+const toDataAttributes = require("./attributes/data");
 const toFunctionAttributes = require("./attributes/function");
