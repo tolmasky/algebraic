@@ -14,7 +14,7 @@ const toFields = definition =>
             .entries(definition.fFields)
             .map(([key, value]) => [key, value()])
 
-const apply = (NominalT, construct, definition, args) => given((
+const apply = (NominalT, definition, construct, args) => given((
     values = args.length <= 0 ? EmptyArguments : args[0]) =>
     Object.assign(
         this instanceof NominalT ?

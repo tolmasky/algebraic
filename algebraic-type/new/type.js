@@ -29,7 +29,7 @@ const define = attributes => given((
                         fail.type(`${name} is not a constructable type.`) :
                     attributes
                         .apply
-                        .call(this, T, construct, attributes, args);
+                        .call(this, T, attributes, construct, args);
         })) => Object.defineProperty(
             T,
             TypeDefinition,
@@ -41,6 +41,8 @@ const toInferredDefinition = configuration =>
         fail.type(`FIXME: unary types not supported yet`) :
     !configuration ?
         fail.type(`Can't configure type with ${configuration}`) :
+    configuration instanceof type ?
+        (console.log("WHAAA!"),toAliasAttributes(configuration)) :
     typeof configuration === "function" ?
         toFunctionAttributes(configuration) :
     typeof configuration === "object" ?
@@ -96,6 +98,18 @@ Object.assign(
     fromEntries(
         ["null", "undefined", "number", "string", "boolean"]
             .map(name => [name, define({ name })])));
+
+const toAliasAttributes = T => given((
+    TAttributes = T[TypeDefinition]) =>
+({
+    aliasof: T,
+    apply:
+        TAttributes.apply &&
+        function apply(NominalT, attributes, ...rest)
+        {
+            return TAttributes.apply.call(this, NominalT, TAttributes, ...rest);
+        }
+}))
 
 const toDataAttributes = require("./attributes/data");
 const toFunctionAttributes = require("./attributes/function");
