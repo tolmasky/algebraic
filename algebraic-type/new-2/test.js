@@ -3,6 +3,7 @@ const type = require("./type");
 const test = type `test` ({ x: of => type.number });
 console.log(typeof test);
 console.log(test({x:4}));
+console.log(test({}));
 console.log(test({x:"hi"}));
 
 // We have this issue of satisfies(instance vs. type)

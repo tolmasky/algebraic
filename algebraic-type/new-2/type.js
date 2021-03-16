@@ -31,6 +31,9 @@ module.exports = type;
 
 function satisfies(predicate, candidate)
 {
+    if (predicate === type.any)
+        return true;
+
     if (predicate === candidate)
         return true;
 
@@ -55,6 +58,8 @@ type.satisfies = function (T, value)
 const data = require("./data");
 
 type.typename = T => T.name;
+
+type.any = {};
 
 type.of = value =>
     type[value === null ? "null" : typeof value] ||
