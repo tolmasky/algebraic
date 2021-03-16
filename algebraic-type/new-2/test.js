@@ -1,10 +1,19 @@
 const type = require("./type");
 
+const getTypeChain = value => getFunctionNameChain(value["Provenance"]);
+
+const getFunctionNameChain = provenance =>
+    provenance ? [provenance.function.name, ...getFunctionNameChain(provenance.parent)] : []
+
+
 const test = type `test` ({ x: of => type.number });
 console.log(typeof test);
 console.log(test({x:4}));
-console.log(test({}));
-console.log(test({x:"hi"}));
+//console.log(test({}));
+//console.log(test({x:"hi"}));
+
+console.log(test({x:4})["Provenance"].function.name)
+console.log(getTypeChain(test({x:4})));
 
 // We have this issue of satisfies(instance vs. type)
 
@@ -20,12 +29,10 @@ const Pizza2 = type `Pizza2` (([T] = type) => Tree /*`NewName`*/ (test));
 
 
 
-const aliases = provenance =>
-    provenance ? [provenance.function.name, ...aliases(provenance.parent)] : []
 
-console.log(aliases(Pizza["Provenance"]));
-console.log(aliases(Pizza2["Provenance"]));
-console.log(aliases(Pizza2(test)["Provenance"]));
+console.log(getTypeChain(Pizza["Provenance"]));
+console.log(getTypeChain(Pizza2["Provenance"]));
+console.log(getTypeChain(Pizza2(test)["Provenance"]));
 
 
 console.log(aliases(TreeAppliedWithName["Provenance"]));

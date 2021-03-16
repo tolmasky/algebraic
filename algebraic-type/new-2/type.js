@@ -9,7 +9,7 @@ const unary = provenancing(() => ({}));
 const type = (...arguments) =>
     template.isTaggedCall(arguments) ?
         (...nextArguments) =>
-            alias(template.resolve(arguments), type(...nextArguments)) :
+            alias(template.resolve(...arguments), type(...nextArguments)) :
     arguments.length === 0 ?
         unary() :
     !arguments[0] ?
