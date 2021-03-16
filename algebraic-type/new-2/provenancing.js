@@ -1,8 +1,12 @@
 const fNamed = (name, f) => Object.defineProperty(f, "name", { value: name });
 const ProvenanceProperty = "Provenance" // Symbol("Provenance");
-const ApplyAsProperty = "ApplyAs";
 const IsProvenancing = "IsProvenancing";
 const { hasOwnProperty } = Object;
+const unenumerableAssign = (target, values) => Object
+    .entries(values)
+    .reduce((target, [name, value]) =>
+        Object.defineProperty(target, name, { value }),
+        target);
 
 function Provenance(f, args, parent)
 {
@@ -55,7 +59,7 @@ function provenanced (value, toProvenance)
     return Object.defineProperty(
             Object.setPrototypeOf(duplicate, prototype),
             ProvenanceProperty,
-            { value: provenance, enumerable: true });
+            { value: provenance, enumerable: false });
 }
 
 const isType = f => typeof f === "function";
@@ -68,7 +72,7 @@ const defaultToAppliedName = (f, arguments) =>
 
 function provenancing (f, toAppliedName = defaultToAppliedName)
 {
-    return Object.assign(copy.function(f, function (fProvenancing, args)
+    return unenumerableAssign(copy.function(f, function (fProvenancing, args)
     {
 /*        const result = f(...args);
         const resultIsProvenancing = typeof f === "function" && result[IsProvenancing];
@@ -104,7 +108,7 @@ copy.function = function (f, fInternal = (fCopy, args) => f(...args))
     const fCopy = Object.assign(fNamed(
         f.name/* + "copy"*/,
         Function("f", `return function (${parameters}) { return f(${parameters}) }`)
-        (function (...args) { return fInternal(fCopy, args) })), {copyof:f,...f});
+        (function (...args) { return fInternal(fCopy, args) })), {/*copyof:f,*/...f});
 
     return fCopy;
 }

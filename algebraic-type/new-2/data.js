@@ -6,7 +6,8 @@ const provenancing = require("./provenancing");
 const CachedFields = new WeakMap();
 const given = f => f();
 
-const toResolvedFields = entries => entries
+const toResolvedFields = fields => Object
+    .entries(fields)
     .map(([name, fValue]) => [name, fValue()]);
 
 const ResolvedCachedFields = new WeakMap();
@@ -17,21 +18,23 @@ const toResolvedFieldsCached = T =>
             (ResolvedCachedFields.set(T, fields), fields));
 
 
-module.exports = provenancing(function data(fields)
+const data = provenancing(function data(fields)
 {
-    const unresolvedFields = Object.entries(fields);
-
     const T = provenancing(function data(values)
     {
         // FIXME: values instanceof T return values...
-        const fields = toResolvedFieldsCached(unresolvedFields);
+        // FIXME: We should be copying fields to be safe, so again
+        // the implication that we want an inbetween type...
+        const resolved = toResolvedFieldsCached(fields);
 
         // FIXME: T is no good here, because we might be an alias?...
-        return fromEntries(fields.map(initialize(T, values)));
+        return fromEntries(resolved.map(initialize(T, values)));
     });
 
     return T;
 });
+
+module.exports = data;
 
 const highlighted = ([color]) => string => `${color}${string}\x1b[0m`;
 const toTypeString = T => highlighted `\x1b[36m` (type.typename(T));
@@ -57,3 +60,14 @@ const initialize = (T, values) => ([name, FieldT]) =>
                 `  Found: ${toValueString(candidate)} ` +
                 `of type ${toTypeString(type.of(candidate))}`) :
         [name, candidate]);
+
+const Field = type `field` (data({ name: of => type.string, type: of => type.any }));
+const getFields = provenance =>
+    provenance.function === data ?
+        toResolvedFieldsCached(provenance.arguments[0]) :
+        getFields(provenance.parent);
+
+
+data.fields = T => getFields(T["Provenance"])
+    .map(([name, type]) => Field({ name, type }));
+

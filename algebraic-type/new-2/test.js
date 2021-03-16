@@ -7,6 +7,7 @@ const getFunctionNameChain = provenance =>
 
 
 const test = type `test` ({ x: of => type.number });
+console.log(require("./data").fields(test));
 console.log(typeof test);
 console.log(test({x:4}));
 //console.log(test({}));
