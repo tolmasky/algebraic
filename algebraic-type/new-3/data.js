@@ -18,6 +18,7 @@ const toResolvedFieldsCached = T =>
             (ResolvedCachedFields.set(T, fields), fields));
 
 
+const AllDefaults = {};
 const construct = (T, instantiate, { fields }, values) =>
     values instanceof T ?
         values :
@@ -25,7 +26,7 @@ const construct = (T, instantiate, { fields }, values) =>
             T,
             fromEntries(
                 toResolvedFieldsCached(fields)
-                    .map((console.log(T, values),initialize(T, values)))));
+                    .map(initialize(T, values || AllDefaults))));
 
 module.exports = fields => ({ construct, fields: { ...fields } });
 

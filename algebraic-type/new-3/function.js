@@ -9,10 +9,10 @@ const toAppliedName = (FT, arguments) =>
 
 const apply = (T, { implementation }, ...arguments) =>
     template.isTaggedCall(arguments) ?
-        (...nextArguments) => {console.log("in here!", `${template.resolve(...arguments)}`, (implementation(...nextArguments).prototype) instanceof type, implementation(...nextArguments), "done");
-            return type
+        (...nextArguments) =>
+            type
                 `${template.resolve(...arguments)}`
-                (implementation(...nextArguments))} :
+                (implementation(...nextArguments)) :
     given((ResultT = implementation(...arguments)) =>
         ResultT.attributes.anonymous ?
             type `${toAppliedName(T, arguments)}` (ResultT) :

@@ -13,12 +13,12 @@ const given = f => f();
 
 const anonymous = {};
 
-function type(...arguments)
+function type(...args)
 {
-    return  template.isTaggedCall(arguments) ?
+    return  template.isTaggedCall(args) ?
                 (...nextArguments) =>
-                    infer(template.resolve(...arguments), ...nextArguments) :
-                infer(false, ...arguments);
+                    infer(template.resolve(...args), ...nextArguments) :
+                infer(false, ...args);
 };
 
 Object.setPrototypeOf(type.prototype, Function.prototype);
@@ -60,9 +60,8 @@ const define = (name, attributes) =>
                             Object.assign(this, args[1]) :
                             construct.call(this, T, instantiate, attributes, ...args);
                 } :
-                (...args) => apply(T, attributes, ...args))) => Object.assign(T, { attributes: { ...attributes, anonymous: isAnonymous } }));
-
-
+                (...args) => apply(T, attributes, ...args))) =>
+                    Object.defineProperty(T, "attributes", { value: { ...attributes, anonymous: isAnonymous } }));
 
 
 type.attributes = T => T.attributes;
@@ -71,7 +70,15 @@ type.attributes = T => T.attributes;
 module.exports = type;
 
 
+const union = require("./union");
 
+type.union = function(...args)
+{
+    return  template.isTaggedCall(args) ?
+                (...nextArguments) =>
+                    define(template.resolve(...args), union(...nextArguments)) :
+                define(false, union(...args));
+}
 
 function satisfies(predicate, candidate)
 {
