@@ -18,8 +18,10 @@ function type(...arguments)
     return  template.isTaggedCall(arguments) ?
                 (...nextArguments) =>
                     infer(template.resolve(...arguments), ...nextArguments) :
-                infer("anonymous", ...arguments);
-}
+                infer(false, ...arguments);
+};
+
+Object.setPrototypeOf(type.prototype, Function.prototype);
 
 
 const empty = {};
@@ -35,29 +37,30 @@ const infer = (name, configuration) =>
     typeof configuration === "function" ?
         configuration instanceof type ?
             define(name, type.attributes(configuration)) :
-            fail(`Not yet implemented: type.function`) :
+            define(name, func(configuration)) :
 
     fail(`Can't make new type with ${JSON.stringify(configuration)}`);
             /*define(name, f(con*/
         
 
 const Instantiate = {};
-const instantiate = (T, ...args) => (console.log(T, args, "wha..."),new T(Instantiate, ...args));
+const instantiate = (T, ...args) => new T(Instantiate, ...args);
 
 const define = (name, attributes) =>
     given((
         { construct, apply } = attributes,
+        isAnonymous = !name,
         T = fPrototyped(
             type.prototype,
-            name,
+            isAnonymous ? "anonymous" : name,
             construct ?           
                 function (...args)
                 {
                     return  args[0] === Instantiate ?
                             Object.assign(this, args[1]) :
-                            (console.log(construct+""),construct.call(this, T, instantiate, attributes, ...args));
+                            construct.call(this, T, instantiate, attributes, ...args);
                 } :
-                (...args) => apply(T, ...args))) => Object.assign(T, { attributes }));
+                (...args) => apply(T, attributes, ...args))) => Object.assign(T, { attributes: { ...attributes, anonymous: isAnonymous } }));
 
 
 
@@ -97,6 +100,7 @@ type.satisfies = function (T, value)
 }
 
 const data = require("./data");
+const func = require("./function");
 
 type.typename = T => T.name;
 
