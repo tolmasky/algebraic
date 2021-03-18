@@ -5,6 +5,7 @@ const fNamed = (name, f) => Object.defineProperty(f, "name", { value: name });
 const fPrototyped = (prototype, name, f) =>
     fNamed(name, Object.setPrototypeOf(f, prototype));
 const given = f => f();
+const annotated = require("./annotated");
 
 //const alias = provenancing((name, T) => T, (_, [name]) => name);
 //const unary = provenancing(() => ({}));
@@ -109,11 +110,9 @@ Object.assign(
 
 const modifiers = (T, arguments, alternate) =>
     tagged(arguments, modifier =>
-        modifier === "?" ? type.nullable(T) `=` (null) :
-        modifier === "=" ? value =>
-            define(type.typename(T), { ...type.attributes(T), default: value }) :
-        modifier === "()=" ? compute =>
-            define(type.typename(T), { ...type.attributes(T), compute }) :
+        modifier === "?" ? type.nullable(T)/* `=` (null)*/ :
+        modifier === "=" ? value => new annotated(T,  { default: value }) :
+        modifier === "()=" ? compute => new annotated(T, { compute }) :
         alternate(modifier),
         /*fail(`Unrecognized modifier: ${modifier} on type ${T.name}`),*/
         alternate);
@@ -130,3 +129,10 @@ type.array = ItemT => define(`array(${type.typename(ItemT)})`,
 });
 
 type.array.item = T => type.attributes(T).ItemT;
+
+
+
+
+
+
+

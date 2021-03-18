@@ -10,15 +10,14 @@ const extract = (key, attributes) =>
 
 const toResolvedFields = fields => Object
     .entries(fields)
-    .map(([name, fType]) => [name, fType()])
-    .map(([name, T]) => [name, T, type.attributes(T)])
-    .map(([name, T, attributes]) =>
+    .map(([name, f]) => [name, f()])
+    .map(([name, resolved]) => given((
+        annotated = !(resolved instanceof type)) =>
     ({
         name,
-        type: T,
-        ...extract("default", attributes),
-        ...extract("compute", attributes)
-    }));
+        type: annotated ? resolved.type : resolved,
+        ...(annotated && resolved.annotations)
+    })));
 
 const ResolvedCachedFields = new WeakMap();
 const toResolvedFieldsCached = T =>
