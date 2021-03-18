@@ -1,6 +1,6 @@
 const fromEntries = require("@climb/from-entries");
 const fail = require("../fail");
-const template = require("./template");
+const { tagged } = require("./template");
 const fNamed = (name, f) => Object.defineProperty(f, "name", { value: name });
 const fPrototyped = (prototype, name, f) =>
     fNamed(name, Object.setPrototypeOf(f, prototype));
@@ -15,17 +15,14 @@ const anonymous = {};
 
 function type(...args)
 {
-    return  template.isTaggedCall(args) ?
-                (...nextArguments) =>
-                    infer(template.resolve(...args), ...nextArguments) :
-                infer(false, ...args);
+    return tagged(args, infer, () => infer(false)(...args));
 };
 
 Object.setPrototypeOf(type.prototype, Function.prototype);
 
 
 const empty = {};
-const infer = (name, configuration) =>
+const infer = name => configuration =>
     configuration === empty ?
         0 : // FIXME: Unary...
 
@@ -41,27 +38,26 @@ const infer = (name, configuration) =>
 
     fail(`Can't make new type with ${JSON.stringify(configuration)}`);
             /*define(name, f(con*/
-        
 
 const Instantiate = {};
 const instantiate = (T, ...args) => new T(Instantiate, ...args);
 
-const define = (name, attributes) =>
-    given((
-        { construct, apply } = attributes,
-        isAnonymous = !name,
-        T = fPrototyped(
-            type.prototype,
-            isAnonymous ? "anonymous" : name,
-            construct ?           
-                function (...args)
-                {
-                    return  args[0] === Instantiate ?
-                            Object.assign(this, args[1]) :
-                            construct.call(this, T, instantiate, attributes, ...args);
-                } :
-                (...args) => apply(T, attributes, ...args))) =>
-                    Object.defineProperty(T, "attributes", { value: { ...attributes, anonymous: isAnonymous } }));
+const define = (name, attributes) => given((
+    { construct, apply } = attributes,
+    isAnonymous = !name,
+    T = fPrototyped(
+        type.prototype,
+        isAnonymous ? "anonymous" : name,
+        construct ?
+            function (...args)
+            {
+                return  modifiers(T, args, () =>
+                    args[0] === Instantiate ?
+                    Object.assign(this, args[1]) :
+                    construct.call(this, T, instantiate, attributes, ...args));
+            } :
+            (...args) => modifiers(T, args, () => apply(T, attributes, ...args)))) =>
+                Object.defineProperty(T, "attributes", { value: { ...attributes, anonymous: isAnonymous } }));
 
 
 type.attributes = T => T.attributes;
@@ -74,10 +70,8 @@ const union = require("./union");
 
 type.union = function(...args)
 {
-    return  template.isTaggedCall(args) ?
-                (...nextArguments) =>
-                    define(template.resolve(...args), union(...nextArguments)) :
-                define(false, union(...args));
+    return  tagged(args, name => (...args) => define(name, union(...args))) ||
+            define(false, union(...args));
 }
 
 function satisfies(predicate, candidate)
@@ -115,7 +109,7 @@ type.any = {};
 
 type.of = value =>
     type[value === null ? "null" : typeof value] ||
-    Object.getPrototypeOf(value).constructor; 
+    Object.getPrototypeOf(value).constructor;
 
 Object.assign(
     type,
@@ -123,3 +117,11 @@ Object.assign(
         ["null", "undefined", "number", "string", "boolean"]
             .map(name => [name, define(name,
                 { apply: () => fail(`Cannot construct objects of type ${name}`) })])));
+
+const modifiers = (T, arguments, alternate) =>
+    tagged(arguments, modifiers => type.nullable(T), alternate);
+
+type.nullable = type `nullable` (T =>
+    type.union `(${type.typename(T)})?` (of => T, of => type.null));
+
+

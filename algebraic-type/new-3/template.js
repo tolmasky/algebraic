@@ -14,3 +14,9 @@ exports.resolve = (strings, ...arguments) => reduce.call(
     (string, argument, index) =>
         string + argument + strings[index + 1],
     strings[0]);
+
+
+exports.tagged = (arguments, consequent, alternate) =>
+    exports.isTaggedCall(arguments) ?
+        consequent(exports.resolve(...arguments)) :
+        alternate();
