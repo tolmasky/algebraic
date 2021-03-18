@@ -4,6 +4,7 @@ const fPrototyped = (prototype, name, f) =>
     fNamed(name, Object.setPrototypeOf(f, prototype));
 const given = f => f();
 
+const populate = f => Array.from(f, () => []);
 const [extract, collect] = (function ()
 {
     let stack = null;
@@ -13,7 +14,7 @@ const [extract, collect] = (function ()
         const types = [];
         stack = { types, length: f.length, next: stack };
 
-        try { f(); }
+        try { f(...populate(f)); }
         catch (error) { if (error !== done) throw error };
     
         stack = stack.next;
@@ -53,30 +54,30 @@ const fail = message => { throw Error(message) };
 type.satisfies = (criterion, candidate) =>
     criterion === type.of(candidate);
 
-function typed(name, f)
+const typed= ([name]) => function (f)
 {
     const types = extract(f);
+    const argumentTs = types.slice(0, types.length - 1);
+    const returnT = types[types.length - 1];
     //const FT = fPrototyped(typed, f.name, )
 
     // Use  Function.call(null, { f.length } to maintain length...
     return Object.assign(fPrototyped(typed, name, function (...args)
     {
-        return f.apply(this, args.map((argument, index) =>
-            type.satisfies(types[index], argument) ?
-                [argument] :
+        const result = f.apply(this, types.map((argumentT, index) =>
+            index === argumentTs.length ?
+                [[]] :
+            type.satisfies(argumentT, args[index]) ?
+                [[args[index]]] :
                 fail (`Expected value of type ${types[index].name} for ` +
                     `argument ${index} of ${name}, but instead found: ` +
-                    type.of(argument).name)));
-    }), { types });
+                    type.of(args[index]).name)));
+
+        // FIXME: check return type.
+        return result;
+    }), { argumentTs, returnT, signature: `(${argumentTs.map(T => T.name).join(", ")}) -> ${returnT.name}` });
 }
 
-const f = typed("f", ([name] = type.string, [fields] = type.object) => 5);
-/*
-function call(...args)
-{
-    inherit({}, implementation(...args))
-}
+const f = typed `f` (([[name] = type.string], [[fields] = type.object], [[returning] = type.number]) => 5);
 
-*/
-
-f("hi", {});
+f.signature

@@ -40,7 +40,7 @@ function provenanced (value, toProvenance)
 {
     const [copied, duplicate] = 
         typeof value === "function" && value[IsProvenancing] ?
-            [true, provenancing(value)] :
+            [true, (console.log("here... " + value.name+""),provenancing(value))] :
             copy(value);
 
     if (!copied)

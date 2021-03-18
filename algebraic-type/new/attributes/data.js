@@ -23,6 +23,7 @@ const toFieldsCached = T =>
 const apply = (NominalT, T, construct, args) => given((
     values = args.length <= 0 ? EmptyArguments : args[0]) =>
     Object.assign(
+        
         this instanceof NominalT ?
             this :
             construct(NominalT),

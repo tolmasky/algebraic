@@ -14,8 +14,72 @@ const TypeDefine = Symbol("Type.Internal.Define");
 const TypeConstruct = Symbol("Type.Internal.Construct");
 const TypeAttributes = Symbol("type.attributes");
 
-const construct = T => new T(TypeConstruct);
+const construct = (T, properties) =>
+    Object.assign(new T(TypeConstruct), properties);
 const unsatisfied = () => false;
+
+const newkind = (name, toAttributes) =>
+    attributes = toAttributes(construct),
+    fNamed()
+    K = (name, p
+    
+     fPrototyped(prototype, name, function (...args),
+    {
+        return  args[0] === TypeConstruct ? this :
+                this instanceof T ?
+                    fail.type(`Don't call ${name} with "new".`) :
+                template.isTaggedCall(args[0]) ?
+                    annotate(T, template.resolve(args)) :
+                !apply ?
+                    fail.type(`${name} is not a constructable type.`) :
+                apply.call(this, T, T, construct, args);
+    }) => Object.defineProperty(
+        T,
+        TypeAttributes,
+        { value: { satisfies: unsatisfied, ...attributes } }));
+
+data = kind `type.data` (require())
+
+"Pizza" -> { name, fields }
+"type" -> { satisfies, apply }
+"type" -> {}
+
+
+
+type()
+
+type 
+{
+    name,
+    kind: { apply, satisfies, attributes } 
+}
+
+function kind()
+{
+    
+}
+
+type()
+{
+    name
+    [attributes]: { apply, satisfies, ...more };
+}
+
+type "Pizza" { name, apply, satisfies, { ...rest } },  
+    -> kind = type.data
+        -> type<data> ""
+    
+    kind
+    {
+        name,
+        apply,
+        satisfies,
+        
+    }
+
+const type {  }
+{
+}
 
 const define = attributes => given((
     T = fPrototyped(
@@ -42,6 +106,7 @@ const toInferredDefinition = configuration =>
     !configuration ?
         fail.type(`Can't configure type with ${configuration}`) :
     typeof configuration === "object" ?
+        define(data, 
         toDataAttributes(configuration) :
     // This has to come before the function check, if not it will trigger for
     // that first.
@@ -50,6 +115,23 @@ const toInferredDefinition = configuration =>
     typeof configuration === "function" ?
         (console.log("here with...", configuration+""), toFunctionAttributes(configuration)) :
         fail.type(`Can't configure type with ${configuration}`)
+
+const toInferredDefinition = configuration =>
+    configuration === NoConfiguration ?
+        fail.type(`FIXME: unary types not supported yet`) :
+    !configuration ?
+        fail.type(`Can't configure type with ${configuration}`) :
+    typeof configuration === "object" ?
+        define(data
+        toDataAttributes(configuration) :
+    // This has to come before the function check, if not it will trigger for
+    // that first.
+    configuration instanceof type ?
+        toAliasAttributes(configuration) :
+    typeof configuration === "function" ?
+        (console.log("here with...", configuration+""), toFunctionAttributes(configuration)) :
+        fail.type(`Can't configure type with ${configuration}`)
+
 
 
 const modify = (T, operator) =>
@@ -75,6 +157,11 @@ function type(...args)
             }));
 };
 
+const kinds = fromEntries(
+[
+    ["data", require("./kind/data")],
+    ["function", require("./kind/function")]
+].map(kind));
 
 module.exports = type;
 
@@ -126,6 +213,7 @@ const toAliasAttributes = aliasof => given((
                 .call(this, NominalT, aliasof, ...rest);
         }
 }));
+
 
 const toDataAttributes = require("./attributes/data");
 const toFunctionAttributes = require("./attributes/function");
