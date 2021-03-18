@@ -1,55 +1,55 @@
-const { data, nullable, array } = require("@algebraic/type");
-const { boolean, number, string, tundefined } = require("@algebraic/type/primitive");
-
-const { KeyPathsByName } = require("./key-path");
-const compute = require("./compute");
+const type = require("@algebraic/type");
 
 const Extra = require("./extra");
 const Node = require("./node");
 
 
-exports.BigIntLiteral = Node `BigIntLiteral` (
-    value               =>  string,
-    extra               =>  [nullable(Extra(string)), null],
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.BigIntLiteral = Node `BigIntLiteral`
+({
+    value               :of =>  type.string,
+    extra               :of =>  Extra(type.string) `?`
+});
 
-exports.BooleanLiteral = Node `BooleanLiteral` (
-    value               =>  boolean,
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.BooleanLiteral = Node `BooleanLiteral`
+({
+    value               :of =>  boolean
+});
 
-exports.NumericLiteral = Node `NumericLiteral` (
-    value               =>  number,
-    extra               =>  [nullable(Extra(number)), null],
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.NumericLiteral = Node `NumericLiteral`
+({
+    value               :of =>  type.number,
+    extra               :of =>  Extra(type.number) `?`,
+});
 
-exports.NullLiteral = Node `NullLiteral` (
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.NullLiteral = Node `NullLiteral` ();
 
-exports.RegExpLiteral = Node `RegExpLiteral` (
-    flags               =>  string,
-    pattern             =>  string,
-    extra               =>  [nullable(Extra(tundefined)), null],
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.RegExpLiteral = Node `RegExpLiteral`
+({
+    flags               :of =>  type.string,
+    pattern             :of =>  type.string,
+    extra               :of =>  Extra(type.stirng) `?`
+});
 
-exports.StringLiteral = Node `StringLiteral` (
-    value               =>  string,
-    extra               =>  [nullable(Extra(string)), null],
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.StringLiteral = Node `StringLiteral`
+({
+    value               :of =>  types.string,
+    extra               :of =>  Extra(type.string) `?`
+});
 
-exports.TemplateElement = Node `TemplateElement` (
-    value               =>  Node.TemplateElement.Value,
-    tail                =>  [boolean, false],
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.TemplateElement = Node `TemplateElement`
+({
+    value               :of =>  Node.TemplateElement.Value,
+    tail                :of =>  type.boolean `=` (false)
+});
 
-exports.TemplateElement.Value = data `TemplateElement.Value` (
-    raw                 =>  string,
-    cooked              =>  string );
+exports.TemplateElement.Value = type `TemplateElement.Value`
+({
+    raw                 :of =>  type.string,
+    cooked              :of =>  type.string
+});
 
-exports.TemplateLiteral = Node `TemplateLiteral` (
-    expressions         =>  array(Node.Expression),
-    quasis              =>  array(Node.TemplateElement),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `expressions.freeVariables`) );
-
-
-
+exports.TemplateLiteral = Node `TemplateLiteral`
+({
+    expressions         :of =>  type.array(Node.Expression),
+    quasis              :of =>  type.array(Node.TemplateElement)
+});

@@ -1,169 +1,147 @@
-const { is, data, nullable, array, or, maybe } = require("@algebraic/type");
-const { boolean, number, string } = require("@algebraic/type/primitive");
-const union = require("@algebraic/type/union-new");
+const type = require("@algebraic/type");
 const Node = require("./node");
-const { KeyPathsByName } = require("./key-path");
-const compute = require("./compute");
 
 
-exports.AssignmentExpression = Node `AssignmentExpression` (
-    left                =>  Node.AssignmentTarget,
-    right               =>  Node.Expression,
-    operator            =>  string,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables`,
-                                take => `left.bindingNames` ) );
+exports.AssignmentExpression = Node `AssignmentExpression`
+({
+    left                :of =>  Node.AssignmentTarget,
+    right               :of =>  Node.Expression,
+    operator            :of =>  type.string
+});
 
-const Intrinsic = data `Intrinsic` (
-    name                => string,
-    keyword             => [nullable(string), null] );
+const Intrinsic = type `Intrinsic`
+({
+    name                :of =>  type.string,
+    keyword             :of =>  type.string `?`
+});
 
 exports.Intrinsic = Intrinsic;
 
-exports.IntrinsicReference = Node `IntrinsicReference` (
-    intrinsic           =>  Intrinsic,
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.IntrinsicReference = Node `IntrinsicReference`
+({
+    intrinsic           :of =>  Intrinsic
+});
 
-exports.IdentifierReference = Node `IdentifierReference` (
-    name                =>  string,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `name`) );
+exports.IdentifierReference = Node `IdentifierReference`
+({
+    name                :of =>  type.string,
+});
 
-exports.ArrowFunctionExpression = Node `ArrowFunctionExpression` (
-    body                =>  or (Node.BlockStatement, Node.Expression),
-    ([id])              =>  data.always (null),
+exports.ArrowFunctionExpression = Node `ArrowFunctionExpression`
+({
+    body                :of =>  or (Node.BlockStatement, Node.Expression),
+    id                  :of =>  type.null `=` (null), // fixme: some sort of "always"
 
-    parameters          =>  [array (Node.DefaultableBinding), []],
-    restParameter       =>  [nullable (Node.RestElementBinding), null],
+    parameters          :of =>  array (Node.DefaultableBinding) `=` ([]),
+    restParameter       :of =>  Node.RestElementBinding `?`,
 
-    ([generator])       =>  data.always (false),
-    async               =>  [boolean, false],
+    generator           :of =>  type.boolean `=` (false), // fixme: NEED ALWAYS, since CANT be generator
+    async               :of =>  type.boolean `=` (false)
+});
 
-    ([varBindings])     =>  KeyPathsByName.compute (
-                                take => `params.bindingNames` ),
+exports.FunctionExpression = Node `FunctionExpression`
+({
+    body                :of =>  Node.BlockStatement,
+    id                  :of =>  Node.IdentifierBinding `?`,
 
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `body.freeVariables`,
-                                take => `params.freeVariables`,
-                                subtract => `varBindings` ) );
+    parameters          :of =>  array (Node.DefaultableBinding) `=` ([]),
+    restParameter       :of =>  Node.RestElementBinding `?`,
 
-exports.FunctionExpression = Node `FunctionExpression` (
-    body                =>  Node.BlockStatement,
-    id                  =>  [nullable(Node.IdentifierBinding), null],
+    generator           :of =>  type.boolean `=` (false),
+    async               :of =>  type.boolean `=` (false),
+});
 
-    parameters          =>  [array (Node.DefaultableBinding), []],
-    restParameter       =>  [nullable (Node.RestElementBinding), null],
+exports.ArrayExpression = Node `ArrayExpression`
+({
+    elements            :of =>  array(type.union (
+                                    Node.Elision,
+                                    Node.Expression,
+                                    Node.SpreadElement)) `=` ([])
+});
 
-    generator           =>  [boolean, false],
-    async               =>  [boolean, false],
+exports.CallExpression = Node `CallExpression`
+({
+    callee              :of =>  Node.Expression,
+    arguments           :of =>  array(type.union (Node.Expression, Node.SpreadElement))
+});
 
-    ([varBindings])     =>  KeyPathsByName.compute (
-                                take => `id.bindingNames`,
-                                take => `body.varBindingNames`,
-                                take => `params.bindingNames`,
-                                take => KeyPathsByName.just("arguments") ),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `body.freeVariables`,
-                                take => `params.freeVariables`,
-                                subtract => `varBindings` ) );
+exports.ConditionalExpression = Node `ConditionalExpression`
+({
+    test                :of =>  Node.Expression,
+    consequent          :of =>  Node.Expression,
+    alternate           :of =>  Node.Expression
+});
 
-exports.ArrayExpression = Node `ArrayExpression` (
-    elements            =>  array(or (
-                                Node.Elision,
-                                Node.Expression,
-                                Node.SpreadElement)),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `elements.freeVariables`) );
+exports.BinaryExpression = Node `BinaryExpression`
+({
+    left                :of =>  Node.Expression,
+    right               :of =>  Node.Expression,
+    operator            :of =>  type.string
+});
 
-exports.CallExpression = Node `CallExpression` (
-    callee              =>  Node.Expression,
-    arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `callee.freeVariables`,
-                                take => `arguments.freeVariables` ) );
+exports.LogicalExpression = Node `LogicalExpression`
+({
+    left                :of =>  Node.Expression,
+    right               :of =>  Node.Expression,
+    operator            :of =>  type.string
+});
 
-exports.ConditionalExpression = Node `ConditionalExpression` (
-    test                =>  Node.Expression,
-    consequent          =>  Node.Expression,
-    alternate           =>  Node.Expression,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `test.freeVariables` ,
-                                take => `consequent.freeVariables`,
-                                take => `alternate.freeVariables` ) );
+exports.MemberExpression = Node `MemberExpression`
+({
+    computed            :of =>  type.boolean `()=`
+                                (({ property }) =>
+                                    type.belongs(Node.Expression, property)),
 
-exports.BinaryExpression = Node `BinaryExpression` (
-    left                =>  Node.Expression,
-    right               =>  Node.Expression,
-    operator            =>  string,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables` )  );
+    object              :of =>  Node.Expression,
+    property            :of =>  type.union (Node.Expression, Node.IdentifierName),
+    optional            :of =>  type.boolean `?`
+});
 
-exports.LogicalExpression = Node `LogicalExpression` (
-    left                =>  Node.Expression,
-    right               =>  Node.Expression,
-    operator            =>  string,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `left.freeVariables`,
-                                take => `right.freeVariables` ) );
+exports.NewExpression = Node `NewExpression`
+({
+    callee              :of =>  Node.Expression,
+    arguments           :of =>  type.array(type.union (
+                                    Node.Expression,
+                                    Node.SpreadElement))
+});
 
-exports.MemberExpression = Node `MemberExpression` (
-    ([computed])        =>  [boolean, property =>
-                                        is(Node.Expression, property)],
+exports.ThisExpression = Node `ThisExpression` ();
 
-    object              =>  Node.Expression,
-    property            =>  or (Node.Expression, Node.IdentifierName),
-    optional            =>  [nullable(boolean), null],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `object.freeVariables`) );
+exports.SequenceExpression = Node `SequenceExpression`
+({
+    expressions         :of =>  type.array(Node.Expression)
+});
 
-exports.NewExpression = Node `NewExpression` (
-    callee              =>  Node.Expression,
-    arguments           =>  array(or (Node.Expression, Node.SpreadElement)),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `callee.freeVariables`,
-                                take => `arguments.freeVariables` ) );
+exports.TaggedTemplateExpression = Node `TaggedTemplateExpression`
+({
+    tag                 :of =>  Node.Expression,
+    quasi               :of =>  Node.TemplateLiteral
+});
 
-exports.ThisExpression = Node `ThisExpression` (
-    ([freeVariables])   =>  data.always (KeyPathsByName.None) );
+exports.UnaryExpression = Node `UnaryExpression`
+({
+    argument            :of =>  Node.Expression,
+    operator            :of =>  type.string,
+    prefix              :of =>  type.boolean `=` (true)
+});
 
-exports.SequenceExpression = Node `SequenceExpression` (
-    expressions         =>  array(Node.Expression),
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `expressions.freeVariables`) );
+exports.UpdateExpression = Node `UpdateExpression`
+({
+    argument            :of =>  Node.Expression,
+    operator            :of =>  type.string,
+    prefix              :of =>  type.boolean `=` (true)
+});
 
-exports.TaggedTemplateExpression = Node `TaggedTemplateExpression` (
-    tag                 =>  Node.Expression,
-    quasi               =>  Node.TemplateLiteral,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `tag.freeVariables`,
-                                take => `quasi.freeVariables`) );
+exports.YieldExpression = Node `YieldExpression`
+({
+    argument            :of =>  Node.Expression,
+    delegate            :of =>  type.boolean `=` (false)
+});
 
-exports.UnaryExpression = Node `UnaryExpression` (
-    argument            =>  Node.Expression,
-    operator            =>  string,
-    prefix              =>  [boolean, true],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `argument.freeVariables`) );
-
-exports.UpdateExpression = Node `UpdateExpression` (
-    argument            =>  Node.Expression,
-    operator            =>  string,
-    prefix              =>  [boolean, true],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `argument.freeVariables`) );
-
-exports.YieldExpression = Node `YieldExpression` (
-    argument            =>  Node.Expression,
-    delegate            =>  [boolean, false],
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `argument.freeVariables`));
-
-exports.AwaitExpression = Node `AwaitExpression` (
-    argument            =>  Node.Expression,
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `argument.freeVariables`) );
+exports.AwaitExpression = Node `AwaitExpression`
+({
+    argument            :of =>  Node.Expression
+});
 
 // NOTE: I originally split ObjectProperty up into Longhand and Shorthand
 // variants to try to make it impossible to construct impossible properties
@@ -179,7 +157,7 @@ exports.AwaitExpression = Node `AwaitExpression` (
 // an ergonomic interface, I settled on having a user-settable
 // "prefersShorthand" property, with "canBeShorthand" and "shorthand" *computed*
 // properties. When prefersShorthand is true and canBeShorthand evaluates to
-// true, the code pritner will generate shorthand properties, but otherwise
+// true, the code printer will generate shorthand properties, but otherwise
 // there is no real difference with interacting with these objects. We default
 // the "prefersShorthand" property to true so that by default we always generate
 // compact properties whenever possible. Upon parsing, "prefersShorthand" will
@@ -187,34 +165,38 @@ exports.AwaitExpression = Node `AwaitExpression` (
 // perform a series of operations that lead to it still being shorthandable, it
 // will be.
 
-exports.ObjectProperty = Node `ObjectProperty` (
-    ([computed])        =>  [boolean, key => is(Node.ComputedPropertyName, key)],
+exports.ObjectProperty = Node `ObjectProperty`
+({
+    computed            :of =>  type.boolean `()=`
+                                (({ key }) => type.belongs
+                                    (Node.ComputedPropertyName, key)),
 
-    ([canBeShorthand])  =>  [boolean, (key, value) =>
-                                is (Node.IdentifierName, key) &&
-                                is (Node.IdentifierReference, value) &&
-                                key.name === value.name],
+    canBeShorthand      :of =>  type.boolean `()=`
+                                (({ key, value }) =>
+                                    type.belongs(Node.IdentifierName, key) &&
+                                    type.belongs(Node.IdentifierReference, value) &&
+                                    key.name === value.name),
 
-    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
-                                canBeShorthand && prefersShorthand],
+    shorthand           :of =>  type.boolean `()=`
+                                (({ canBeShorthand, prefersShorthand }) =>
+                                    canBeShorthand && prefersShorthand),
 
-    prefersShorthand    =>  [boolean, true],
+    prefersShorthand    :of =>  type.boolean `=` (true),
 
-    key                 =>  Node.PropertyName,
-    value               =>  Node.Expression,
+    key                 :of =>  Node.PropertyName,
+    value               :of =>  Node.Expression,
+});
 
-    ([freeVariables])   =>  KeyPathsByName.compute (
-                                take => `key.freeVariables`,
-                                take => `value.freeVariables` ) );
+exports.ObjectExpression = Node `ObjectExpression`
+({
+    properties          :of =>  type.array (type.union (
+                                    Node.ObjectProperty,
+                                    Node.SpreadElement))
+});
 
-exports.ObjectExpression = Node `ObjectExpression` (
-    properties          => array ( or(Node.ObjectProperty, Node.SpreadElement)),
-    ([freeVariables])   => KeyPathsByName.compute (
-                                take => `properties.freeVariables`) );
-
-exports.SpreadElement = Node `SpreadElement` (
-    argument            => Node.Expression,
-    ([freeVariables])   => KeyPathsByName.compute (
-                            take => `argument.freeVariables`) );
+exports.SpreadElement = Node `SpreadElement`
+({
+    argument            :of =>  Node.Expression
+});
 
 Object.assign(exports, require("./literals"));

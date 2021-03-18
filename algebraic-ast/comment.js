@@ -1,19 +1,25 @@
-const { data, array, string, nullable } = require("@algebraic/type");
-const union = require("@algebraic/type/union-new");
-const Node = require("./node");
+const type = require("@algebraic/type");
+const SourceLocation = require("./source-location");
 
 
-exports.Comment = union `Comment` (
-    is                      =>  Node.SingleLineComment,
-    or                      =>  Node.MultiLineComment );
+exports.SingleLineComment = type `SingleLineComment`
+({
+    location    :of =>  SourceLocation `?`,
+    value       :of =>  type.string
+});
 
-exports.SingleLineComment = Node `SingleLineComment` (
-    value                   =>  string );
+exports.MultiLineComment = type `MultiLineComment`
+({
+    location    :of =>  SourceLocation `?`,
+    value       :of =>  type.string
+});
 
-exports.MultiLineComment = Node `MultiLineComment` (
-    value                   =>  string );
+exports.Comment =
+    type.union `Comment` (exports.SingleLineComment, exports.MultiLineComment);
 
-exports.Comments = data `Comments` (
-    leading                 =>  [nullable(array(Node.Comment)), null],
-    inner                   =>  [nullable(array(Node.Comment)), null],
-    trailing                =>  [nullable(array(Node.Comment)), null] );
+exports.Comments = type `Comments`
+({
+    leading     :of =>  type.array(exports.Comment) `?`,
+    inner       :of =>  type.array(exports.Comment) `?`,
+    trailing    :of =>  type.array(exports.Comment) `?`
+});

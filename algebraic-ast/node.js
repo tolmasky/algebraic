@@ -1,25 +1,18 @@
-const { is, of, data, nullable, array, number, or, type } = require("@algebraic/type");
-const union = require("@algebraic/type/union-new");
-const { parameterized } = require("@algebraic/type");
-const { parameters } = parameterized;
+const type = require("@algebraic/type");
 const SourceLocation = require("./source-location");
-const DeferredComments = () => require("./comment").Comments;
 
-const Node = parameterized((name, ...fields) =>
-    data ([name])
-    (...[
-        name.endsWith("Comment") ?
-            false :
-            comments    =>  [DeferredComments(), DeferredComments()()],
-        location        =>  [nullable(SourceLocation), null],
-        ...fields
-    ].filter(field => !!field)));
+const Node = type `Node` (fields => type
+({
+    location    :of =>  SourceLocation `?`,
+    comments    :of =>  Comments,
+    ...fields
+}));
 
 
 Node.Node = Node;
 
 module.exports = Node;
-
+/*
 const NodeUnion = ([name]) =>
     (filter, exports) =>
         union `${name}` (...Object
@@ -69,25 +62,4 @@ Object
         .map(([name]) => name)])
     .map(([type, keys]) => type.traversable = keys);
 
-/*
-function placeholders(type)
-{
-    const name = "placeholders";
-    const computed = true;
-    const λdefinition = function ()
-    {
-        const dependencies = type.traversableKeys;
-        const compute = children => dependencies
-            .map(key => children[key].placeholders);
-
-        field.definition.computed(Map(Node.PlaceholderExpression, boolean))
-            ({ dependencies: traversableKeys, compute: children =>  })
-    }
-
-    return data.field.deferred({ name, computed, λdefinition });
-}
-
-for (const type of Object.values(Node))
-    if (getKind(type) === data)
-        console.log(getTypename(type));*/
-
+*/

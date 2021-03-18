@@ -1,7 +1,8 @@
-const { data, string, parameterized } = require("@algebraic/type");
+const type = require("@algebraic/type");
 
 
-module.exports = parameterized (T =>
-    data `Extra<${T}>` (
-        raw         => string,
-        rawValue    => T ) );
+module.exports = type `Extra` (T => type
+({
+    raw         :of => type.string,
+    rawValue    :of => T
+}));
