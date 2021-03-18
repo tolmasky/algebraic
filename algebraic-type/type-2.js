@@ -45,6 +45,40 @@ const fPrototyped = (prototype, name, f) =>
 const Type = { };
 const Definition = Symbol("definition");
 
+/*const tagged = given((
+    { hasOwnProperty } = Object,
+    { isArray } = Array,
+    is = args => isArray(args[0]) && hasOwnProperty.call(args[0], "raw")) =>
+        (args, f) => is(args) ? [name, f(args)] : ["<anonymous>", f(args)]);
+
+Object.assign(f =>
+    (...args) => tagged.is(args) ?
+    (...more) => f(tagged.resolve(...args), tagged.resolveUUID(...args), ...more) :
+    f(false, ...args),
+    {
+        is: args => Array.isArray(args[0]) && has(args[0], "raw"),
+        resolve: (strings, ...args) =>
+            args.reduce((string, arg, index) =>
+                string + typenameIfType(arg) + strings[index + 1],
+                strings[0]),
+        resolveUUID: (strings, ...args) =>
+            args.reduce((string, arg, index) =>
+                string + UUIDIfType(arg) + strings[index + 1],
+                strings[0])
+    });
+
+const isTemplateCall = args => Array.isArray(args[0])
+*/
+
+const isTaggedTemplateCall = given((
+    { hasOwnProperty } = Object,
+    { isArray } = Array) =>
+        args => isArray(args[0]) && hasOwnProperty.call(args[0], "raw"));
+const resolveTagArguments = (strings, ...args) =>
+    args.reduce((string, argument, index) =>
+        string + argument + strings[index + 1],
+        strings[0]);
+
 Type.Expression = function Expression (...args)
 {
     if (!(this instanceof Expression))
@@ -53,17 +87,19 @@ Type.Expression = function Expression (...args)
     const [name, initialize, satisfies, construct] = args;
     const E = fNamed(name, function (...args)
     {
-        return this instanceof E ?
-            Object.defineProperty(
-                this,
-                Definition,
-                { value: { ...initialize(...args), satisfies } }) :
-            given((T = E.apply(fPrototyped(E.prototype, name, function (...args)
-            {
-                return !construct ?
-                    fail.type(`${name} is not a constructable type`) :
-                    construct.call(this, T, args);
-            }), args)) => fNamed(args[0], T));
+        return  isTaggedTemplateCall(args) ?
+                    (...nextArgs) => E(resolveTagArguments(...args), ...nextArgs) :
+                this instanceof E ?
+                    Object.defineProperty(
+                        this,
+                        Definition,
+                        { value: { ...initialize(...(typeof args[0] === "string" ? args : [`<anonymous ${name}>`, ...args])), satisfies } }) :
+                given((T = E.apply(fPrototyped(E.prototype, name, function (...args)
+                {
+                    return !construct ?
+                        fail.type(`${name} is not a constructable type`) :
+                        construct.call(this, T, args);
+                }), args)) => fNamed(T[Definition].name/*args[0]*/, T));
     });
     Object.setPrototypeOf(E.prototype, Function.prototype);
 
@@ -203,7 +239,8 @@ const Sum1 = Type.Expression.Sum(...firstHalf)
 const Sum2 = Type.Expression.Sum(Sum1, ...secondHalf)
 
 const Tree = Type.Expression.Function("Tree", T => Type.Expression.Data("<anonymous>", () => ({ data: T }))); 
-const NumberTree = Tree(type.number);
+const Tree2 = Type.Expression.Function("Tree", T => Tree(T));
+const NumberTree = Tree2(type.number);
 
 //
 //console.log(type.name(type.number))
