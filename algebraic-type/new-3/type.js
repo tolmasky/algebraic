@@ -112,7 +112,10 @@ const modifiers = (T, arguments, alternate) =>
         modifier === "?" ? type.nullable(T) `=` (null) :
         modifier === "=" ? value =>
             define(type.typename(T), { ...type.attributes(T), default: value }) :
-        fail(`Unrecognized modifier: ${modifier} on type ${T.name}`),
+        modifier === "()=" ? compute =>
+            define(type.typename(T), { ...type.attributes(T), compute }) :
+        alternate(modifier),
+        /*fail(`Unrecognized modifier: ${modifier} on type ${T.name}`),*/
         alternate);
 
 type.nullable = type `nullable` (T =>

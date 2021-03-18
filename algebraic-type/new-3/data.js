@@ -5,6 +5,8 @@ const type = require("./type");
 const provenancing = require("./provenancing");
 const CachedFields = new WeakMap();
 const given = f => f();
+const extract = (key, attributes) =>
+    hasOwnProperty.call(attributes, key) && { [key]: attributes[key] };
 
 const toResolvedFields = fields => Object
     .entries(fields)
@@ -14,8 +16,8 @@ const toResolvedFields = fields => Object
     ({
         name,
         type: T,
-        ...(hasOwnProperty.call(attributes, "default") &&
-        { default: attributes.default })
+        ...extract("default", attributes),
+        ...extract("compute", attributes)
     }));
 
 const ResolvedCachedFields = new WeakMap();
@@ -50,9 +52,12 @@ const toValueString = value => highlighted `\x1b[35m` (
 //    of(value) && getKind(of(value)) ? value + "" :
     JSON.stringify(value, null, 2));
 
+// FIXME: Should we throw if you attempt to pass something for a computed value?
+// FIXME: Need to resolve the other props...
 const toCandidate = (T, values, { name, ...field }) =>
     hasOwnProperty.call(values, name) ? values[name] :
     hasOwnProperty.call(field, "default") ? field.default :
+    hasOwnProperty.call(field, "compute") ? field.compute(values) :
     fail.type(
         `${toTypeString(T)} constructor requires field ` +
         `${toValueString(name)}.`);
