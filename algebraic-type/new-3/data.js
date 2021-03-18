@@ -8,7 +8,15 @@ const given = f => f();
 
 const toResolvedFields = fields => Object
     .entries(fields)
-    .map(([name, fValue]) => [name, fValue()]);
+    .map(([name, fType]) => [name, fType()])
+    .map(([name, T]) => [name, T, type.attributes(T)])
+    .map(([name, T, attributes]) =>
+    ({
+        name,
+        type: T,
+        ...(hasOwnProperty.call(attributes, "default") &&
+        { default: attributes.default })
+    }));
 
 const ResolvedCachedFields = new WeakMap();
 const toResolvedFieldsCached = T =>
@@ -40,20 +48,24 @@ const toValueString = value => highlighted `\x1b[35m` (
     of(value) && getKind(of(value)) ? value + "" :
     JSON.stringify(value, null, 2));
 
-const initialize = (T, values) => ([name, FieldT]) =>
-    !hasOwnProperty.call(values, name) ?
-        fail.type(
-            `${toTypeString(T)} constructor requires field ` +
-            `${toValueString(name)}.`) :
-    given((candidate = values[name]) =>
-        !type.satisfies(FieldT, candidate) ?
+const toCandidate = (T, values, { name, ...field }) =>
+    hasOwnProperty.call(values, name) ? values[name] :
+    hasOwnProperty.call(field, "default") ? field.default :
+    fail.type(
+        `${toTypeString(T)} constructor requires field ` +
+        `${toValueString(name)}.`);
+
+const initialize = (T, values) => field =>
+    given((candidate = toCandidate(T, values, field)) =>
+        !type.satisfies(field.type, candidate) ?
             fail.type(
                 `${toTypeString(T)} constructor passed invalid value` +
-                ` for field ${toValueString(name)}:\n` +
-                `  Expected: type ${toTypeString(FieldT)}\n` +
+                ` for field ${toValueString(field.name)}:\n` +
+                `  Expected: type ${toTypeString(field.type)}\n` +
                 `  Found: ${toValueString(candidate)} ` +
                 `of type ${toTypeString(type.of(candidate))}`) :
-        [name, candidate]);
+        [field.name, candidate]);
+
 /*
 const Field = type `field` ({ name: of => type.string, type: of => type.any });
 const getFields = provenance =>

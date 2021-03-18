@@ -82,6 +82,11 @@ function satisfies(predicate, candidate)
     if (predicate === candidate)
         return true;
 
+    const attributes = type.attributes(predicate);
+
+    if (attributes.types)
+        return union.types(predicate).some(predicate => satisfies(predicate, candidate));
+
     return false;
 /*
     const pAttributes = type.attributes(predicate);
@@ -119,7 +124,12 @@ Object.assign(
                 { apply: () => fail(`Cannot construct objects of type ${name}`) })])));
 
 const modifiers = (T, arguments, alternate) =>
-    tagged(arguments, modifiers => type.nullable(T), alternate);
+    tagged(arguments, modifier =>
+        modifier === "?" ? type.nullable(T) `=` (null) :
+        modifier === "=" ? value =>
+            define(type.typename(T), { ...type.attributes(T), default: value }) :
+        fail(`Unrecognized modifier: ${modifier} on type ${T.name}`),
+        alternate);
 
 type.nullable = type `nullable` (T =>
     type.union `(${type.typename(T)})?` (of => T, of => type.null));
