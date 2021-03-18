@@ -57,7 +57,8 @@ const define = (name, attributes) => given((
                     construct.call(this, T, instantiate, attributes, ...args));
             } :
             (...args) => modifiers(T, args, () => apply(T, attributes, ...args)))) =>
-                Object.defineProperty(T, "attributes", { value: { ...attributes, anonymous: isAnonymous } }));
+                Object.defineProperty(T, "attributes",
+                    { value: { satisfies: equals, ...attributes, anonymous: isAnonymous } }));
 
 
 type.attributes = T => T.attributes;
@@ -74,35 +75,17 @@ type.union = function(...args)
             define(false, union(...args));
 }
 
-function satisfies(predicate, candidate)
+const equals = (lhs, rhs) => lhs === rhs;
+
+type.satisfies = function (predicate, candidate)
 {
-    if (predicate === type.any)
-        return true;
-
-    if (predicate === candidate)
-        return true;
-
-    const attributes = type.attributes(predicate);
-
-    if (attributes.types)
-        return union.types(predicate).some(predicate => satisfies(predicate, candidate));
-
-    return false;
-/*
-    const pAttributes = type.attributes(predicate);
-
-    if (pAttributes.satisfies(predicate, candidate))
-        return true;
-
-    const cAttributes = type.attributes(candidate);
-
-    return  cAttributes.aliasof &&
-            satisfies(predicate, cAttributes.aliasof);*/
+    return  predicate === type.any ||
+            type.attributes(predicate).satisfies(predicate, candidate);
 }
 
-type.satisfies = function (T, value)
-{//console.log(value, type.of(value), type.of(value)[Definition]);
-    return satisfies(T, type.of(value));
+type.belongs = function (T, value)
+{
+    return type.satisfies(T, type.of(value));
 }
 
 const data = require("./data");
@@ -113,6 +96,7 @@ type.typename = T => T.name;
 type.any = {};
 
 type.of = value =>
+    isArray(value) ? type.array(type.any) :
     type[value === null ? "null" : typeof value] ||
     Object.getPrototypeOf(value).constructor;
 
@@ -134,4 +118,12 @@ const modifiers = (T, arguments, alternate) =>
 type.nullable = type `nullable` (T =>
     type.union `(${type.typename(T)})?` (of => T, of => type.null));
 
+const { isArray, prototype: { every } } = Array;
+type.array = ItemT => define(`array(${type.typename(ItemT)})`,
+{
+    ItemT,
+    satisfies: (predicate, candidate) => !!type.attributes(candidate).ItemT
+    /*isArray(candidate) && every.call(candidate, item => satisfies(ItemT, candidate))*/
+});
 
+type.array.item = T => type.attributes(T).ItemT;

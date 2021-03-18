@@ -36,7 +36,9 @@ const construct = (T, instantiate, { fields }, values) =>
                 toResolvedFieldsCached(fields)
                     .map(initialize(T, values || AllDefaults))));
 
-module.exports = fields => ({ construct, fields: { ...fields } });
+const satisfies = (ΠT, candidate) => ΠT === candidate;
+
+module.exports = fields => ({ construct, satisfies, fields: { ...fields } });
 
 const highlighted = ([color]) => string => `${color}${string}\x1b[0m`;
 const toTypeString = T => highlighted `\x1b[36m` (type.typename(T));
@@ -44,8 +46,8 @@ const toValueString = value => highlighted `\x1b[35m` (
     value === void(0) ? "undefined" :
     value === null ? "null" :
     typeof value === "function" ? `[function ${value.name}]` :
-    typeof value !== "object" ? JSON.stringify(value, null, 2) :
-    of(value) && getKind(of(value)) ? value + "" :
+//    typeof value !== "object" ? JSON.stringify(value, null, 2) :
+//    of(value) && getKind(of(value)) ? value + "" :
     JSON.stringify(value, null, 2));
 
 const toCandidate = (T, values, { name, ...field }) =>
@@ -57,7 +59,7 @@ const toCandidate = (T, values, { name, ...field }) =>
 
 const initialize = (T, values) => field =>
     given((candidate = toCandidate(T, values, field)) =>
-        !type.satisfies(field.type, candidate) ?
+        !type.belongs(field.type, candidate) ?
             fail.type(
                 `${toTypeString(T)} constructor passed invalid value` +
                 ` for field ${toValueString(field.name)}:\n` +

@@ -18,9 +18,11 @@ const toResolvedTypesCached = T =>
             (ResolvedTypesCached.set(T, types), types));
 
 
+const types = ΣT => toResolvedTypesCached(ΣT);
 
 const apply = T => fail (`${toTypeString(type.typename(T))} is not a constructible type.`);
+const satisfies = (ΣT, candidate) =>
+    types(ΣT).some(Ti => type.satisfies(Ti, candidate));
 
-module.exports = (...types) => ({ apply, types });
 
-module.exports.types = T => toResolvedTypesCached(T);
+module.exports = (...types) => ({ apply, types, satisfies });
