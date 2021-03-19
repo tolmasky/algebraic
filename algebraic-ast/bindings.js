@@ -1,68 +1,83 @@
-const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
-const union = require("@algebraic/type/union-new");
+const type = require("@algebraic/type");
 const Node = require("./node");
 const given = f => f();
 
 
-exports.IdentifierBinding = Node `IdentifierBinding` (
-    name                =>  string );
+exports.IdentifierBinding = Node `IdentifierBinding`
+({
+    name                :of =>  type.string
+});
 
-exports.Binding = union `Binding` (
-    is                  =>  Node.PatternBinding,
-    or                  =>  Node.IdentifierBinding );
+exports.Binding = type.union `Binding` (
+    of                  =>  Node.PatternBinding,
+    of                  =>  Node.IdentifierBinding );
 
-exports.DefaultedBinding = Node `DefaultedBinding` (
-    binding             =>  Node.Binding,
-    fallback            =>  Node.Expression );
+exports.DefaultedBinding = Node `DefaultedBinding`
+({
+    binding             :of =>  Node.Binding,
+    default             :of =>  Node.Expression
+});
 
-exports.DefaultableBinding = union `DefaultableBinding` (
-    is                  =>  Node.Binding,
-    or                  =>  Node.DefaultedBinding );
+exports.DefaultableBinding = type.union `DefaultableBinding` (
+    of                  =>  Node.Binding,
+    of                  =>  Node.DefaultedBinding );
 
-exports.PatternBinding = union `PatternBinding` (
-    is                  =>  Node.ObjectPatternBinding,
-    or                  =>  Node.ArrayPatternBinding );
+exports.PatternBinding = type.union `PatternBinding` (
+    of                  =>  Node.ObjectPatternBinding,
+    of                  =>  Node.ArrayPatternBinding );
 
-exports.ObjectPatternBinding = Node `ObjectPatternBinding` (
-    properties          =>  array (Node.PropertyBinding),
-    restProperty        =>  nullable (Node.RestPropertyBinding) );
+exports.ObjectPatternBinding = Node `ObjectPatternBinding`
+({
+    properties          :of =>  array (Node.PropertyBinding) `=` ([]),
+    restProperty        :of =>  Node.RestPropertyBinding `?`
+});
 
-exports.ArrayElementBinding = union `ArrayElementBinding` (
-    is                  =>  Node.Elision,
-    or                  =>  Node.DefaultableBinding );
+exports.ArrayElementBinding = type.union `ArrayElementBinding` (
+    of                  =>  Node.Elision,
+    of                  =>  Node.DefaultableBinding );
 
-exports.ArrayPatternBinding = Node `ArrayPatternBinding` (
-    elements            =>  array (Node.ArrayElementBinding),
-    restElement         =>  nullable (Node.RestElementBinding) );
+exports.ArrayPatternBinding = Node `ArrayPatternBinding`
+({
+    elements            :of =>  array (Node.ArrayElementBinding) `=` ([]),
+    restElement         :of =>  Node.RestElementBinding `?`
+});
 
-exports.RestElementBinding = Node `RestElementBinding` (
-    argument            =>  Node.Binding );
+exports.RestElementBinding = Node `RestElementBinding`
+({
+    argument            :of =>  Node.Binding
+});
 
-exports.RestPropertyBinding = Node `RestPropertyBinding` (
-    argument            =>  Node.IdentifierBinding );
+exports.RestPropertyBinding = Node `RestPropertyBinding`
+({
+    argument            :of =>  Node.IdentifierBinding
+});
 
 exports.Elision = Node `Elision` ();
 
 const getUndefaultedBinding = binding =>
-    is (Node.DefaultedBinding, binding) ?
+    type.belongs (Node.DefaultedBinding, binding) ?
         binding.binding : binding;
 
-exports.PropertyBinding = Node `PropertyBinding` (
-    ([computed])        =>  [boolean, key =>
-                                is(Node.ComputedPropertyName, key)],
+exports.PropertyBinding = Node `PropertyBinding`
+({
+    computed            :of =>  type.boolean `()=`
+                                (({ key }) =>
+                                    type.belong(Node.ComputedPropertyName, key)),
 
-    ([canBeShorthand])  =>  [boolean, (key, binding) => given((
-                                receiver = getUndefaultedBinding(binding)) =>
-                                is (Node.IdentifierName, key) &&
-                                is (Node.IdentifierBinding, receiver) &&
-                                key.name === receiver.name)],
+    canBeShorthand      :of =>  type.boolean `()=` (({ key, binding }) => given((
+                                    receiver = getUndefaultedBinding(binding)) =>
+                                    type.belngs (Node.IdentifierName, key) &&
+                                    type.belongs (Node.IdentifierBinding, receiver) &&
+                                    key.name === receiver.name)),
 
-    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
-                                canBeShorthand && prefersShorthand],
-    prefersShorthand    =>  [boolean, true],
+    shorthand           :of =>  type.boolean `()=`
+                                (({ canBeShorthand, prefersShorthand }) =>
+                                    canBeShorthand && prefersShorthand),
+    prefersShorthand    :of =>  type.boolean `=` (true),
 
-    key                 =>  Node.PropertyName,
-    binding             =>  Node.DefaultableBinding );
+    key                 :of =>  Node.PropertyName,
+    binding             :of =>  Node.DefaultableBinding
+});
 
 /*
     ([canBeShorthand])  =>  [boolean, (key, binding) =>

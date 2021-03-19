@@ -1,5 +1,7 @@
 const type = require("@algebraic/type");
+const { Comments } = require("./comment");
 const SourceLocation = require("./source-location");
+
 
 const Node = type `Node` (fields => type
 ({
@@ -19,16 +21,17 @@ const NodeUnion = ([name]) =>
             .values(exports)
             .filter(T => filter.test(type.name(T)))
             .map(T => is => T));
-
+*/
 Object.assign(module.exports,
 {
+/*
     Expression: NodeUnion `Expression` (
         /(Reference|Expression|Literal)$/,
         require("./expressions")),
     Statement: NodeUnion `Statement` (
         /(Statement|Declaration)$/,
         require("./statements")),
-
+*/
     ...require("./property-names"),
     ...require("./expressions"),
 
@@ -50,7 +53,7 @@ const isNodeOrComposite = T =>
         union.components(T).some(isNodeOrComposite);
 
 // Node.isNodeOrCompose = isNodeOrComposite;
-
+/*
 Object
     .values(Node)
     .filter(type => parameterized.is(Node, type))

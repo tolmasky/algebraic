@@ -1,5 +1,6 @@
 const { parse } = require("@babel/core");
-const { is, data, string, or, type, Δ } = require("@algebraic/type");
+//Δ
+const type = require("@algebraic/type");
 const given = f => f();
 
 const to = Symbol("to");
@@ -23,12 +24,16 @@ const toReferencedNames = ({ type, ...expression }) =>
         toReferencedNames(expression.value) :
         [];
 
-const FieldSetting = data `FieldSetting` (
-    dependencies    =>  type.array(string),
-    compute         =>  Function );
+const FieldSetting = type `FieldSetting`
+({
+    dependencies    :of =>  type.array(type.string),
+    compute         :of =>  Function
+});
 
-const FieldCasting = data `FieldCasting` (
-    TargetT             => Function );
+const FieldCasting = type `FieldCasting`
+({
+    TargetT         :of =>  type
+});
 
 const toFieldCasting = f =>
     FieldCasting({ TargetT: f() });
@@ -55,15 +60,19 @@ const toProxy = (get, apply) => new Proxy(function(){},
     get: (_, key) => get(key)
 });
 
-const WrappingTranslation = data `WrappingTranslation` (
-    entries =>  type.array(type.object) );
+const WrappingTranslation = type `WrappingTranslation`
+({
+    entries             :of =>  type.array(type.object)
+});
 
-const ValueTranslation = data `ValueTranslation` (
-    type                =>  Function,
-    pattern             =>  [type.object, Empty],
-    keyPath             =>  [type.array(string), []],
-    fieldSettings       =>  [type.object, Empty],
-    fieldCastings       =>  [type.object, Empty] );
+const ValueTranslation = type `ValueTranslation`
+({
+    type                :of =>  type,
+    pattern             :of =>  type.object `=` (Empty),
+    keyPath             :of =>  type.array(type.string) `=` ([]),
+    fieldSettings       :of =>  type.object `=` (Empty),
+    fieldCastings       :of =>  type.object `=` (Empty)
+});
 
 const toValueTranslationProxy = valueTranslation => toProxy(
     key =>

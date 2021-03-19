@@ -1,8 +1,7 @@
 const { hasOwnProperty } = Object;
-const fail = require("../fail");
+const fail = require("./fail");
 const fromEntries = require("@climb/from-entries");
 const type = require("./type");
-const provenancing = require("./provenancing");
 const CachedFields = new WeakMap();
 const given = f => f();
 const extract = (key, attributes) =>
@@ -12,7 +11,8 @@ const toResolvedFields = fields => Object
     .entries(fields)
     .map(([name, f]) => [name, f()])
     .map(([name, resolved]) => given((
-        annotated = !(resolved instanceof type)) =>
+    // FIXME: UGH!!!
+        annotated = resolved instanceof require("./annotated")) =>
     ({
         name,
         type: annotated ? resolved.type : resolved,

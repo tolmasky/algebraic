@@ -1,19 +1,22 @@
-const { string, or } = require("@algebraic/type");
-const union = require("@algebraic/type/union-new");
+const type = require("@algebraic/type");
 const Node = require("./node");
 
 
-exports.PropertyName = union `PropertyName` (
+exports.PropertyName = type.union `PropertyName` (
     is                  =>  Node.LiteralPropertyName,
     or                  =>  Node.ComputedPropertyName );
 
-exports.IdentifierName = Node `IdentifierName` (
-    name                =>  string );
+exports.IdentifierName = Node `IdentifierName`
+({
+    name                :of =>  type.string
+});
 
-exports.LiteralPropertyName = union `LiteralPropertyName` (
-    is                  =>  Node.IdentifierName,
-    or                  =>  Node.StringLiteral,
-    or                  =>  Node.NumericLiteral );
+exports.LiteralPropertyName = type.union `LiteralPropertyName` (
+    of                  =>  Node.IdentifierName,
+    of                  =>  Node.StringLiteral,
+    of                  =>  Node.NumericLiteral );
 
-exports.ComputedPropertyName = Node `ComputedPropertyName` (
-    expression          =>  Node.Expression );
+exports.ComputedPropertyName = Node `ComputedPropertyName`
+({
+    expression          :of =>  Node.Expression
+});

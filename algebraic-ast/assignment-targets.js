@@ -1,5 +1,4 @@
-const { is, data, or, string, array, nullable, boolean } = require("@algebraic/type");
-const union = require("@algebraic/type/union-new");
+const type = require("@algebraic/type");
 const Node = require("./node");
 const given = f => f();
 
@@ -8,43 +7,51 @@ const given = f => f();
 //
 // FIXME: We need parenthesized expression too...
 //
-exports.AssignmentTarget = union `AssignmentTarget` (
-    is                  =>  Node.IdentifierReference,
-    or                  =>  Node.MemberExpression,
-    or                  =>  Node.ArrayAssignmentTarget,
-    or                  =>  Node.ObjectAssignmentTarget );
+exports.AssignmentTarget = type.union `AssignmentTarget` (
+    of                  =>  Node.IdentifierReference,
+    of                  =>  Node.MemberExpression,
+    of                  =>  Node.ArrayAssignmentTarget,
+    of                  =>  Node.ObjectAssignmentTarget );
 
-exports.AssignableReference = union `AssignableReference` (
-    is                  =>  Node.IdentifierReference,
-    or                  =>  Node.MemberExpression );
+exports.AssignableReference = type.union `AssignableReference` (
+    of                  =>  Node.IdentifierReference,
+    of                  =>  Node.MemberExpression );
 
-exports.DefaultedAssignmentTarget = Node `DefaultedAssignmentTarget` (
-    target              =>  Node.AssignmentTarget,
-    fallback            =>  Node.Expression );
+exports.DefaultedAssignmentTarget = Node `DefaultedAssignmentTarget`
+({
+    target              :of =>  Node.AssignmentTarget,
+    default             :of =>  Node.Expression
+});
 
-exports.DefaultableAssignmentTarget = union `DefaultableAssignmentTarget` (
-    is                  =>  Node.AssignmentTarget,
-    or                  =>  Node.DefaultedAssignmentTarget );
+exports.DefaultableAssignmentTarget = type.union `DefaultableAssignmentTarget` (
+    of                  =>  Node.AssignmentTarget,
+    of                  =>  Node.DefaultedAssignmentTarget );
 
 
-exports.ArrayAssignmentTarget = Node `ArrayAssignmentTarget` (
-    elements            =>  array (Node.ArrayElementAssignmentTarget),
-    restElement         =>  nullable (Node.RestElementAssignmentTarget) );
+exports.ArrayAssignmentTarget = Node `ArrayAssignmentTarget`
+({
+    elements            :of =>  array (Node.ArrayElementAssignmentTarget),
+    restElement         :of =>  Node.RestElementAssignmentTarget `?`
+});
 
-exports.ArrayElementAssignmentTarget = union `ArrayElementAssignmentTarget` (
-    is                  =>  Node.Elision,
-    or                  =>  Node.DefaultableAssignmentTarget );
+exports.ArrayElementAssignmentTarget = type.union `ArrayElementAssignmentTarget` (
+    of                  =>  Node.Elision,
+    of                  =>  Node.DefaultableAssignmentTarget );
 
-exports.RestElementAssignmentTarget = Node `RestElementAssignmentTarget` (
-    argument            =>  Node.AssignmentTarget );
+exports.RestElementAssignmentTarget = Node `RestElementAssignmentTarget`
+({
+    argument            :of =>  Node.AssignmentTarget
+});
 
 // ?
 
-exports.ObjectAssignmentTarget = Node `ObjectAssignmentTarget` (
-    properties          =>  array (Node.PropertyAssignmentTarget),
-    restProperty        =>  nullable (Node.RestPropertyAssignmentTarget) );
+exports.ObjectAssignmentTarget = Node `ObjectAssignmentTarget`
+({
+    properties          :of =>  array (Node.PropertyAssignmentTarget),
+    restProperty        :of =>  Node.RestPropertyAssignmentTarget `?`
+});
 
-exports.PropertyAssignmentTarget = union `PropertyAssignmentTarget` (
+exports.PropertyAssignmentTarget = type.union `PropertyAssignmentTarget` (
     is                  =>  Node.LonghandPropertyAssignmentTarget,
     or                  =>  Node.ShorthandPropertyAssignmentTarget );
 
@@ -52,23 +59,28 @@ const getUndefaultedTarget = target =>
     is (Node.DefaultedAssignmentTarget, target) ?
         target.target : target;
 
-exports.PropertyAssignmentTarget = Node `PropertyAssignmentTarget` (
-    ([computed])        =>  [boolean, key => is(Node.ComputedPropertyName, key)],
+exports.PropertyAssignmentTarget = Node `PropertyAssignmentTarget`
+({
+    computed            :of =>  type.boolean `()=` (({ key }) =>
+                                    type.belongs(Node.ComputedPropertyName, key)),
 
-    ([canBeShorthand])  =>  [boolean, (key, target) => given((
-                                receiver = getUndefaultedTarget(target)) =>
-                                is (Node.IdentifierName, key) &&
-                                is (Node.IdentifierReference, receiver) &&
-                                key.name === receiver.name)],
+    canBeShorthand      :of =>  type.boolean `()=` (({ key, target }) => given((
+                                    receiver = getUndefaultedTarget(target)) =>
+                                    type.belongs (Node.IdentifierName, key) &&
+                                    type.belongs (Node.IdentifierReference, receiver) &&
+                                    key.name === receiver.name)),
 
-    ([shorthand])       =>  [boolean, (canBeShorthand, prefersShorthand) =>
-                                canBeShorthand && prefersShorthand],
+    shorthand           :of =>  type.boolean `()=`
+                                    (({ canBeShorthand, prefersShorthand }) =>
+                                        canBeShorthand && prefersShorthand),
 
-    prefersShorthand    =>  [boolean, true],
+    prefersShorthand    :of =>  type.boolean `=` (true),
 
-    key                 =>  Node.PropertyName,
-    target              =>  Node.DefaultableAssignmentTarget );
+    key                 :of =>  Node.PropertyName,
+    target              :of =>  Node.DefaultableAssignmentTarget
+});
 
-exports.RestPropertyAssignmentTarget = Node `RestPropertyAssignmentTarget` (
-    argument            =>  Node.AssignableReference );
-
+exports.RestPropertyAssignmentTarget = Node `RestPropertyAssignmentTarget`
+({
+    argument            :of =>  Node.AssignableReference
+});

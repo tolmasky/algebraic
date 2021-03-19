@@ -1,11 +1,11 @@
+Error.stackTraceLimit = 1000;
 const fromEntries = require("@climb/from-entries");
-const fail = require("../fail");
+const fail = require("./fail");
 const { tagged } = require("./template");
 const fNamed = (name, f) => Object.defineProperty(f, "name", { value: name });
 const fPrototyped = (prototype, name, f) =>
     fNamed(name, Object.setPrototypeOf(f, prototype));
 const given = f => f();
-const annotated = require("./annotated");
 
 //const alias = provenancing((name, T) => T, (_, [name]) => name);
 //const unary = provenancing(() => ({}));
@@ -58,8 +58,18 @@ const define = (name, attributes) => given((
                     construct.call(this, T, instantiate, attributes, ...args));
             } :
             (...args) => modifiers(T, args, () => apply(T, attributes, ...args)))) =>
+                (T.prototype && (T.prototype.Δ = function (mutation)
+    {
+        const key = (mutation + "").match(/([^\s=])*/)[0];
+        const original = this[key];
+        const updated = mutation(original);
+
+        return original === updated ?
+            this :
+            T({ ...this, [key]: updated });
+    }),
                 Object.defineProperty(T, "attributes",
-                    { value: { satisfies: equals, ...attributes, anonymous: isAnonymous } }));
+                    { value: { satisfies: equals, ...attributes, anonymous: isAnonymous } })));
 
 
 type.attributes = T => T.attributes;
@@ -72,8 +82,9 @@ const union = require("./union");
 
 type.union = function(...args)
 {
-    return  tagged(args, name => (...args) => define(name, union(...args))) ||
-            define(false, union(...args));
+    return  tagged(args,
+        name => (...args) => define(name, union(...args)),
+        () => define(false, union(...args)));
 }
 
 const equals = (lhs, rhs) => lhs === rhs;
@@ -81,7 +92,9 @@ const equals = (lhs, rhs) => lhs === rhs;
 type.satisfies = function (predicate, candidate)
 {
     return  predicate === type.any ||
-            type.attributes(predicate).satisfies(predicate, candidate);
+            predicate instanceof type ?
+                type.attributes(predicate).satisfies(predicate, candidate) :
+                predicate === candidate;
 }
 
 type.belongs = function (T, value)
@@ -101,12 +114,18 @@ type.of = value =>
     type[value === null ? "null" : typeof value] ||
     Object.getPrototypeOf(value).constructor;
 
-Object.assign(
-    type,
-    fromEntries(
-        ["null", "undefined", "number", "string", "boolean"]
-            .map(name => [name, define(name,
-                { apply: () => fail(`Cannot construct objects of type ${name}`) })])));
+
+const primitives = fromEntries(
+    ["null", "undefined", "object", "number", "string", "boolean"]
+        .map(name => [name, define(name,
+            { apply: () => fail(`Cannot construct objects of type ${name}`) })]));
+
+
+Object.assign(type, primitives);
+
+type.primitives = type.union `primitives` (...Object.values(primitives));
+
+const annotated = require("./annotated");
 
 const modifiers = (T, arguments, alternate) =>
     tagged(arguments, modifier =>

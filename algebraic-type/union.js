@@ -1,5 +1,5 @@
 const { hasOwnProperty } = Object;
-const fail = require("../fail");
+const fail = require("./fail");
 const type = require("./type");
 const CachedFields = new WeakMap();
 const given = f => f();
