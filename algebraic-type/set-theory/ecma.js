@@ -7,7 +7,7 @@ exports.Uint32 = Predicated
 ({
     name: "ECMA.Uint32",
     subsetof: integer.nonnegative,
-    predicate: value => ToUint32(value) === value
+    predicate: x => ToUint32(x) === x
 });
 
 const MAX_UINT32 = -1 >>> 0;

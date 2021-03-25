@@ -51,7 +51,8 @@ const Predicated = Set `Predicated`
     has: ({ subsetof, predicate }, item) =>
         subsetof.has(item) && predicate(item),
 
-    inspect: ({ subsetof, predicate }, inner) =>
+    inspect: ({ name, subsetof, predicate }, inner) =>
+        name ||
         `{ x ∈ ${inner(subsetof)} | ${/*predicate.name ||*/ (predicate + "")} }`
 });
 
