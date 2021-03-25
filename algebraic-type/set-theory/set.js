@@ -6,6 +6,9 @@ const curry = (value, binding) =>
         value :
         given(({ ...copy } = binding) => (...args) => value(copy, ...args));
 const JSSet = global.Set;
+const fInspect = require("./function-inspect");
+const style = require("./style");
+
 
 const Set = ([name]) => function ({ initialize = x => x, ...definition })
 {
@@ -51,9 +54,9 @@ const Predicated = Set `Predicated`
     has: ({ subsetof, predicate }, item) =>
         subsetof.has(item) && predicate(item),
 
-    inspect: ({ name, subsetof, predicate }, inner) =>
+    inspect: ({ name, subsetof, predicate }, inner, { stylize }) =>
         name ||
-        `{ x ∈ ${inner(subsetof)} | ${/*predicate.name ||*/ (predicate + "")} }`
+        `{ ${style.x} ∈ ${inner(subsetof)} : ${fInspect(stylize, predicate)} }`
 });
 
 exports.Predicated = Predicated;
@@ -83,33 +86,56 @@ exports.undefined = Concrete(void(0));
 
 const Axiomatic = Set `Axiomatic` 
 ({
-    inspect: ({ inspect }, inner, { stylize }) => `{ ${inspect(stylize)} }`,
+    inspect: ({ inspect }, inner) => style("italic", inspect()),
     has: ({ predicate }, item) => predicate(item)
 });
 
 exports.object = Axiomatic
 ({
-    inspect: stylize => stylize("the objects", "special"),
+    inspect: () => style("special", "the objects"),
     predicate: value => value && typeof value === "object"
 });
 
 // Should we mention IEEE 754? 
 exports.number = Axiomatic
 ({
-    inspect: stylize => stylize("the numbers", "number"),
+    inspect: () => style("number", "the numbers"),
     predicate: value => typeof value === "number"
 });
 
 exports.string = Axiomatic
 ({
-    inspect: stylize => stylize("the strings", "string"),
+    inspect: () => style("string", "the strings"),
     predicate: value => typeof value === "string"
 });
 
 exports.function = Axiomatic
 ({
-    inspect: stylize => stylize("the functions", "special"),
+    inspect: () => style("special", "the functions"),
     predicate: value => typeof value === "function"
+});
+
+exports.symbol = Axiomatic
+({
+    inspect: () => style("symbol", "the symbols"),
+    predicate: value => typeof value === "symbol"
+});
+
+exports.bigint = Axiomatic
+({
+    inspect: () => style("bigint", "the bigints"),
+    predicate: value => typeof value === "bigint"
+});
+
+
+
+
+const { isArray } = Array;
+
+exports.array = Predicated
+({
+    subsetof: exports.object,
+    predicate: isArray
 });
 
 Object.assign(

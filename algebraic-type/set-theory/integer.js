@@ -1,6 +1,8 @@
 const { Predicated, number } = require("./set");
 const { floor } = Math;
 const { isFinite } = global;
+const style = require("./style");
+
 
 const isInteger =
     Number.isInteger ||
@@ -12,7 +14,7 @@ const isInteger =
 
 const integer = Predicated
 ({
-    name: "ℤ",
+    name: style("number", "ℤ"),
     subsetof: number,
     predicate: isInteger
 });
@@ -21,28 +23,28 @@ exports.integer = integer;
 
 integer.positive = Predicated
 ({
-    name: "ℤ⁺",
+    name: style("number", "ℤ⁺"),
     subsetof: integer,
     predicate: value => value > 0
 });
 
 integer.nonnegative = Predicated
 ({
-    name: "ℤ*",
+    name: style("number", "ℤ*"),
     subsetof: integer,
     predicate: value => value >= 0
 });
 
 integer.negative = Predicated
 ({
-    name: "ℤ⁻",
+    name: style("number", "ℤ⁻"),
     subsetof: integer,
     predicate: value => value < 0
 });
 
 integer.nonpositive = Predicated
 ({
-    name: "non-positive integer",
+    name: style("number", "the non-positive integers"),
     subsetof: integer,
     predicate: value => value < 0
 });
