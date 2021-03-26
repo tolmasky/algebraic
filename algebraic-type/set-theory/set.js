@@ -8,24 +8,22 @@ const curry = (value, binding) =>
 const JSSet = global.Set;
 const fInspect = require("./function-inspect");
 const style = require("./style");
-
+const annotatable = require("./annotatable");
 
 const Set = ([name]) => function ({ initialize = x => x, ...definition })
 {
     const entries = Object.entries(definition);
-    const Set = fNamed(`Set.${name}`, function(...args)
-    {   
-        const properties = initialize(...args);
 
-        return !(this instanceof Set) ?
-            new Set(...args) :
+    const Set = annotatable(
+        `Set.${name}`, 
+        (instance, ...arguments) => given((
+            properties = initialize(...arguments)) =>
             entries.reduce((target, [key, value]) =>
                 Object.defineProperty(
                     target,
                     key,
                     { value: curry(value, properties) }),
-                this);
-    });
+                instance)));
 
     Set.prototype[inspect.custom] = function (depth, options)
     {
