@@ -33,7 +33,7 @@ function fConstruct({ name, fImplementation, prototype, constructible = false })
 {
     const f = constructible ?
         function (...args) { return implementation.apply(this, args); } :
-        (...args) => (console.log("CALLED WITH", implementation+"", ...args, new Error().stack), (x => (console.log("RESULT: ",x),x))(implementation(...args)));
+        (...args) => implementation(...args);
     const implementation = fImplementation(f);
 
     if (name !== false)
