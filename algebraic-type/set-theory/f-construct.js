@@ -23,18 +23,17 @@ const toFConstruct = constructible => function fInfer(...args)
         fConstruct
         ({
             name: offset === 0 ? false : args[0],
-            fImplementation: args[offset],
+            implementation: args[offset],
             prototype: args[offset + 1] || false,
             constructible
         }));
 }
 
-function fConstruct({ name, fImplementation, prototype, constructible = false })
+function fConstruct({ name, implementation, prototype, constructible = false })
 {
     const f = constructible ?
-        function (...args) { return implementation.apply(this, args); } :
-        (...args) => implementation(...args);
-    const implementation = fImplementation(f);
+        function (...args) { return implementation.call(this, f, ...args); } :
+        (...args) => implementation(f, ...args);
 
     if (name !== false)
         Object.defineProperty(f, "name", { value: name });
