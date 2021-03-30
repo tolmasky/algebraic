@@ -27,7 +27,7 @@ const Set = ([name]) => function ({ initialize = x => x, ...definition })
 
     Set.prototype[inspect.custom] = function (depth, options)
     {
-        if (depth < 0)
+        if (depth < -1)
             return "{ … }";
 
         const nextDepth = options.depth === null ? null : options.depth - 1;

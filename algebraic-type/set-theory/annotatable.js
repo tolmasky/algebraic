@@ -1,4 +1,4 @@
-const AnnotationsRegExp = /^\s*(\??)\s*(=|\s*\(\s*\)\*=)\s*?$/;
+const AnnotationsRegExp = /^\s*(\??)\s*(?:(=|\s*\(\s*\)\*=)\s*)?$/;
 const Set = require("./set");
 const f = require("./f-construct");
 const { isTaggedCall, tagResolve } = require("./templating");
