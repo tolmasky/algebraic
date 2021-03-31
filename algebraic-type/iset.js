@@ -8,7 +8,10 @@ function ISet(items)
     if (!(this instanceof ISet))
         return new ISet(items);
 
-    sets.set(this, new Set(items));
+    const set = new Set(items);
+
+    sets.set(this, set);
+    this.length = set.size;
 }
 
 module.exports = ISet;

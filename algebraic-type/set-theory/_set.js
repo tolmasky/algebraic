@@ -2,6 +2,7 @@ const OrderedSet = require("../iset");
 const { inspect } = require("util");
 const { iterator } = Symbol;
 const f = require("./f-construct");
+const given = f => f();
 
 const
 {
@@ -65,9 +66,47 @@ const Set = data `Set`
 
     has: ({ items }, item) => items.has(item),
     inspect: ({ items }, inner) =>
-        `{ ${[...items].map(item => inner(item)).join(", ")} }`
+        items.length === 0 ?
+            "∅" :
+           `{ ${[...items].map(item => inner(item)).join(", ")} }`
 });
 
+Set.Empty = Set();
+
+Set.Union = data `Set.Union`
+({
+    [initialize]: (...sets) => given((
+        condensed = condense(sets)) =>
+        condensed.length <= 0 ? Set.Empty :
+        condensed.length === 1 ? condensed[0] :
+        { subsets: condensed }),
+
+    has: ({ subsets }, item) => subsets.some(set => set.has(item)),
+    inspect: ({ subsets }, inner) => `(${ subsets.map(inner).join(" ∪ ") })`
+});
+
+function condense(sets)
+{
+    if (sets.length <= 1)
+        return sets;
+
+    const every = new OrderedSet();
+    const note = items => (items, items.map(item => every.add(item)));
+    const list = sets.reduceRight((next, set) =>
+        !(set instanceof Set) ? { set, next } :
+        !next || !next.items ? { items: [...set.items], next } :
+        { ...next, items: set.items.concat(next.items) },
+        false);
+    const iterate = function * (list)
+        { list && (yield list, (yield * iterate(list.next))); };
+console.log(Array
+        .from(iterate(list)));
+    return Array
+        .from(iterate(list))
+        .map(({ set, items }) =>
+            set ||
+            Set(...note(items.filter(item => every.has(item)))));
+}
 
 module.exports = Set;
 
