@@ -18,6 +18,13 @@ const
 const initialize = Symbol("data.initialize");
 const instantiate = Symbol("data.instantiate");
 const id = x => x;
+const AnnotatedType = require("./annotated-type");
+const operators =
+{
+    "U": (lhs, rhs) => union(lhs, rhs),
+    "where": (lhs, predicate) => lhs,
+    "?": (lhs, rhs) => union(lhs, SetNull)
+};
 
 
 const data = ([name]) => function (definition)
@@ -34,13 +41,11 @@ const data = ([name]) => function (definition)
         const isJustObject =
             result && ObjectGetPrototypeOf(result) !== ObjectPrototype;
 
-        return isJustObject?
-            result :
-            ObjectAssign(
+        return AnnotatedType(operators, ObjectAssign(
                 this instanceof T ?
                     this :
                     new T(instantiate),
-                result);
+                result));
     });
 
     ObjectAssign(PT.prototype,
@@ -74,9 +79,11 @@ const Set = data `Set`
            `{ ${[...items].map(item => inner(item)).join(", ")} }`
 });
 
+const SetNull = Set(null);
+console.log(SetNull);
 Set.Empty = Set();
 
-Set.null = Set(null);
+Set.null = SetNull;
 Set.boolean = Set(false, true);
 Set.undefined = Set(void(0));
 /*
@@ -124,6 +131,37 @@ Set.bigint = Axiomatic
 });
 */
 
+function union(lhs, rhs)
+{
+    const subsets = [lhs, rhs]
+        .filter(set => set.length !== 0)
+        .flatMap(set => set instanceof SetUnion ? set.subsets : set);
+
+    return  subsets.length <= 0 ? Set.Empty :
+            subsets.length === 1 ? subsets[0] :
+            SetUnion({ subsets });
+}
+
+const SetUnion = data `Set.Union`
+({
+    has: ({ subsets }, item) => subsets.some(set => set.has(item)),
+    inspect: ({ subsets }, inner) => `(${ subsets.map(inner).join(" ∪ ") })`
+});
+
+const Predicated = data `Set.Predicated` 
+({
+//    initialize: (subsetof, predicate) => ({ subsetof, predicate }),
+    has: ({ subsetof, predicate }, item) =>
+        subsetof.has(item) && predicate(item),
+
+    inspect: ({ name, subsetof, predicate }, inner, { stylize }) =>
+        name ||
+        `{ ${style.x} ∈ ${inner(subsetof)} : ${fInspect(stylize, predicate)} }`
+});
+
+
+/*
+
 
 Set.Union = data `Set.Union`
 ({
@@ -136,6 +174,8 @@ Set.Union = data `Set.Union`
     has: ({ subsets }, item) => subsets.some(set => set.has(item)),
     inspect: ({ subsets }, inner) => `(${ subsets.map(inner).join(" ∪ ") })`
 });
+*/
+
 
 function condense(sets)
 {

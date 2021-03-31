@@ -1,11 +1,13 @@
 const given = f => f();
 const fail = require("./fail");
+const { inspect } = require("util");
 
 const f = require("./f-construct");
 const { isTaggedCall, tagResolve } = require("./templating");
+const { hasOwnProperty } = Object;
 
 const AnnotationsRegExp = /^\s*(\??)\s*(?:(=|\s*\(\s*\)\*=)\s*)?$/;
-const annotate = (AT, annotations) => given((
+const annotate_ = (AT, annotations) => given((
     [, nulls, fallbacks = ""] = annotations.match(AnnotationsRegExp),
     type = nulls ? Set.Union(AT.type, Set.null) : AT.type) =>
         fallbacks ? 
@@ -21,7 +23,7 @@ const Default =
         (function (f, computed) { this.computed = computed })
 };
 
-function AnnotatedType(type, ...rest)
+function AnnotatedType(operators, type, ...rest)
 {
     const fallback = rest.length >= 1 ? rest[0] : Default.None;
 
@@ -32,10 +34,23 @@ function AnnotatedType(type, ...rest)
         f.constructible `${type.name}`
             ((AT, ...arguments) => 
                 isTaggedCall(arguments) ?
-                    annotate(AT, tagResolve(...arguments)) :
-                    (()=>{ fail(`undefined... for ${AT.name}`) }),
+                    annotate(operators, AT, tagResolve(...arguments)) :
+                    AT.type(...arguments),
             AnnotatedType.prototype),
         { type, fallback });
 }
 
+AnnotatedType.prototype[inspect.custom] = function (...args)
+{
+    return this.type[inspect.custom](...args);
+}
+
 module.exports = AnnotatedType;
+
+function annotate(operators, AT, annotations)
+{
+    if (!hasOwnProperty.call(operators, annotations))
+        fail (`Type ${AT.type} does not support the ${annotations} operator.`);
+
+    return rhs => operators[annotations](AT.type, rhs.type);
+}
