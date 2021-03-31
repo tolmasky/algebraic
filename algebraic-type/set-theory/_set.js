@@ -17,11 +17,12 @@ const
 
 const initialize = Symbol("data.initialize");
 const instantiate = Symbol("data.instantiate");
+const id = x => x;
 
 
 const data = ([name]) => function (definition)
 {
-    const { [initialize]: fInitialize, ...rest } = definition;
+    const { [initialize]: fInitialize = id, ...rest } = definition;
     const entries = Object.entries(rest);
     const internal = new WeakMap();
     const PT = f.constructible `${name}` (function (T, ...args)
@@ -75,6 +76,55 @@ const Set = data `Set`
 
 Set.Empty = Set();
 
+Set.null = Set(null);
+Set.boolean = Set(false, true);
+Set.undefined = Set(void(0));
+/*
+const Primitive = data `Set.Primitive`
+({
+    inspect: ({ inspect }, inner) => style("italic", inspect()),
+    has: ({ predicate }, item) => predicate(item)
+});
+
+Set.object = data `Set.object`
+({
+    inspect: () => style("special", "the objects"),
+    has: value => value && typeof value === "object"
+});
+
+// Should we mention IEEE 754? 
+Set.number = Axiomatic
+({
+    inspect: () => style("number", "the numbers"),
+    predicate: value => typeof value === "number"
+});
+
+Set.string = Axiomatic
+({
+    inspect: () => style("string", "the strings"),
+    predicate: value => typeof value === "string"
+});
+
+Set.function = Axiomatic
+({
+    inspect: () => style("special", "the functions"),
+    predicate: value => typeof value === "function"
+});
+
+Set.symbol = Axiomatic
+({
+    inspect: () => style("symbol", "the symbols"),
+    predicate: value => typeof value === "symbol"
+});
+
+Set.bigint = Axiomatic
+({
+    inspect: () => style("bigint", "the bigints"),
+    predicate: value => typeof value === "bigint"
+});
+*/
+
+
 Set.Union = data `Set.Union`
 ({
     [initialize]: (...sets) => given((
@@ -108,7 +158,19 @@ console.log(Array
         .map(({ set, items }) =>
             set ||
             Set(...note(items.filter(item => !every.has(item)))));
-}
+};
+
+Set.Predicated = data `Set.Predicated` 
+({
+//    initialize: (subsetof, predicate) => ({ subsetof, predicate }),
+    has: ({ subsetof, predicate }, item) =>
+        subsetof.has(item) && predicate(item),
+
+    inspect: ({ name, subsetof, predicate }, inner, { stylize }) =>
+        name ||
+        `{ ${style.x} ∈ ${inner(subsetof)} : ${fInspect(stylize, predicate)} }`
+});
+
 
 module.exports = Set;
 
