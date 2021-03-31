@@ -1,4 +1,6 @@
+const JSSet = global.Set;
 const OrderedSet = require("../iset");
+
 const { inspect } = require("util");
 const { iterator } = Symbol;
 const f = require("./f-construct");
@@ -90,12 +92,12 @@ function condense(sets)
     if (sets.length <= 1)
         return sets;
 
-    const every = new OrderedSet();
-    const note = items => (items, items.map(item => every.add(item)));
+    const every = new JSSet();
+    const note = items => (items.map(item => every.add(item)), items);
     const list = sets.reduceRight((next, set) =>
         !(set instanceof Set) ? { set, next } :
         !next || !next.items ? { items: [...set.items], next } :
-        { ...next, items: set.items.concat(next.items) },
+        { ...next, items: [...set.items].concat(next.items) },
         false);
     const iterate = function * (list)
         { list && (yield list, (yield * iterate(list.next))); };
@@ -105,7 +107,7 @@ console.log(Array
         .from(iterate(list))
         .map(({ set, items }) =>
             set ||
-            Set(...note(items.filter(item => every.has(item)))));
+            Set(...note(items.filter(item => !every.has(item)))));
 }
 
 module.exports = Set;
