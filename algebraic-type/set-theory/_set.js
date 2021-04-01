@@ -23,7 +23,7 @@ const operators =
 {
     "U": (lhs, rhs) => union(lhs, rhs),
     "where": (lhs, predicate) => lhs,
-    "?": (lhs, rhs) => union(lhs, SetNull)
+    "?": lhs => union(lhs, SetNull.type)
 };
 
 
@@ -70,7 +70,9 @@ const data = ([name]) => function (definition)
 
 const Set = data `Set`
 ({
-    [initialize]: (...values) => ({ items: new OrderedSet(values) }),
+    [initialize]: (...values) => given((
+        items = new OrderedSet(values)) =>
+        ({ items, length: items.length })),
 
     has: ({ items }, item) => items.has(item),
     inspect: ({ items }, inner) =>
@@ -80,7 +82,7 @@ const Set = data `Set`
 });
 
 const SetNull = Set(null);
-console.log(SetNull);
+
 Set.Empty = Set();
 
 Set.null = SetNull;
@@ -191,8 +193,7 @@ function condense(sets)
         false);
     const iterate = function * (list)
         { list && (yield list, (yield * iterate(list.next))); };
-console.log(Array
-        .from(iterate(list)));
+
     return Array
         .from(iterate(list))
         .map(({ set, items }) =>

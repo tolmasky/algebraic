@@ -52,5 +52,9 @@ function annotate(operators, AT, annotations)
     if (!hasOwnProperty.call(operators, annotations))
         fail (`Type ${AT.type} does not support the ${annotations} operator.`);
 
-    return rhs => operators[annotations](AT.type, rhs.type);
+    const operator = operators[annotations];
+
+    return operator.length === 1 ?
+        operator(AT.type) :
+        rhs => operator(AT.type, rhs.type);
 }
