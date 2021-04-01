@@ -7,7 +7,7 @@ function type(...args)
 {
     return isTaggedCall(args) ?
         (...nextArguments) => define(tagResolve(...args), ...nextArguments) :
-        define(...args);
+        define("<anonymous>", ...args);
 }
 
 module.exports = type;
