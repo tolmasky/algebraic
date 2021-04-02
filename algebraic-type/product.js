@@ -1,4 +1,4 @@
-const { isArray } = Array;
+const { prototype: ArrayPrototype, isArray } = Array;
 const { assign, entries, freeze, hasOwnProperty, setPrototypeOf } = Object;
 const fromEntries = require("@climb/from-entries");
 
@@ -9,8 +9,10 @@ const f = require("./function-define");
 const given = f => f();
 const fail = require("./fail");
 
+const type = require("./type");
 
-function product(type, name, definition, toFallback)
+
+function product(name, definition, toFallback)
 {
     const isTupleDefinition = isArray(definition);
     const T = f.constructible(name, function (T, values)
@@ -25,14 +27,13 @@ function product(type, name, definition, toFallback)
                         new T(Instantiate),
                     fromEntries(fields(T)
                         .map(initialize(
-                            type,
                             T,
                             values || UseFallbackForEveryField)))));
     },
     type.prototype);
 
     if (isTupleDefinition)
-        Object.setPrototypeOf(T.prototype, Array.prototype);
+        Object.setPrototypeOf(T.prototype, ArrayPrototype);
 
     private(T, "fieldDefinitions", () => entries(definition));
     private(T, "toFallback", () =>
@@ -59,7 +60,7 @@ function fields(T)
 }
 
 
-const initialize = (type, T, values) => field =>
+const initialize = (T, values) => field =>
     given((candidate = toCandidate(T, values, field)) =>
         !type.belongs(field.type, candidate) ?
             fail.type(
@@ -79,6 +80,9 @@ const toCandidate = (T, values, { name, ...field }) =>
     fail.type(
         `${toTypeString(T)} constructor requires field ` +
         `${toValueString(name)}.`)
+
+
+
 
 /*
 const given = f => f();
