@@ -24,4 +24,6 @@ type.belongs = (type, value) =>
 (console.log(type, value),
     value instanceof type);
 
+type.typename = T => T.name;
+
 const product = require("./product");

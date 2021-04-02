@@ -8,6 +8,7 @@ const given = f => f();
 const fail = require("./fail");
 
 const type = require("./type");
+const Field = require("./field");
 
 
 function product(name, definition, toFallback)
@@ -53,34 +54,12 @@ function fields(T)
 {
     return private(T, "fields", () =>
         private(T, "fieldDefinitions")
-            .map(([name, f]) => [name, f()])
-            .map(([name, constraint]) => ({ name, constraint, type: constraint })));
+            .map(([name, f]) => [name, new Field(f())]));
 }
 
-
-const initialize = (T, values) => field =>
-    given((candidate = toCandidate(T, values, field)) =>
-        !type.belongs(field.type, candidate) ?
-            fail.type(
-                `${toTypeString(T)} constructor passed invalid value` +
-                ` for field ${toValueString(field.name)}:\n` +
-                `  Expected: type ${toTypeString(field.type)}\n` +
-                `  Found: ${toValueString(candidate)} ` +
-                `of type ${toTypeString(type.of(candidate))}`) :
-        [field.name, candidate]);
-
-// FIXME: Should we throw if you attempt to pass something for a computed value?
-// FIXME: Need to resolve the other props...
-const toCandidate = (T, values, { name, ...field }) =>
-    IObject.has(name, values) ? values[name] :
-    IObject.has("defualt", field) ? field.default :
-    IObject.has("compute", field) ? field.compute(values) :
-    fail.type(
-        `${toTypeString(T)} constructor requires field ` +
-        `${toValueString(name)}.`)
-
-
-
+const initialize = (T, values) =>
+    ([name, field]) =>
+        [name, field.extract(T, name, values)];
 
 /*
 const given = f => f();

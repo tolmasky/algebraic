@@ -4,23 +4,22 @@ const type = require("./type");
 const fail = require("./fail");
 
 
-function Field(name, value)
+function Field(value)
 {
-    this.name = name;
     this.constraint = new Constraint(value);
     this.default = Default.None;
 }
 
 module.exports = Field;
 
-Field.prototype.extract = function (T, values)
+Field.prototype.extract = function (forT, name, values)
 {
-    const present = IObject.has(this.name, values);
+    const present = IObject.has(name, values);
     
     if (!present && this.default === Field.Default.None)
         fail.type(
-            `${toTypeString(T)} constructor requires field ` +
-            `${toValueString(this.name)}.`);
+            `${toTypeString(forT)} constructor requires field ` +
+            `${toValueString(name)}.`);
 
     // FIXME: Do computed correctly...
     if (!present)
@@ -28,13 +27,13 @@ Field.prototype.extract = function (T, values)
             this.default.value :
             this.default.computed();
 
-    const value = values[this.name];
+    const value = values[name];
 
     if (!this.constraint.has(value))
         fail.type(
-            `${toTypeString(T)} constructor passed invalid value` +
-            ` for field ${toValueString(this.name)}:\n` +
-            `  Expected: type ${toTypeString(T)}\n` +
+            `${toTypeString(forT)} constructor passed invalid value` +
+            ` for field ${toValueString(name)}:\n` +
+            `  Expected: type ${toTypeString(forT)}\n` +
             `  Found: ${toValueString(value)} ` +
             `of type ${toTypeString(type.of(value))}`);
 
