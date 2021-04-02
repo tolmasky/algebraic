@@ -6,6 +6,8 @@ const Instantiate = { };
 const UseFallbackForEveryField = { };
 const private = require("./private");
 const f = require("./function-define");
+const given = f => f();
+const fail = require("./fail");
 
 
 function product(type, name, definition, toFallback)
@@ -22,10 +24,15 @@ function product(type, name, definition, toFallback)
                         this :
                         new T(Instantiate),
                     fromEntries(fields(T)
-                        .map(initialize(T,
+                        .map(initialize(
+                            type,
+                            T,
                             values || UseFallbackForEveryField)))));
     },
     type.prototype);
+
+    if (isTupleDefinition)
+        Object.setPrototypeOf(T.prototype, Array.prototype);
 
     private(T, "fieldDefinitions", () => entries(definition));
     private(T, "toFallback", () =>
@@ -45,13 +52,14 @@ function fallback(T)
 
 function fields(T)
 {
-    return private(T, "fields", () => 
+    return private(T, "fields", () =>
         private(T, "fieldDefinitions")
             .map(([name, f]) => [name, f()])
-            .map(([name, constraint]) => ({ name, constraint })));
+            .map(([name, constraint]) => ({ name, constraint, type: constraint })));
 }
 
-const initialize = (T, values) => field =>
+
+const initialize = (type, T, values) => field =>
     given((candidate = toCandidate(T, values, field)) =>
         !type.belongs(field.type, candidate) ?
             fail.type(
@@ -61,6 +69,16 @@ const initialize = (T, values) => field =>
                 `  Found: ${toValueString(candidate)} ` +
                 `of type ${toTypeString(type.of(candidate))}`) :
         [field.name, candidate]);
+
+// FIXME: Should we throw if you attempt to pass something for a computed value?
+// FIXME: Need to resolve the other props...
+const toCandidate = (T, values, { name, ...field }) =>
+    hasOwnProperty.call(values, name) ? values[name] :
+    hasOwnProperty.call(field, "default") ? field.default :
+    hasOwnProperty.call(field, "compute") ? field.compute(values) :
+    fail.type(
+        `${toTypeString(T)} constructor requires field ` +
+        `${toValueString(name)}.`)
 
 /*
 const given = f => f();

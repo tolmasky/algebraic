@@ -16,3 +16,10 @@ function define(name, definition)
 {
     return product(type, name, definition);
 }
+
+type.of = value =>
+    Object.getPrototypeOf(value).constructor;
+
+type.belongs = (type, value) =>
+(console.log(type, value),
+    value instanceof type);
