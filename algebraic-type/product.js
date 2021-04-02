@@ -1,6 +1,4 @@
-const { prototype: ArrayPrototype, isArray } = Array;
-const { assign, entries, freeze, hasOwnProperty, setPrototypeOf } = Object;
-const fromEntries = require("@climb/from-entries");
+const { IArray, IObject } = require("./intrinsics");
 
 const Instantiate = { };
 const UseFallbackForEveryField = { };
@@ -14,18 +12,18 @@ const type = require("./type");
 
 function product(name, definition, toFallback)
 {
-    const isTupleDefinition = isArray(definition);
+    const isTupleDefinition = IArray.isArray(definition);
     const T = f.constructible(name, function (T, values)
     {
         return  values instanceof T ? values :
                 values === Instantiate ? this :
-                freeze(assign(
+                IObject.freeze(IObject.assign(
                     isTupleDefinition ?
-                        setPrototypeOf([], T.prototype) :
+                        IObject.setPrototypeOf([], T.prototype) :
                     this instanceof T ?
                         this :
                         new T(Instantiate),
-                    fromEntries(fields(T)
+                    IObject.fromEntries(fields(T)
                         .map(initialize(
                             T,
                             values || UseFallbackForEveryField)))));
@@ -33,9 +31,9 @@ function product(name, definition, toFallback)
     type.prototype);
 
     if (isTupleDefinition)
-        Object.setPrototypeOf(T.prototype, ArrayPrototype);
+        IObject.setPrototypeOf(T.prototype, IArray.prototype);
 
-    private(T, "fieldDefinitions", () => entries(definition));
+    private(T, "fieldDefinitions", () => IObject.entries(definition));
     private(T, "toFallback", () =>
         toFallback ||
         // FIXME: Automatic if all fields can be automatic.
@@ -74,9 +72,9 @@ const initialize = (T, values) => field =>
 // FIXME: Should we throw if you attempt to pass something for a computed value?
 // FIXME: Need to resolve the other props...
 const toCandidate = (T, values, { name, ...field }) =>
-    hasOwnProperty.call(values, name) ? values[name] :
-    hasOwnProperty.call(field, "default") ? field.default :
-    hasOwnProperty.call(field, "compute") ? field.compute(values) :
+    IObject.has(name, values) ? values[name] :
+    IObject.has("defualt", field) ? field.default :
+    IObject.has("compute", field) ? field.compute(values) :
     fail.type(
         `${toTypeString(T)} constructor requires field ` +
         `${toValueString(name)}.`)
