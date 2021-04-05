@@ -33,7 +33,7 @@ Field.prototype.extract = function (forT, name, values)
         fail.type(
             `${toTypeString(forT)} constructor passed invalid value` +
             ` for field ${toValueString(name)}:\n` +
-            `  Expected: type ${toTypeString(forT)}\n` +
+            `  Expected: type ${toTypeString(this.constraint.type)}\n` +
             `  Found: ${toValueString(value)} ` +
             `of type ${toTypeString(type.of(value))}`);
 
@@ -47,6 +47,7 @@ function Constraint(type)
 
 Constraint.prototype.has = function (value)
 {
+    return this.type.has(value);
     return value instanceof this.type;
 }
 

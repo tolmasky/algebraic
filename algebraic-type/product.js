@@ -33,6 +33,8 @@ function product(name, definition, toFallback)
     },
     type.prototype);
 
+    T.has = value => value instanceof T;
+
     if (isTupleDefinition)
         IObject.setPrototypeOf(T.prototype, IArray.prototype);
 
