@@ -54,7 +54,15 @@ module.exports = function sum(name, constructors = [])
 
         return `${fullyQualified} { ${private(this, "values")} }`;
     };
-console.log(constructors);
+
+    const necessary = constructors.map(([name]) => name);
+    const necessarySet = new Set(necessary);
+
+    T.prototype.match = function (cases)
+    {
+        return match.call(this, T, necessary, necessarySet, cases);
+    }
+
     IObject.assign(T, IObject.fromEntries(constructors));
 
     T.case = (...arguments) =>
@@ -89,6 +97,72 @@ function toConstructor(name, definitions)
 const type = require("./type");
 
 
+// FIXME, This may be faster with bitsets, just loop each one and | together...
+function match(T, necessary, necessarySet, cases)
+{console.log(necessary, necessarySet);
+    const hasDefault = IObject.has("default", cases);
+    const present = IObject.keys(cases);
+    const presentSet = new Set(IObject.keys(cases));
+    const missing =
+        !hasDefault && necessary.find(name => !presentSet.has(name));
+
+    if (missing)
+        fail(`${T.name}.match call is missing case for "${missing}".`);
+
+    if (present.length > necessary.length)
+        fail(
+            `${T.name}.match call has non-constructor case ` +
+            `"${present.find(name => !necessarySet.has(name))}".`);
+
+    const target = private(this, "constructor").name;
+    const handler = cases[target] || cases.default;
+
+    return handler(...private(this, "values"));
+}
+
+/*
+x.match
+({
+    Just: value => value,
+    Nothing: () => 10,
+    default: () => 20,
+})
+    .case `Just` (value => value);
+    .case `Nothing` (() => 10);
+    
+function toCase(T, masks, visited, remaining)
+{
+    return function (args)
+    {
+        if (!isTaggedCall(args))
+            fail("Missing constructor name in case statement");
+
+        const name = tagResolve(...args);
+        const mask = masks[name];
+
+        if (!mask)
+            fail(`Type ${T.name} has no constructor named ${name}.`);
+
+
+        return uRemaining === 0 ?
+            uAnswer :
+            
+        if (uRemaining === 0)
+            return uAnswer;
+
+            (...definitions) =>
+                sum(name,
+                [
+                    ...constructors,
+                    toConstructor(tagResolve(...arguments), definitions)
+                ]):
+            fail("NO.");
+
+        
+        if (!masks[]
+        if (visited & )
+    }
+}
 /*
     private(T, "constructors", constructors);
 
