@@ -9,19 +9,29 @@ const fail = require("./fail");
 
 const type = require("./type");
 const Field = require("./field");
+const isJSFuntion = value => typeof value === "function";
 
+// Product types can either have *positional* fields, in which case we interpret
+// it to be a tuple, or labeled properties, in which case we interpret it to be
+// an object. The main difference is that in pattern matching, we spread the
+// values in the case of calls to `match`.
+//
+// FIXME: If you pass an array, should we interpret that to be positional too?
 
 function product(name, definition, toFallback)
 {
-    const isTupleDefinition = IArray.isArray(definition);
+    const hasPositionalFields = isJSFuntion(definition[0]);
+    const fieldDefinitions = IObject
+        .entries(hasPositionalFields ? definition: definition[0]);
+
     const T = f.constructible(name, function (T, ...args)
     {
-        const values = isTupleDefinition ? args : args[0];
+        const values = hasPositionalFields ? args : args[0];
 
         return  values instanceof T ? values :
                 values === Instantiate ? this :
                 IObject.freeze(IObject.assign(
-                    isTupleDefinition ?
+                    hasPositionalFields ?
                         IObject.setPrototypeOf([], T.prototype) :
                     this instanceof T ?
                         this :
@@ -35,10 +45,10 @@ function product(name, definition, toFallback)
 
     T.has = value => value instanceof T;
 
-    if (isTupleDefinition)
+    if (hasPositionalFields)
         IObject.setPrototypeOf(T.prototype, IArray.prototype);
 
-    private(T, "fieldDefinitions", () => IObject.entries(definition));
+    private(T, "fieldDefinitions", () => fieldDefinitions);
     private(T, "toFallback", () =>
         toFallback ||
         // FIXME: Automatic if all fields can be automatic.

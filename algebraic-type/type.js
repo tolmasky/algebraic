@@ -12,9 +12,9 @@ function type(...args)
 
 module.exports = type;
 
-function define(name, definition)
+function define(name, ...fields)
 {
-    return product(name, definition);
+    return product(name, fields);
 }
 
 type.of = value =>
