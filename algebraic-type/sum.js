@@ -48,11 +48,17 @@ module.exports = function sum(name, constructors = [])
     },
     type.prototype);
     
-    T.prototype[inspect.custom] = function ()
+    T.prototype[inspect.custom] = function (depth, options)
     {
+        if (depth < -1)
+            return "{ … }";
+
+        const nextDepth = options.depth === null ? null : options.depth - 1;
+        const inner = value => inspect(value, { ...options, depth: nextDepth });
+
         const fullyQualified = T.name + "." + private(this, "constructor").name;
 
-        return `${fullyQualified} { ${private(this, "values")} }`;
+        return `${fullyQualified} { ${private(this, "values").map(inner)} }`;
     };
 
     const necessary = constructors.map(([name]) => name);
@@ -72,7 +78,14 @@ module.exports = function sum(name, constructors = [])
                 [
                     ...constructors,
                     toConstructor(tagResolve(...arguments), definitions)
-                ]):
+                ]) :
+            arguments.length === 1 &&
+            arguments[0] instanceof type ?
+                sum(name,
+                [
+                    ...constructors,
+                    toConstructor(arguments[0].name, arguments.map(T => of => T))
+                ]) :
             fail("NO.");
 
     return T;
