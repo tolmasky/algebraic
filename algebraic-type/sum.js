@@ -10,7 +10,7 @@ const fail = require("./fail");
 const Field = require("./field");
 
 
-module.exports = function sum(name, fConstructors = [])
+function sum(name, fConstructors = [])
 {
     const T = f.constructible(name, function (T, ...rest)
     {
@@ -64,26 +64,26 @@ module.exports = function sum(name, fConstructors = [])
     }
 
     T.has = value => value instanceof T;
-
-    T.case = (...arguments) =>
-        isTaggedCall(arguments) ?
-            (...definitions) =>
-                sum(name,
-                [
-                    ...fConstructors,
-                    toFConstructor(tagResolve(...arguments), definitions)
-                ]) :
-            arguments.length === 1 &&
-            arguments[0] instanceof type ?
-                sum(name,
-                [
-                    ...fConstructors,
-                    toFConstructor(arguments[0].name, arguments.map(T => of => T))
-                ]) :
-            fail("NO.");
+    T.case = sum.case(name, fConstructors);
 
     return T;
 }
+
+module.exports = sum;
+
+sum.case = (name, fConstructors = []) =>
+    (...arguments) =>
+        isTaggedCall(arguments) ?
+            (...definitions) =>
+                sum(name, fConstructors.concat(
+                    toFConstructor(tagResolve(...arguments), definitions))) :
+        arguments.length === 1 &&
+        arguments[0] instanceof type ?
+            sum(name, fConstructors.concat(
+                toFConstructor(
+                    arguments[0].name,
+                    arguments.map(T => of => T)))) :
+        fail("NO.");
 
 function toFConstructor(name, definitions)
 {

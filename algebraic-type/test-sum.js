@@ -1,16 +1,14 @@
 const type = require("@algebraic/type");
-const sum = require("@algebraic/type/sum");
 
-
-const List = sum("List")
-    .case `List`({ item: of => type.number, next: of => List })
+const List = type `List`
+    .case `List` ({ item: of => type.number, next: of => List })
     .case `Empty` ();
 
 // console.log(List.has(List.Empty()));
 // console.log(Object.getPrototypeOf(List.Empty()).constructor);
 console.log(List({ item: 5, next: List.Empty() }));
 
-const MaybeNumber = sum("MaybeNumber")
+const MaybeNumber = type `MaybeNumber`
     .case `Just` (of => type.number)
     .case `Nothing` ();
 
@@ -38,7 +36,7 @@ console.log(MaybeNumber.Nothing());
 
 const AssignmentExpression = type `AssignmentExpression` ({ name: of => type.string });
 const UnaryExpression = type `UnaryExpression` ({ name: of => type.string });
-const Expression = sum("Expression")
+const Expression = type `Expression`
     .case (AssignmentExpression)
     .case (UnaryExpression);
 

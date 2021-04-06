@@ -1,21 +1,21 @@
 Error.stackTraceLimit = 1000;
 
+const { IObject } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
-
 
 function type(...args)
 {
     return isTaggedCall(args) ?
-        (...nextArguments) => define(tagResolve(...args), ...nextArguments) :
-        define("<anonymous>", ...args);
+        productOrSum(tagResolve(...args)) :
+        product(name, args);
 }
+
+const productOrSum = name => IObject.assign(
+    (...fields) => product(name, fields),
+    { case: sum.case(name) });
+
 
 module.exports = type;
-
-function define(name, ...fields)
-{
-    return product(name, fields);
-}
 
 type.of = value =>
     !value || typeof value !== "object" ?
@@ -30,6 +30,7 @@ type.has = (T, value) => T.has(value);
 type.typename = T => T.name;
 
 const product = require("./product");
+const sum = require("./sum");
 
 
 const f = require("./function-define");
