@@ -1,16 +1,20 @@
 const type = require("@algebraic/type");
 
-const List = type `List`
-    .case `List` ({ item: of => type.number, next: of => List })
-    .case `Empty` ();
+const List = type(T => type `List`
+    .case `List` ({ item: of => T, next: of => List.of(T) })
+    .case `Empty` ());
+
+console.log(List.of(type.number).Empty());
 
 // console.log(List.has(List.Empty()));
 // console.log(Object.getPrototypeOf(List.Empty()).constructor);
-console.log(List({ item: 5, next: List.Empty() }));
+console.log(List.of(type.number)({ item: 5, next: List.of(type.number).Empty() }));
 
-const MaybeNumber = type `MaybeNumber`
-    .case `Just` (of => type.number)
-    .case `Nothing` ();
+const Maybe = type(T => type `Maybe`
+    .case `Just` (of => T)
+    .case `Nothing` () );
+
+const MaybeNumber = Maybe.of(type.number);
 
 console.log(MaybeNumber);
 console.log(MaybeNumber.Just(5));

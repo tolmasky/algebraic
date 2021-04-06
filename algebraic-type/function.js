@@ -1,4 +1,4 @@
-const template = require("./template");
+/*const template = require("./template");
 const type = require("./type");
 const given = f => f();
 
@@ -12,10 +12,19 @@ const apply = (T, { implementation }, ...arguments) =>
         (...nextArguments) =>
             type
                 `${template.resolve(...arguments)}`
-                (implementation(...nextArguments)) :
+                (22, implementation(...nextArguments)) :
     given((ResultT = implementation(...arguments)) =>
         ResultT.attributes.anonymous ?
             type `${toAppliedName(T, arguments)}` (ResultT) :
             ResultT);
 
-module.exports = implementation => ({ apply, implementation });
+module.exports = implementation => ({ apply, implementation });*/
+
+const toCache = require("./cache");
+
+module.exports = function typef(f)
+{
+    const cache = toCache();
+
+    return { of: (...args) => cache(args, () => f(...args)) };
+}
