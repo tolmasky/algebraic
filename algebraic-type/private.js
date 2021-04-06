@@ -13,4 +13,4 @@ module.exports = (target, key, fValue) => given((
     exists = hasOwnProperty.call(values, key)) =>
         exists ?
             values[key] :
-            (console.log(key, fValue, values),values[key] = fValue()));
+            values[key] = fValue());

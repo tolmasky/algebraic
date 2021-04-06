@@ -23,8 +23,7 @@ type.of = value =>
         Object.getPrototypeOf(value).constructor;
 
 type.belongs = (type, value) =>
-(console.log(type, value),
-    value instanceof type);
+    value instanceof type;
 
 type.has = (T, value) => T.has(value);
 
