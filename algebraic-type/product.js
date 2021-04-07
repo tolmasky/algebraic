@@ -11,6 +11,9 @@ const type = require("./type");
 const Field = require("./field");
 const isJSFuntion = value => typeof value === "function";
 
+const { isTaggedCall, tagResolve } = require("./templating");
+
+
 // Product types can either have *positional* fields, in which case we interpret
 // it to be a tuple, or labeled properties, in which case we interpret it to be
 // an object. The main difference is that in pattern matching, we spread the
@@ -26,6 +29,11 @@ function product(name, definition, toFallback)
 
     const T = f.constructible(name, function (T, ...args)
     {
+        const annotatedT = annotate(T, args);
+
+        if (annotatedT)
+            return annotatedT;
+
         const values = hasPositionalFields ? args : args[0];
 
         return  values instanceof T ? values :
@@ -74,3 +82,13 @@ function fields(T)
 const initialize = (T, values) =>
     ([name, field]) =>
         [name, field.extract(T, name, values)];
+
+function annotate(T, args)
+{
+    if (!isTaggedCall(args))
+        return false;
+
+    const operator = tagResolve(...args);
+
+    return type.optional.of(T);
+}
