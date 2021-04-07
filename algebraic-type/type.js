@@ -1,42 +1,25 @@
 Error.stackTraceLimit = 1000;
-
 const { IObject } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
+const f = require("./function-define");
 
-function type(...args)
-{
-    return  isTaggedCall(args) ?
-                productOrSum(tagResolve(...args)) :
-            typeof args[0] === "function" ?
-                typef(args[0]) :
-                product("<anonymous>", args);
-}
+const type = function (){};
 
-const productOrSum = name => IObject.assign(
-    (...fields) => product(name, fields),
-    { case: sum.case(name) });
-
+type[Symbol.iterator] = function * () { yield type; yield type; };
 
 module.exports = type;
 
+type.type = type;
 type.of = value =>
     !value || typeof value !== "object" ?
         type[typeof value] :
         Object.getPrototypeOf(value).constructor;
 
-type.belongs = (type, value) =>
-    value instanceof type;
-
 type.has = (T, value) => T.has(value);
 
 type.typename = T => T.name;
 
-const product = require("./product");
-const sum = require("./sum");
-const typef = require("./function");
-
-
-const f = require("./function-define");
+type.data = require("./data");
 
 function primitive(name, has)
 {
@@ -56,10 +39,11 @@ type.symbol = primitive("symbol");
 type.undefined = primitive("undefined");
 type.object = primitive("object", value => value && typeof value === "object");
 
+/*
 type.optional = type(T =>
     type `optional(${T.name})`
         .case `some` (of => T)
         .case `none` ());
-
+*/
 
 
