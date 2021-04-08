@@ -27,9 +27,9 @@ module.exports = case_;
 
 function sum(name, initializers)
 {
-    const T = constructible(name, initializers);
-
-    T.case = case_(name, initializers);
+    const T = IObject.assignNonenumerable(
+        constructible(name, initializers),
+        { case: case_(name, initializers) });
 
     const CIDs = IObject
         .fromEntries(
