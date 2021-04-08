@@ -1,60 +1,14 @@
 const { IObject, IArray } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
+const constructible = require("./constructible");
 const f = require("./function-define");
 
-const construct =
-    (T, initializer, args) =>
-        IObject.freeze(initializer(T, args));
-const instantiate = T => new T(instantiate);
-const annotate = () => false;
 const private = require("./private");
 const Field = require("./field");
 const fail = require("./fail");
 const UseFallbackForEveryField = { };
+const case_ = require("./sum-case");
 
-
-function algebraic(name, initializers)
-{
-    const T = f.constructible(name, function (T, ...args)
-    {
-        const instantiating = args[0] === instantiate;
-        const instantiated = this instanceof T;
-
-        return  instantiating && instantiated ?
-                    this :
-                !instantiating && instantiated ?
-                    fail(
-                        `${T} cannot be invoked with "new", ` +
-                        `use ${T}(...) instead.`) :
-                isTaggedCall(args) ?
-                    annotate(T, args) :
-                defaultConstructor ?
-                    defaultConstructor(...args) :
-                    fail(
-                        `Type ${T.name} cannot be used as a constructor.\n` +
-                        `Available constructors for type ${T.name} are:` +
-                        private(T, "constructors")
-                            .map(({ name }) => `\n  ${name}`));
-    },
-    type.prototype);
-
-    const constructors = IObject.fromEntries(initializers
-        .map(initializer =>
-        [
-            initializer.name,
-            f (initializer.name, (f, ...args) => construct(T, initializer, args))
-        ]));
-
-    const defaultConstructor =
-        IObject.has(name, constructors) ? constructors[name] : false;
-
-    private(T, "constructors", () => constructors);
-    private(T, "defaultConstructor", () => defaultConstructor);
-
-    return IObject.assignNonenumerable(T,
-        constructors,
-        { has: value => value instanceof T });
-}
 
 function product(name, definition)
 {
@@ -62,10 +16,10 @@ function product(name, definition)
     const fieldDefinitions = IObject
         .entries(hasPositionalFields ? definition : definition[0]);
 
-    const initializer = f(name, function(f, T, args)
+    const initializer = f(name, function(f, T, instantiate, args)
     {
         const values = hasPositionalFields ? args : args[0];
-console.log(values, f, args);
+
         return  !hasPositionalFields && values instanceof T ?
                 values :
                 IObject.assign(
@@ -77,13 +31,12 @@ console.log(values, f, args);
                             T,
                             values || UseFallbackForEveryField))));
     });
-    const T = algebraic(name, [initializer]);
+    const T = constructible(name, [initializer]);
 
     if (hasPositionalFields)
         IObject.setPrototypeOf(T.prototype, IArray.prototype);
 
     private(T, "fieldDefinitions", () => fieldDefinitions);
-    console.log(private(T, "fieldDefinitions"));
     private(T, "toFallback", () =>
         false /*toFallback*/ ||
         // FIXME: Automatic if all fields can be automatic.
@@ -105,7 +58,7 @@ const initialize = (T, values) =>
 
 const define = name => IObject.assign(
     (...fields) => product(name, fields),
-    { pizza: true/*case: sum.case(name)*/ });
+    { case: case_(name) });
 
 const data = (...arguments) =>
     isTaggedCall(arguments) ?
