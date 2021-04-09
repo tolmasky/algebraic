@@ -1,24 +1,26 @@
 const { IObject } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
-const constructible = require("./constructible");
+
 const f = require("./function-define");
 
 const private = require("./private");
 const Field = require("./field");
 const fail = require("./fail");
 const DIS = require("@algebraic/dense-int-set");
-const Constructor = require("./constructor");
+
+const Constructible = require("./constructible");
+const ConstructorDefinition = require("./constructor-definition");
 
 
-function sum(name, caseofs)
+function sum(name, definitions)
 {
-    const T = constructible(name, caseofs);
+    const T = Constructible(name, false, definitions);
 
     const constructors = private(T, "constructors");
     const CIDs = IObject
-        .fromEntries(
-            constructors
-                .map(({ name }, index) => [name, index]));
+        .fromEntries(IObject
+            .entries(constructors)
+            .map(({ name }, index) => [name, index]));
 
     // This can be different than initializers.length if two or more have the
     // same name. Maybe we should fail earlier in that case though?
@@ -28,49 +30,56 @@ function sum(name, caseofs)
     private(T, "CIDs", () => CIDs);
     private(T, "EveryCID", () => EveryCID);
 
-    T.prototype.caseof = icaseof;
+    T.prototype.caseof = caseof;
 
     return T;
 }
 
-const caseof = (...arguments) =>
+module.exports = sum;
+
+sum.caseof = (...arguments) =>
     isTaggedCall(arguments) ?
-        (...definitions) =>
-            toSumConstructor(tagResolve(...arguments), definitions) :
+        (...fieldDeclarations) =>
+            toConstructorDefinition(
+                tagResolve(...arguments),
+                fieldDeclarations) :
 
     arguments.length === 1 &&
     arguments[0] instanceof type ?
-        toSumConstructor(arguments[0].name, arguments.map(T => of => T)) :
+        toConstructorDefinition(
+            arguments[0].name,
+            arguments.map(T => of => T)) :
 
     fail ("No. (Unnamed caseof not allowed).");
 
-function toSumConstructor(name, definitions)
+function toConstructorDefinition(name, fieldDeclarations)
 {
     const innerT =
-        definitions.length === 1 &&
-        typeof definitions[0] === "object" ?
-            data(name, definitions[0]) :
+        fieldDeclarations.length === 1 &&
+        typeof fieldDeclarations[0] === "object" ?
+            data(name, fieldDeclarations[0]) :
             false;
-    const constraints = [innerT] : definitions;
-    const preprocess = innerT ?
-        ([first, ...rest]) => [false, [innerT(first), ...rest]] :
-        false;
 
-    return Constructor(name, constraints, preprocess, construct);
+    return ConstructorDefinition(
+        name,
+        innerT ?
+            [of => innerT] :
+            fieldDeclarations,
+        innerT ?
+            ([first, ...rest]) => [false, [innerT(first), ...rest]] :
+            false,
+        initialize);
 }
 
-function construct(T, C, instantiate, values)
+function initialize(constructor, processed)
 {
-    const instance = instantiate(T);
+    const values = IObject.assign([], processed);
 
-    private(instance, "constructor", () => C);
-    private(instance, "values", () => values);
-
-    return instance;
+    return [{ constructor, values }];
 }
 
 // FIXME, This may be faster with bitsets, just loop each one and | together...
-const icaseof = function caseof(cases)
+const caseof = function caseof(cases)
 {
     const T = type.of(this);
     const CIDs = private(T, "CIDs");

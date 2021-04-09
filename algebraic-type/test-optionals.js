@@ -1,4 +1,5 @@
 const [type, { data, forall }] = require("@algebraic/type");
+const { caseof } = data;
 const Person = data `Person`
 ({
     name    :of =>  type.string,
@@ -12,8 +13,32 @@ console.log(Person({ name: "Francisco", age: 37 }));
 
 console.log(Pair(10, 10));
 
-console.log(Person({ name: "Francisco", age: 37 }, 10));
+// console.log(Person({ name: "Francisco", age: 37 }, 10));
+console.log(caseof);
+const OptionalPerson = data `OptionalPerson`
+([
+    caseof `some` (of => Person),
+    caseof `none` ()
+]);
 
+const x = OptionalPerson.some(Person({ name: "Francisco", age: 37 }));
+
+console.log(Object.getPrototypeOf(x.constructor).constructor);
+console.log(Object.getPrototypeOf(x.values[0]).constructor);
+console.log(x);
+
+
+const { some } = OptionalPerson;
+
+console.log(some(Person({ name: "Francisco", age: 37 })));
+
+
+console.log(
+    some(Person({ name: "Francisco", age: 37 })).caseof(
+    {
+        some: x => x.age + 1,
+        none: () => 10
+    }));
 
 /*
 const optional = forall (T =>

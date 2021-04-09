@@ -1,8 +1,8 @@
 const { IObject, IArray } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
 const product = require("./product");
-const sum = ()=>{};
-console.log(product);
+const sum = require("./sum");
+
 
 function data(...args)
 {
@@ -23,8 +23,9 @@ function data(...args)
                 sum(name, ...definition) :
                 product(name, ...definition);
 }
-
+console.log(sum.caseof);
 module.exports = data;
+module.exports.caseof = sum.caseof;
 
 function body(name)
 {

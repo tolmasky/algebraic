@@ -32,7 +32,8 @@ module.exports = function constructible(name, tuple, definitions)
                     fail(
                         `Type ${T.name} cannot be used as a constructor.\n` +
                         `Available constructors for type ${T.name} are:` +
-                        private(T, "constructors")
+                        IObject
+                            .values(private(T, "constructors"))
                             .map(({ name }) => `\n  ${name}`));
     },
     type.prototype);
@@ -68,7 +69,7 @@ function Constructor(T, tuple, definition)
                 instantiate(
                     T,
                     tuple,
-                    initialize(process(C, tuple, preprocessed)));
+                    initialize(C, process(C, preprocessed)));
     },
     Constructor.prototype);
 
@@ -77,9 +78,10 @@ function Constructor(T, tuple, definition)
     return IObject.assign(C, { hasPositionalFields, fieldDefinitions });
 }
 
-function process(C, tuple, preprocessed)
+function process(C, preprocessed)
 {
-    if (!tuple && preprocessed.length > 1)
+    const { hasPositionalFields } = C;
+    if (!hasPositionalFields && preprocessed.length > 1)
         fail (
             `Too many arguments passed to ${C.name}.\n` +
             `${C.name} is a record constructor and thus expects ` +
@@ -87,7 +89,7 @@ function process(C, tuple, preprocessed)
 
     const fields = toFields(C);
 
-    if (tuple && preprocessed.length > fields.length)
+    if (hasPositionalFields && preprocessed.length > fields.length)
         fail (
             `Too many arguments passed to ${C.name}.\n`
             `${C.name} is a positional constructor that expects no more than` +
@@ -96,7 +98,7 @@ function process(C, tuple, preprocessed)
     const flattened =
         preprocessed.length <= 0 ?
             UseFallbackForEverField :
-        tuple ?
+        hasPositionalFields ?
             preprocessed :
             preprocessed[0];
 
@@ -114,11 +116,13 @@ function toFields(C)
 }
 
 function instantiate(T, tuple, properties)
-{
+{console.log("WILL INSTANTIATE WITH");
+    console.log(JSON.stringify(properties[0]));
+    console.log("hi");
     const instance = tuple ?
         Object.setPrototypeOf([], T.prototype) :
         new T(instantiate);
-
+console.log("WITH INSTANCE: ", instance);
     return IObject.freeze(IObject.assign(instance, properties[0]));
 }
 
