@@ -115,14 +115,16 @@ function toFields(C)
             .map(([name, f]) => [name, new Field(f())]));
 }
 
-function instantiate(T, tuple, properties)
-{console.log("WILL INSTANTIATE WITH");
-    console.log(JSON.stringify(properties[0]));
-    console.log("hi");
+function instantiate(T, tuple, [public_, private_])
+{
     const instance = tuple ?
         Object.setPrototypeOf([], T.prototype) :
         new T(instantiate);
-console.log("WITH INSTANCE: ", instance);
-    return IObject.freeze(IObject.assign(instance, properties[0]));
+
+    IObject
+        .entries(private_ || {})
+        .map(([name, value]) => private(instance, name, () => value));
+
+    return IObject.freeze(IObject.assign(instance, public_));
 }
 

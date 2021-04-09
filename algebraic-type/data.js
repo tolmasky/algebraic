@@ -23,7 +23,7 @@ function data(...args)
                 sum(name, ...definition) :
                 product(name, ...definition);
 }
-console.log(sum.caseof);
+
 module.exports = data;
 module.exports.caseof = sum.caseof;
 
