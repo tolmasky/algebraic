@@ -3,19 +3,16 @@ const { IObject, IArray } = require("./intrinsics");
 const fail = require("./fail");
 const type = require("./type");
 const private = require("./private");
+const Field = require("./field");
 
 const { isTaggedCall, tagResolve } = require("./templating");
 const f = require("./function-define");
-
-const construct =
-    (T, initializer, args) =>
-        IObject.freeze(initializer(T, instantiate, args));
-const instantiate = T => new T(instantiate);
+const UseFallbackForEverField = Object.create(null);
 
 const annotate = () => false;
 
 
-module.exports = function constructible(name, initializers)
+module.exports = function constructible(name, tuple, definitions)
 {
     const T = f.constructible(name, function (T, ...args)
     {
@@ -40,20 +37,88 @@ module.exports = function constructible(name, initializers)
     },
     type.prototype);
 
-    const constructors = IObject.fromEntries(initializers
-        .map(initializer =>
-        [
-            initializer.name,
-            f (initializer.name, (f, ...args) => construct(T, initializer, args))
-        ]));
-
+    const constructors = IObject.fromEntries(
+        definitions
+            .map(definition => Constructor(T, tuple, definition))
+            .map(constructor => [constructor.name, constructor]));
     const defaultConstructor =
         IObject.has(name, constructors) ? constructors[name] : false;
 
     private(T, "constructors", () => constructors);
     private(T, "defaultConstructor", () => defaultConstructor);
 
+    if (tuple)
+        IObject.setPrototypeOf(T.prototype, IArray.prototype);
+
     return IObject.assignNonenumerable(T,
         constructors,
         { has: value => value instanceof T });
 }
+
+function Constructor(T, tuple, definition)
+{
+    const { name, preprocess, initialize } = definition;
+    const C = f(name, (C, ...values) =>
+    {
+        const [result, preprocessed] = preprocess ?
+            preprocess(C, ...values) :
+            [false, values];
+
+        return  result ||
+                instantiate(
+                    T,
+                    tuple,
+                    initialize(process(C, tuple, preprocessed)));
+    },
+    Constructor.prototype);
+
+    const { hasPositionalFields, fieldDefinitions } = definition;
+
+    return IObject.assign(C, { hasPositionalFields, fieldDefinitions });
+}
+
+function process(C, tuple, preprocessed)
+{
+    if (!tuple && preprocessed.length > 1)
+        fail (
+            `Too many arguments passed to ${C.name}.\n` +
+            `${C.name} is a record constructor and thus expects ` +
+            `one object argument.`);
+
+    const fields = toFields(C);
+
+    if (tuple && preprocessed.length > fields.length)
+        fail (
+            `Too many arguments passed to ${C.name}.\n`
+            `${C.name} is a positional constructor that expects no more than` +
+            `${fields.length} arguments.`);
+
+    const flattened =
+        preprocessed.length <= 0 ?
+            UseFallbackForEverField :
+        tuple ?
+            preprocessed :
+            preprocessed[0];
+
+    return IObject
+        .fromEntries(fields
+            .map(([name, field]) =>
+                [name, field.extract(C, name, flattened)]));
+}
+
+function toFields(C)
+{
+    return private(C, "fields", () =>
+        C.fieldDefinitions
+            .map(([name, f]) => [name, new Field(f())]));
+}
+
+function instantiate(T, tuple, properties)
+{
+    const instance = tuple ?
+        Object.setPrototypeOf([], T.prototype) :
+        new T(instantiate);
+
+    return IObject.freeze(IObject.assign(instance, properties[0]));
+}
+

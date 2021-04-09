@@ -38,6 +38,7 @@ type.string = primitive("string");
 type.symbol = primitive("symbol");
 type.undefined = primitive("undefined");
 type.object = primitive("object", value => value && typeof value === "object");
+type.forall = require("./forall");
 
 /*
 type.optional = type(T =>

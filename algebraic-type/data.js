@@ -1,21 +1,44 @@
 const { IObject, IArray } = require("./intrinsics");
 const { isTaggedCall, tagResolve } = require("./templating");
-const constructible = require("./constructible");
-const f = require("./function-define");
+const product = require("./product");
+const sum = ()=>{};
+console.log(product);
 
-const private = require("./private");
-const Field = require("./field");
-const fail = require("./fail");
-const UseFallbackForEveryField = { };
-const case_ = require("./sum-case");
-
-
-function product(name, definition)
+function data(...args)
 {
-    const hasPositionalFields = type.function.has(definition[0]);
-    const fieldDefinitions = IObject
-        .entries(hasPositionalFields ? definition : definition[0]);
+    if (isTaggedCall(args))
+        return body(tagResolve(...args));
 
+    const anonymous = typeof args[0] !== "string";
+    const name = anonymous ? "anonymous" : args[0];
+
+    if (!anonymous && args.length === 1)
+        return body(name);
+
+    const definition = anonymous ? args : args.slice(1);
+
+    return  definition.length > 1 ?
+                product(name, ...definition) :
+            IArray.isArray(definition[0]) ?
+                sum(name, ...definition) :
+                product(name, ...definition);
+}
+
+module.exports = data;
+
+function body(name)
+{
+    return IObject.assignNonenumerable(
+        (...definition) => data(name, ...definition),
+        { forall: toDefinition => body(name, toDefinition()) });
+}
+
+
+// data.constructors = T => private(T, "constructors");
+
+// const type = require("./type");
+
+/*
     const initializer = f(name, function(f, T, instantiate, args)
     {
         const values = hasPositionalFields ? args : args[0];
@@ -31,18 +54,18 @@ function product(name, definition)
                             T,
                             values || UseFallbackForEveryField))));
     });
-    const T = constructible(name, [initializer]);
 
-    if (hasPositionalFields)
-        IObject.setPrototypeOf(T.prototype, IArray.prototype);
+*/
 
-    private(T, "fieldDefinitions", () => fieldDefinitions);
-    private(T, "toFallback", () =>
-        false /*toFallback*/ ||
-        // FIXME: Automatic if all fields can be automatic.
-        (() => fail(`No fallback for ${T}`)));
+/*
+function tupleConstruct(T, C, instantiate, processed)
+{
+    return IObject.assign(IObject.setPrototypeOf([], T), processed);
+}
 
-    return T;
+function objectConstruct(T, C, instantiate, processed)
+{
+    return IObject.assign(instantiate(T), processed);
 }
 
 function fields(T)
@@ -54,19 +77,4 @@ function fields(T)
 
 const initialize = (T, values) =>
     ([name, field]) =>
-        [name, field.extract(T, name, values)];
-
-const define = name => IObject.assign(
-    (...fields) => product(name, fields),
-    { case: case_(name) });
-
-const data = (...arguments) =>
-    isTaggedCall(arguments) ?
-        define(tagResolve(...arguments)) :
-        product("<anonymous>", arguments);
-
-
-module.exports = data;
-
-
-const type = require("./type");
+        [name, field.extract(T, name, values)];*/

@@ -1,94 +1,64 @@
-const { IArray, IObject } = require("./intrinsics");
-
-const Instantiate = { };
-const UseFallbackForEveryField = { };
-const private = require("./private");
-const f = require("./function-define");
-const given = f => f();
-const fail = require("./fail");
-
-const type = require("./type");
-const Field = require("./field");
-const isJSFuntion = value => typeof value === "function";
-
-const { isTaggedCall, tagResolve } = require("./templating");
+const { IObject, IArray } = require("./intrinsics");
+const constructible = require("./constructible");
+const ConstructorDefinition = require("./constructor-definition");
 
 
-// Product types can either have *positional* fields, in which case we interpret
-// it to be a tuple, or labeled properties, in which case we interpret it to be
-// an object. The main difference is that in pattern matching, we spread the
-// values in the case of calls to `match`.
-//
-// FIXME: If you pass an array, should we interpret that to be positional too?
-
-function product(name, definition, toFallback)
+function product(name, ...fieldDeclarations)
 {
-    const hasPositionalFields = isJSFuntion(definition[0]);
-    const fieldDefinitions = IObject
-        .entries(hasPositionalFields ? definition: definition[0]);
+    const constructorDefinition = ConstructorDefinition(
+        name,
+        fieldDeclarations,
+        preprocess);
 
-    const T = f.constructible(name, function (T, ...args)
-    {
-        const annotatedT = annotate(T, args);
-
-        if (annotatedT)
-            return annotatedT;
-
-        const values = hasPositionalFields ? args : args[0];
-
-        return  values instanceof T ? values :
-                values === Instantiate ? this :
-                IObject.freeze(IObject.assign(
-                    hasPositionalFields ?
-                        IObject.setPrototypeOf([], T.prototype) :
-                    this instanceof T ?
-                        this :
-                        new T(Instantiate),
-                    IObject.fromEntries(fields(T)
-                        .map(initialize(
-                            T,
-                            values || UseFallbackForEveryField)))));
-    },
-    type.prototype);
-
-    T.has = value => value instanceof T;
-
-    if (hasPositionalFields)
-        IObject.setPrototypeOf(T.prototype, IArray.prototype);
-
-    private(T, "fieldDefinitions", () => fieldDefinitions);
-    private(T, "toFallback", () =>
-        toFallback ||
-        // FIXME: Automatic if all fields can be automatic.
-        (() => fail(`No fallback for ${T}`)));
-
-    return T;
+    return constructible(
+        name,
+        constructorDefinition.hasPositionalFields,
+        [constructorDefinition]);
 }
 
 module.exports = product;
 
-function fallback(T)
+function preprocess(T, C, values)
 {
-    return private(T, "fallback", () => private(T, "toFallback")());
+    return  C.hasPositionFields || values.length > 1 ?
+        [false, values] :
+        [values[0] instanceof T, values];
 }
 
-function fields(T)
-{
-    return private(T, "fields", () =>
-        private(T, "fieldDefinitions")
-            .map(([name, f]) => [name, new Field(f())]));
+/*
+
+
+//    if (Constructor.hasPositionalFields(defaultConstructor))
+//        IObject.setPrototypeOf(T.prototype, IArray.prototype);
+
+    return T;
 }
 
-const initialize = (T, values) =>
-    ([name, field]) =>
-        [name, field.extract(T, name, values)];
-
-function annotate(T, args)
+function preprocess(T, C, values)
 {
-    if (!isTaggedCall(args))
-        return false;
-
-    const operator = tagResolve(...args);
-
-    return type.optional.of(T);
+    return  Constructor.hasPositionalFields(C) ||
+            values.length > 1 ?
+                [false, values] :
+                [values[0] instanceof T, values];
 }
+
+function initialize(T, C, processed)
+{
+    return [processed];
+}
+
+function construct(T, C, instantiate, processed)
+{
+    return IObject.assign(
+        Constructor.hasPositionalFields(C) ?
+            IObject.setPrototypeOf([], T) :
+            instantiate(T),
+        processed);
+}
+
+function preprocess(T, C, values)
+{
+    return unprocessed.length > 1 ?
+        [false, unprocessed] :
+        [values instanceof T, values];
+}*/
