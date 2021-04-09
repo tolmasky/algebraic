@@ -4,6 +4,7 @@ const product = require("./product");
 const sum = require("./sum");
 
 
+
 function data(...args)
 {
     if (isTaggedCall(args))
@@ -31,9 +32,10 @@ function body(name)
 {
     return IObject.assignNonenumerable(
         (...definition) => data(name, ...definition),
-        { forall: toDefinition => body(name, toDefinition()) });
+        { forall: forall(name) });
 }
 
+const forall = require("./forall");
 
 // data.constructors = T => private(T, "constructors");
 

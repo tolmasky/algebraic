@@ -9,10 +9,8 @@ const { isTaggedCall, tagResolve } = require("./templating");
 const f = require("./function-define");
 const UseFallbackForEverField = Object.create(null);
 
-const annotate = () => false;
 
-
-module.exports = function constructible(name, tuple, definitions)
+module.exports = function Constructible(name, tuple, definitions)
 {
     const T = f.constructible(name, function (T, ...args)
     {
@@ -26,7 +24,7 @@ module.exports = function constructible(name, tuple, definitions)
                         `${T} cannot be invoked with "new", ` +
                         `use ${T}(...) instead.`) :
                 isTaggedCall(args) ?
-                    annotate(T, args) :
+                    annotate(tagResolve(...args), T) :
                 defaultConstructor ?
                     defaultConstructor(...args) :
                     fail(
@@ -128,3 +126,10 @@ function instantiate(T, tuple, [public_, private_])
     return IObject.freeze(IObject.assign(instance, public_));
 }
 
+function annotate(annotation, T)
+{
+    if (annotation === "?")
+        return type.optional.of(T);
+
+    fail (`Unrecognized annotation: ${annotation} on type ${T}`);
+}

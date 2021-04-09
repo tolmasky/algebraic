@@ -1,6 +1,6 @@
-const { IObject } = require("./intrinsics");
+const { IObject, IArray } = require("./intrinsics");
 const toCache = require("./cache");
-const data = require("./data");
+
 
 function variable(index)
 {
@@ -8,35 +8,40 @@ function variable(index)
     this.toString = () => `T${index}`;
 }
 
-
-module.exports = function variadic(fT)
+module.exports = function forall(name, ...rest)
 {
-    const variables = Array.from(fT, (_, index) => new variable(index));
-    const template = fT(...variables);
+    if (rest.length === 0)
+        return (...rest) => forall(name, ...rest);
 
-    // FIXME: BAD!!! We should copy the type, not rename it...
-    const of = (...arguments) =>
+    const [fDefinition] = rest;
+    const variables = IArray
+        .from(fDefinition, (_, index) => new variable(index));
+    const vDefinition = fDefinition(...variables);
+
+    const of = (...Ts) =>
     {
-        const T = fT(...arguments);
-        const Vnames = arguments.map(T => T.name).join(", ");
+        const Vnames = Ts.map(T => T.name).join(", ");
 
-        return Object
-            .defineProperty(T, "name", { value: `${T.name}(${Vnames})` });
+        return data (`${name}(${Vnames})`, fDefinition(...Ts));
     };
 
     const cache = toCache();
-    const constructors = data.constructors(template);
+//    const constructors = data.constructors(template);
     const VT = IObject.assignNonenumerable(
         {},
-        IObject.fromEntries(
+        /*IObject.fromEntries(
             IObject
                 .keys(constructors)
                 .map(name =>
-                    [name, { of: (...args) => VT.of(...args)[name] }])),
+                    [name, { of: (...args) => VT.of(...args)[name] }])),*/
         { of: (...args) => cache(args, () => of(...args)) });
-    
+
     return VT;
 }
+
+const data = require("./data");
+
+console.log(data);
 /*
 function infer(constructor, fields, values)
 {

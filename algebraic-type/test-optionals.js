@@ -40,6 +40,22 @@ console.log(
         none: () => 10
     }));
 
+const optional = data `optional` .forall (T =>
+([
+    caseof `some` (of => T),
+    caseof `none` ()
+]));
+
+console.log(optional.of(Person));
+console.log(Person `?`);
+
+const { some: some_ } = Person `?`;
+
+console.log(some_(Person({ name: "Francisco", age: 37 })));
+
+
+//const Pair = data `Pair` .forall (T => [of => T, of => T]);
+
 /*
 const optional = forall (T =>
     data `optional`
