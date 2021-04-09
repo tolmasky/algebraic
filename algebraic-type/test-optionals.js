@@ -23,8 +23,8 @@ const OptionalPerson = data `OptionalPerson`
 
 const x = OptionalPerson.some(Person({ name: "Francisco", age: 37 }));
 
-console.log(Object.getPrototypeOf(x.constructor).constructor);
-console.log(Object.getPrototypeOf(x.values[0]).constructor);
+//console.log(Object.getPrototypeOf(x.constructor).constructor);
+//console.log(Object.getPrototypeOf(x.values[0]).constructor);
 console.log(x);
 
 
