@@ -22,7 +22,7 @@ function ConstructorDefinition(name, fieldDeclarations, preprocess, initialize)
 
     this.name = name;
     this.fieldDeclarations = fieldDeclarations;
-    this.proprocess = preprocess;
+    this.preprocess = preprocess;
     this.initialize = initialize || ((C, fields) => [fields]);
 
     const hasNamedFields =

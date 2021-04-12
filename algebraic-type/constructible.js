@@ -81,7 +81,7 @@ function Constructor(T, tuple, definition)
     const C = f(name, (C, ...values) =>
     {
         const [result, preprocessed] = preprocess ?
-            preprocess(C, ...values) :
+            preprocess(T, C, values) :
             [false, values];
 
         return  result ||
@@ -139,6 +139,8 @@ function toFields(C)
         C.fieldDefinitions
             .map(([name, f]) => [name, new Field(f())]));
 }
+
+module.exports.fields = toFields;
 
 function instantiate(T, tuple, [public_, private_])
 {

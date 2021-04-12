@@ -57,7 +57,7 @@ function toConstructorDefinition(name, fieldDeclarations)
     const innerT =
         fieldDeclarations.length === 1 &&
         typeof fieldDeclarations[0] === "object" ?
-            data(name, fieldDeclarations[0]) :
+            require("./data")(name, fieldDeclarations[0]) :
             false;
 
     return ConstructorDefinition(
@@ -66,7 +66,7 @@ function toConstructorDefinition(name, fieldDeclarations)
             [of => innerT] :
             fieldDeclarations,
         innerT ?
-            ([first, ...rest]) => [false, [innerT(first), ...rest]] :
+            (T, C, [first, ...rest]) => [false, [innerT(first), ...rest]] :
             false,
         initialize);
 }
