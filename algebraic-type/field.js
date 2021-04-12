@@ -2,12 +2,20 @@ const { IObject } = require("./intrinsics");
 const f = require("./function-define");
 const type = require("./type");
 const fail = require("./fail");
+const private = require("./private");
 
 
 function Field(value)
 {
     this.constraint = new Constraint(value);
-    this.default = Default.None;
+
+    // FIXME: UGH.
+    const MISSING = { };
+    const defaultValue = private(value, "defaultValue", () => MISSING);
+
+    this.default = defaultValue !== MISSING ?
+        new Default.Value(defaultValue) :
+        Default.None;
 }
 
 module.exports = Field;
@@ -15,15 +23,15 @@ module.exports = Field;
 Field.prototype.extract = function (forT, name, values)
 {
     const present = IObject.has(name, values);
-    
-    if (!present && this.default === Field.Default.None)
+
+    if (!present && this.default === Default.None)
         fail.type(
             `${toTypeString(forT)} constructor requires field ` +
             `${toValueString(name)}.`);
 
     // FIXME: Do computed correctly...
     if (!present)
-        return this.default instanceof Field.Default.Value ?
+        return this.default instanceof Default.Value ?
             this.default.value :
             this.default.computed();
 

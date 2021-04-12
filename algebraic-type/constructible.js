@@ -62,6 +62,14 @@ module.exports = function Constructible(name, tuple, definitions)
                     constructor
             ]));
 
+    const defaultValueConstructor = Object
+        .values(constructors)
+        .find(C => C.isUnaryConstructor);
+
+    private(T, "defaultValue", () =>
+        defaultValueConstructor &&
+        assigned[defaultValueConstructor.name]);
+
     return IObject.assignNonenumerable(T,
         assigned,
         { has: value => value instanceof T });
