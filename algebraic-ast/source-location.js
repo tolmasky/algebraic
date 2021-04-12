@@ -1,14 +1,14 @@
-const type = require("@algebraic/type");
+const { type, data } = require("@algebraic/type");
 
 
-const Position = type `Position`
+const Position = data `Position`
 ({
     index   :of =>  type.number,
     line    :of =>  type.number,
     column  :of =>  type.number
 });
 
-const SourceLocation = type `SourceLocation`
+const SourceLocation = data `SourceLocation`
 ({
     start   :of =>  Position,
     end     :of =>  Position

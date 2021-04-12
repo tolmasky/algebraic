@@ -1,8 +1,8 @@
-const type = require("@algebraic/type");
+const { type, data } = require("@algebraic/type");
 
 
-module.exports = type `Extra` (T => type
+module.exports = data `Extra` .forall (T =>
 ({
-    raw         :of => type.string,
-    rawValue    :of => T
+    raw         :of =>  type.string,
+    rawValue    :of =>  T
 }));

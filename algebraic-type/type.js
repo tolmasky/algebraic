@@ -42,10 +42,16 @@ type.object = primitive("object", value => value && typeof value === "object");
 
 const { caseof } = require("./data");
 
+type.caseof = caseof;
+
 type.optional = type.data `optional` .forall (T =>
 ([
     caseof `some` (of => T),
     caseof `none` ()
 ]));
 
-
+type.List = type.data `List` .forall(T =>
+([
+    caseof `Cons`   (of => T),
+    caseof `Empty`  (),
+]));
