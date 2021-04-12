@@ -49,8 +49,21 @@ module.exports = function Constructible(name, tuple, definitions)
     if (tuple)
         IObject.setPrototypeOf(T.prototype, IArray.prototype);
 
+    // We don't want to bother with exposing unary constructors, and instead
+    // just want to expose the unary value.
+    const assigned = IObject.fromEntries(
+        IObject
+            .entries(constructors)
+            .map(([name, constructor]) =>
+            [
+                name,
+                constructor.isUnaryConstructor ?
+                    constructor() :
+                    constructor
+            ]));
+
     return IObject.assignNonenumerable(T,
-        constructors,
+        assigned,
         { has: value => value instanceof T });
 }
 
@@ -71,9 +84,15 @@ function Constructor(T, tuple, definition)
     },
     Constructor.prototype);
 
-    const { hasPositionalFields, fieldDefinitions } = definition;
+    const
+    {
+        hasPositionalFields,
+        fieldDefinitions,
+        isUnaryConstructor
+    } = definition;
 
-    return IObject.assign(C, { hasPositionalFields, fieldDefinitions });
+    return IObject.assign(C,
+        { hasPositionalFields, fieldDefinitions, isUnaryConstructor });
 }
 
 function process(C, preprocessed)

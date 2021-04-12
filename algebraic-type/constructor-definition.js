@@ -37,6 +37,10 @@ function ConstructorDefinition(name, fieldDeclarations, preprocess, initialize)
             `Unrecognized field declarations for constructor ${name}:` +
             JSON.stringify(declarations));
 
+    this.isUnaryConstructor =
+        hasPositionalFields &&
+        fieldDeclarations.length === 0;
+
     this.hasPositionalFields = hasPositionalFields;
     this.fieldDefinitions = IObject
         .entries(hasNamedFields ? fieldDeclarations[0] : fieldDeclarations);
