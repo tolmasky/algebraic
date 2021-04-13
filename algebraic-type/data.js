@@ -32,10 +32,10 @@ function body(name)
 {
     return IObject.assignNonenumerable(
         (...definition) => data(name, ...definition),
-        { forall: forall(name) });
+        { forall: (...rest) => require("./forall")(name, ...rest) });
 }
 
-const forall = require("./forall");
+// const forall = require("./forall");
 
 // data.constructors = T => private(T, "constructors");
 
