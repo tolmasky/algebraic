@@ -35,6 +35,16 @@ console.log(Node);
 console.log(ObjectProperty);
 console.log(ObjectProperty({ computed: true, canBeShorthand: true, shorthand: true, prefersShorthand: true, key: "hi", value: "bye" }));
 
+const value = ObjectProperty({ computed: true, canBeShorthand: true, shorthand: true, prefersShorthand: true, key: "hi", value: "bye" });
+const SUM = type `Expression` (ObjectProperty, type.number);
+
+console.log(type.belongs(ObjectProperty, value), type.of(value));
+
+console.log(SUM);
+SUM(value);
+
+console.log(SUM(value));
+console.log(Object.getPrototypeOf(SUM(value)).constructor);
 /*const VIP = type (function VIP(stuff){ return Person(stuff) });
 
 console.log(VIP({name:"Francisco"}));

@@ -54,6 +54,15 @@ const { some: some_ } = Person `?`;
 console.log(some_(Person({ name: "Francisco", age: 37 })));
 
 
+
+const List = data `List` .forall (T =>
+([
+    caseof `List` (item => T, next => List.of(T)),
+    caseof `Empty` ()
+]));
+
+console.log(List.of(type.number).List(5, List.of(type.number).Empty()));
+
 //const Pair = data `Pair` .forall (T => [of => T, of => T]);
 
 /*

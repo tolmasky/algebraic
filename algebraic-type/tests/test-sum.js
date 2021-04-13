@@ -3,6 +3,11 @@ const type = require("@algebraic/type");
 const List = type(T => type `List`
     .case `List` ({ item: of => T, next: of => List.of(T) })
     .case `Empty` ());
+    
+
+console.log(List.of(type.number) `?`);    
+console.log(List.of(type.number) `?`);
+    
 
 console.log(List.of(type.number).Empty());
 
@@ -54,3 +59,5 @@ console.log(AE.match(
 }));
 
 console.log(MaybeNumber.Just("hi"));
+
+
