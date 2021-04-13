@@ -5,6 +5,7 @@ const { inspect } = require("util");
 const { iterator } = Symbol;
 const f = require("./f-construct");
 const given = f => f();
+const style = require("./style");
 
 const
 {
@@ -88,50 +89,49 @@ Set.Empty = Set();
 Set.null = SetNull;
 Set.boolean = Set(false, true);
 Set.undefined = Set(void(0));
-/*
+
 const Primitive = data `Set.Primitive`
 ({
     inspect: ({ inspect }, inner) => style("italic", inspect()),
     has: ({ predicate }, item) => predicate(item)
 });
 
-Set.object = data `Set.object`
+Set.object = Primitive
 ({
     inspect: () => style("special", "the objects"),
     has: value => value && typeof value === "object"
 });
 
 // Should we mention IEEE 754? 
-Set.number = Axiomatic
+Set.number = Primitive
 ({
     inspect: () => style("number", "the numbers"),
     predicate: value => typeof value === "number"
 });
 
-Set.string = Axiomatic
+Set.string = Primitive
 ({
     inspect: () => style("string", "the strings"),
     predicate: value => typeof value === "string"
 });
 
-Set.function = Axiomatic
+Set.function = Primitive
 ({
     inspect: () => style("special", "the functions"),
     predicate: value => typeof value === "function"
 });
 
-Set.symbol = Axiomatic
+Set.symbol = Primitive
 ({
     inspect: () => style("symbol", "the symbols"),
     predicate: value => typeof value === "symbol"
 });
 
-Set.bigint = Axiomatic
+Set.bigint = Primitive
 ({
     inspect: () => style("bigint", "the bigints"),
     predicate: value => typeof value === "bigint"
 });
-*/
 
 function union(lhs, rhs)
 {
