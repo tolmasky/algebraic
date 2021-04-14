@@ -1,19 +1,7 @@
-const { hasOwnProperty } = Object;
-const { isArray } = Array;
-const { reduce } = Array.prototype;
+const { IObject } = require("./intrinsics");
+const { isTaggedCall, tagResolve } = require("./templating");
 const given = f => f();
 
-
-const isTaggedCall = arguments =>
-    isArray(arguments) &&
-    isArray(arguments[0]) &&
-    hasOwnProperty.call(arguments[0], "raw");
-
-const resolve = (strings, ...arguments) => reduce.call(
-    arguments,
-    (string, argument, index) =>
-        string + argument + strings[index + 1],
-    strings[0]);
 
 const toFConstruct = constructible => function fInfer(...args)
 {
@@ -24,25 +12,37 @@ const toFConstruct = constructible => function fInfer(...args)
         ({
             name: offset === 0 ? false : args[0],
             implementation: args[offset],
-            prototype: args[offset + 1] || false,
+            fProperties: args[offset + 1] || false,
             constructible
         }));
 }
 
-function fConstruct({ name, implementation, prototype, constructible = false })
+function fConstruct({ name, implementation, fProperties, constructible = false })
 {
     const f = constructible ?
         function (...args) { return implementation.call(this, f, ...args); } :
         (...args) => implementation(f, ...args);
 
-    if (name !== false)
-        Object.defineProperty(f, "name", { value: name });
-
-    if (prototype !== false)
-        Object.setPrototypeOf(f, prototype);
-
-    return f;
+    return [name && property({ name: "name", value: name })]
+        .concat(fProperties(f, property))
+        .filter(x => !!x)
+        .reduce((f, { type, ...rest }) =>
+            type === "inherits" ?
+                (IObject.setPrototypeOf(f.prototype, rest.from), f) :
+            type === "prototypeOf" ?
+                IObject.setPrototypeOf(f, rest.prototypeOf) :
+            /* type === "property" */
+            IObject.defineProperty(f, rest.name, rest), f);
 }
+
+const property = IObject.assign(
+    (...args) => args.length === 1 ?
+        { type: "property", ...args[0] } :
+        { type: args[0], ...args[1] },
+{
+    inherits: from => property("inherits", { from }),
+    prototypeOf: prototypeOf => property("prototypeOf", { prototypeOf })
+});
 
 module.exports = Object.assign(
     toFConstruct(false),
