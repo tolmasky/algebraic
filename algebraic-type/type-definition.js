@@ -1,4 +1,5 @@
-const { IObject } = require("./intrinsics");
+const { IObject, IArray } = require("./intrinsics");
+const { flat } = IArray.prototype;
 const { f, constructible } = require("./function-define");
 const { isTaggedCall, tagResolve } = require("./templating");
 
@@ -36,7 +37,7 @@ const declare = (name, body) =>
     define(new TypeDeclaration(
         /*Sum.test(body) ? Sum(name, body) :
         Product.test(body) ? Product(name, body) :*/
-        Product (name, body)
+        Product (name, flat.call(body))
 /*        fail (`Could not recognize type declaration.`)*/));
 
 function parseBody(name)
