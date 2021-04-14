@@ -1,6 +1,6 @@
 const { IObject } = require("./intrinsics");
 const f = require("./function-define");
-const type = require("./type");
+//const type = require("./type");
 const fail = require("./fail");
 const private = require("./private");
 

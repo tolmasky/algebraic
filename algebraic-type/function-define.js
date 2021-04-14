@@ -6,13 +6,13 @@ const given = f => f();
 const toFConstruct = constructible => function fInfer(...args)
 {
     return isTaggedCall(args) ?
-        (...rest) => fInfer(resolve(...args), ...rest) :
+        (...rest) => fInfer(tagResolve(...args), ...rest) :
         given((offset = typeof args[0] === "string" ? 1 : 0) =>
         fConstruct
         ({
             name: offset === 0 ? false : args[0],
             implementation: args[offset],
-            fProperties: args[offset + 1] || false,
+            fProperties: args[offset + 1] || (() => []),
             constructible
         }));
 }
@@ -44,6 +44,6 @@ const property = IObject.assign(
     prototypeOf: prototypeOf => property("prototypeOf", { prototypeOf })
 });
 
-module.exports = Object.assign(
-    toFConstruct(false),
-    { constructible: toFConstruct(true) });
+const f = toFConstruct(false);
+
+module.exports = IObject.assign(f, { f, constructible: toFConstruct(true) });

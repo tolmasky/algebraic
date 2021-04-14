@@ -1,11 +1,52 @@
 const { IObject } = require("./intrinsics");
-const { constructible } = require("./function-define");
+const { f, constructible } = require("./function-define");
 const { isTaggedCall, tagResolve } = require("./templating");
 
 const Definition = Symbol("Definition");
 const definition = T => T[Definition];
 
-const type = constructible("type", (_, declaration) =>
+const Product = require("./types/product");
+
+
+const type = constructible("type", (_, ...arguments) =>
+
+    // Case 0: type() -> ERROR
+    arguments.length < 1 ?
+        fail (`type() cannot be called with no arguments.`) :
+
+    // Case 1: type `[...]` -> ((...body) -> T)
+    isTaggedCall(arguments) ?
+        parseBody(tagResolve(...arguments)) :
+
+    // Case 2: type (...body) -> T
+    typeof arguments[0] !== "string" ?
+        declare("", arguments) :
+
+    // Case 3: type (string) -> ((...body) -> T)
+    arguments.length === 1 ?
+        parseBody(arguments[0]) :
+    
+    // Case 4: type (string, ...body) -> T
+    declare(arguments[0], arguments.slice(1)),
+
+    (f, property) => property.inherits(Function.prototype));
+
+// FIXME: Check if items in body are all constructors...
+const declare = (name, body) =>
+    define(new TypeDeclaration(
+        /*Sum.test(body) ? Sum(name, body) :
+        Product.test(body) ? Product(name, body) :*/
+        Product (name, body)
+/*        fail (`Could not recognize type declaration.`)*/));
+
+function parseBody(name)
+{
+    return IObject.assignNonenumerable(
+        (...body) => type(name, ...body),
+        { forall: (...rest) => require("./forall")(name, ...rest) });
+}
+
+const define = declaration =>
     constructible(declaration.name, function (T, ...args)
     {
         const instantiating = args[0] === instantiate;
@@ -31,19 +72,24 @@ const type = constructible("type", (_, declaration) =>
             {
                 name,
                 enumerable: true,
-                value: isUnaryContructor(constructor) ?
+                value: isUnaryConstructor(constructor) ?
                     constructor() :
                     constructor
             }))
-    ]),
-    (f, property) => property.inherits(Function.prototype));
+    ]);
+
+function isUnaryConstructor()
+{
+    return false;
+}
 
 module.exports = type;
 
-function instantiate(T, tuple, [public_, private_])
+function instantiate(T, [public_, private_])
 {
+    const tuple = false;
     const instance = tuple ?
-        Object.setPrototypeOf([], T.prototype) :
+        IObject.setPrototypeOf([], T.prototype) :
         new T(instantiate);
 
     IObject
@@ -65,12 +111,7 @@ function TypeDeclaration(options)
 }
 
 function TypeDefinition(T, declaration)
-{console.log(declaration);
-    
-    console.log(T + "");
-    console.log("---");
-    console.log(declaration + "");
-
+{
     this.name = declaration.name;
 
     this.invocation = declaration.invocation;
@@ -117,7 +158,7 @@ const failCannotBeInvokedWithNew = T =>
 
 const primitive =
     (name, has = (T, value) => typeof value === name) =>
-        type(new TypeDeclaration({ name, has }));
+        define(new TypeDeclaration({ name, has }));
 
 type.bigint = primitive("bigint");
 type.boolean = primitive("boolean");
@@ -130,6 +171,65 @@ type.undefined = primitive("undefined");
 type.object = primitive("object", (T, value) => value && typeof value === "object");
 
 type.has = (T, value) => definition(T).has(T, value);
+
+
+function Constructor(T, definition)
+{
+    const { name, preprocess, initialize } = definition;
+    const C = f(name, (C, ...values) =>
+    {
+        const [result, preprocessed] = preprocess ?
+            preprocess(T, C, values) :
+            [false, values];
+
+        return  result ||
+                instantiate(
+                    T,
+                    initialize(C, process(C, preprocessed)));
+    },
+    (_, property) => property.prototypeOf (Constructor.prototype));
+
+    const
+    {
+        hasPositionalFields,
+        fieldDefinitions,
+        isUnaryConstructor
+    } = definition;
+
+    return IObject.assign(C,
+        { hasPositionalFields, fieldDefinitions, isUnaryConstructor });
+}
+
+function process(C, preprocessed)
+{
+    const { hasPositionalFields } = C;
+    if (!hasPositionalFields && preprocessed.length > 1)
+        fail (
+            `Too many arguments passed to ${C.name}.\n` +
+            `${C.name} is a record constructor and thus expects ` +
+            `one object argument.`);
+
+    const fields = toFields(C);
+
+    if (hasPositionalFields && preprocessed.length > fields.length)
+        fail (
+            `Too many arguments passed to ${C.name}.\n`
+            `${C.name} is a positional constructor that expects no more than` +
+            `${fields.length} arguments.`);
+
+    const flattened =
+        preprocessed.length <= 0 ?
+            UseFallbackForEverField :
+        hasPositionalFields ?
+            preprocessed :
+            preprocessed[0];
+
+    return IObject
+        .fromEntries(fields
+            .map(([name, field]) =>
+                [name, field.extract(C, name, flattened)]));
+}
+
 
 /*
 IObject.assign(type,
