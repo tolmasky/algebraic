@@ -62,19 +62,19 @@ const define = declaration =>
                     annotate(tagResolve(...args), T) :
                 tryDefaultConstructor(T, args);
     },
-    (T, property, definition = new TypeDefinition(T, declaration)) =>
+    (T, property, TDefinition = new TypeDefinition(T, declaration)) =>
     [
         property.prototypeOf (type.prototype),
         declaration.prototype &&
             property.inherits (declaration.prototype),
-        property({ name: Definition, value: definition }),
+        property({ name: Definition, value: TDefinition }),
         ...IObject
-            .entries(definition.constructors)
+            .entries(TDefinition.constructors)
             .map(([name, constructor]) => property(
             {
                 name,
                 enumerable: true,
-                value: isUnaryConstructor(constructor) ?
+                value: definition(constructor).isUnaryConstructor ?
                     constructor() :
                     constructor
             }))
@@ -177,8 +177,9 @@ type.has = (T, value) => definition(T).has(T, value);
 
 function Constructor(T, definition)
 {
-    const { name, preprocess, initialize } = definition;
-    const C = f(name, (C, ...values) =>
+    const { preprocess, initialize } = definition;
+
+    return f(definition.name, (C, ...values) =>
     {
         const [result, preprocessed] = preprocess ?
             preprocess(T, C, values) :
@@ -189,22 +190,16 @@ function Constructor(T, definition)
                     T,
                     initialize(C, process(C, preprocessed)));
     },
-    (_, property) => property.prototypeOf (Constructor.prototype));
-
-    const
-    {
-        hasPositionalFields,
-        fieldDefinitions,
-        isUnaryConstructor
-    } = definition;
-
-    return IObject.assign(C,
-        { hasPositionalFields, fieldDefinitions, isUnaryConstructor });
+    (_, property) =>
+    [
+        property.prototypeOf (Constructor.prototype),
+        property({ name: Definition, value: definition })
+    ]);
 }
 
 function process(C, preprocessed)
 {
-    const { hasPositionalFields } = C;
+    const { hasPositionalFields } = definition(C);
     if (!hasPositionalFields && preprocessed.length > 1)
         fail (
             `Too many arguments passed to ${C.name}.\n` +
@@ -215,7 +210,7 @@ function process(C, preprocessed)
 
     if (hasPositionalFields && preprocessed.length > fields.length)
         fail (
-            `Too many arguments passed to ${C.name}.\n`
+            `Too many arguments passed to ${C.name}.\n` +
             `${C.name} is a positional constructor that expects no more than` +
             `${fields.length} arguments.`);
 
@@ -250,17 +245,4 @@ IObject.assign(
     IObject.fromEntries(...
         ["bigint", "boolean", "function", "number", "string", "symbol", "undefined"]
             .map(name => [name, primitive])));
-
-
-        property.prototypeOf (type.prototype),
-        property.inherits (declaration.prototype),
-        property.nonenumerable(Definition, definition),
-        ...IObject
-            .entries(definition.constructors)
-            .map(([name, constructor]) => property.enumerable(
-                name,
-                isUnaryContructor(constructor) ?
-                    constructor() :
-                    constructor))
-
 */
