@@ -119,22 +119,25 @@ function initialize(constructor, processed)
 function caseof(cases)
 {
     const T = type.of(this);
-    const CIDs = private(T, "CIDs");
-    const EveryCID = private(T, "EveryCID");
+    const { constructors, EveryCID } = type.definition(T);
 
     const hasDefault = IObject.has("default", cases);
     const present = IObject
         .keys(cases)
         .reduce((set, name) =>
             name === "default" ? set :
-            IObject.has(name, CIDs) ? DIS.add(CIDs[name], set) :
-            fail.type (
-                `${T.name}.caseof call has non-constructor case ${name}.`),
+            IObject.has(name, constructors) ?
+                DIS.add(constructors[name].ID, set) :
+                fail.type (
+                    `${T.name}.caseof call has non-constructor case ${name}.`),
             DIS.Empty);
-
+console.log(IObject
+        .keys(cases))
+console.log(present);
+console.log(EveryCID);
     if (!hasDefault && !DIS.equals(present, EveryCID))
     {
-        const names = Object.keys(private(T, "constructors"));
+        const names = IObject.keys(constructors);
         const missing = DIS
             .toArray(DIS.subtract(EveryCID, present))
             .map(CID => names[CID]);

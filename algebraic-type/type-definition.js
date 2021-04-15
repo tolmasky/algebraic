@@ -38,6 +38,7 @@ const type = constructible("type", (_, ...arguments) =>
 
 type.type = type;
 type.caseof = caseof;
+type.definition = definition;
 
 // FIXME: Generalize this...
 type.of = type.of = value =>
@@ -116,8 +117,12 @@ function TypeDefinition(T, declaration)
 
     this.constructors = IObject.fromEntries(
         (declaration.constructorDeclarations || [])
-            .map(declaration => Constructor(T, declaration))
-            .map(constructor => [constructor.name, constructor])),
+            .map((declaration, ID) => Constructor(T, ID, declaration))
+            .map(constructor => [constructor.name, constructor]));
+
+    const count = IObject.keys(this.constructors).length;
+
+    this.EveryCID = [(1 << count) - 1];
 
     this.defaultConstructor =
         IObject.has(this.name, this.constructors) ?
@@ -170,11 +175,11 @@ type.object = primitive("object", (T, value) => value && typeof value === "objec
 type.has = (T, value) => definition(T).has(T, value);
 
 
-function Constructor(T, definition)
+function Constructor(T, ID, declaration)
 {
-    const { preprocess, initialize } = definition;
+    const { name, preprocess, initialize } = declaration;
 
-    return f(definition.name, (C, ...values) =>
+    return f(name, (C, ...values) =>
     {
         const [result, preprocessed] = preprocess ?
             preprocess(T, C, values) :
@@ -188,7 +193,8 @@ function Constructor(T, definition)
     (_, property) =>
     [
         property.prototypeOf (Constructor.prototype),
-        property({ name: Definition, value: definition })
+        property({ name: "ID", value: ID }),
+        property({ name: Definition, value: declaration })
     ]);
 }
 
