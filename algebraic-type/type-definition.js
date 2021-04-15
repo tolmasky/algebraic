@@ -182,7 +182,7 @@ function Constructor(T, ID, declaration)
 {
     const { name, preprocess, fields } = declaration;
     const initialize = declaration.initialize || ((C, fields) => [fields]);
-console.log(fields);
+
     const hasNamedFields = fields.length === 1 && isObject(fields[0]);
     const hasPositionalFields = !hasNamedFields && fields.every(isFunction);
 
