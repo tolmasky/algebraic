@@ -12,6 +12,9 @@ const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
 
+const isObject = value => value && typeof value === "object";
+const isFunction = value => typeof value === "function";
+
 
 const type = constructible("type", (_, ...arguments) =>
 
@@ -116,7 +119,7 @@ function TypeDefinition(T, declaration)
     this.invocation = declaration.invocation || false;
 
     this.constructors = IObject.fromEntries(
-        (declaration.constructorDeclarations || [])
+        (declaration.constructors || [])
             .map((declaration, ID) => Constructor(T, ID, declaration))
             .map(constructor => [constructor.name, constructor]));
 
@@ -177,7 +180,16 @@ type.has = (T, value) => definition(T).has(T, value);
 
 function Constructor(T, ID, declaration)
 {
-    const { name, preprocess, initialize } = declaration;
+    const { name, preprocess, fields } = declaration;
+    const initialize = declaration.initialize || ((C, fields) => [fields]);
+console.log(fields);
+    const hasNamedFields = fields.length === 1 && isObject(fields[0]);
+    const hasPositionalFields = !hasNamedFields && fields.every(isFunction);
+
+    if (!hasNamedFields && !hasPositionalFields)
+        fail (
+            `Unrecognized field declarations for constructor ${name}:` +
+            JSON.stringify(fields));
 
     return f(name, (C, ...values) =>
     {
@@ -194,7 +206,16 @@ function Constructor(T, ID, declaration)
     [
         property.prototypeOf (Constructor.prototype),
         property({ name: "ID", value: ID }),
-        property({ name: Definition, value: declaration })
+        property({ name: Definition, value:
+        {
+            name,
+            initialize,
+            hasPositionalFields,
+            isUnaryConstructor:
+                hasPositionalFields && fields.length === 0,
+            fieldDefinitions: IObject
+                .entries(hasNamedFields ? fields[0] : fields)
+        } })
     ]);
 }
 

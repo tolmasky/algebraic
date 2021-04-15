@@ -10,25 +10,19 @@ const fail = require("../fail");
 const DIS = require("@algebraic/dense-int-set");
 
 const { f, constructible } = require("../function-define");
-const ConstructorDeclaration = require("../constructor-definition");
 
 const onPrototype = { [inspectSymbol]: inspectSum };
 const isObject = value => value && typeof value === "object";
 
 
-function Sum(name, body)
-{
-    const constructors = body
-        .map(({ name, body }) => toConstructorDeclaration(name, body));
+exports.Sum = (name, body) =>
+({
+    name,
+    onPrototype,
+    constructors: body.map(toConstructorDeclaration)
+});
 
-    return { name, onPrototype, constructorDeclarations: constructors };
-}
-
-module.exports = Sum;
-
-Sum.Sum = Sum;
-
-Sum.isSumBody = declaration =>
+exports.isSumBody = declaration =>
     declaration.every(item => item instanceof SumCaseOf);
 
 const SumCaseOf = constructible ("caseof",
@@ -58,33 +52,28 @@ const SumCaseOf = constructible ("caseof",
 
         fail ("No. (Unnamed caseof not allowed)."));
 
-Sum.caseof = SumCaseOf;
+exports.caseof = SumCaseOf;
 
-const SumCaseOfPrototype = Sum.caseof.prototype;
+const SumCaseOfPrototype = SumCaseOf.prototype;
 
 const toCaseOf = (target, body = []) =>
     IObject.setPrototypeOf(
         IObject.assign(target, { body }),
         SumCaseOfPrototype);
 
-function toConstructorDeclaration(name, fieldDeclarations)
-{
-    const innerT =
-        fieldDeclarations.length === 1 &&
-        typeof fieldDeclarations[0] === "object" ?
-            require("./data")(name, fieldDeclarations[0]) :
-            false;
+const toInnerT = body =>
+    body.length === 1 &&
+    typeof body[0] === "object" &&
+    type(name, body[0]);
 
-    return ConstructorDeclaration(
-        name,
-        innerT ?
-            [of => innerT] :
-            fieldDeclarations,
-        innerT ?
-            (T, C, [first, ...rest]) => [false, [innerT(first), ...rest]] :
-            false,
-        initialize);
-}
+const toConstructorDeclaration = ({ name, body, innerT = toInnerT(body) }) =>
+({
+    name,
+    initialize,
+    fields: innerT ? [of => innerT] : body,
+    preprocess: innerT &&
+        ((T, C, [first, ...rest]) => [false, [innerT(first), ...rest]])
+});
 
 /*
     const singleton =
