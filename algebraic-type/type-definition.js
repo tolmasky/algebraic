@@ -2,6 +2,7 @@ const { IObject, IArray } = require("./intrinsics");
 const { flat } = IArray.prototype;
 const { f, constructible } = require("./function-define");
 const { isTaggedCall, tagResolve } = require("./templating");
+const fail = require("./fail");
 
 const Definition = Symbol("Definition");
 const definition = T => T[Definition];
@@ -35,11 +36,11 @@ const type = constructible("type", (_, ...arguments) =>
 
 // FIXME: Check if items in body are all constructors...
 const declare = (name, body) =>
-    define(new TypeDeclaration(
+    define(
         /*Sum.test(body) ? Sum(name, body) :
         Product.test(body) ? Product(name, body) :*/
         Product (name, flat.call(body))
-/*        fail (`Could not recognize type declaration.`)*/));
+/*        fail (`Could not recognize type declaration.`)*/);
 
 function parseBody(name)
 {
@@ -80,11 +81,6 @@ const define = declaration =>
             }))
     ]);
 
-function isUnaryConstructor()
-{
-    return false;
-}
-
 module.exports = type;
 
 function instantiate(T, [public_, private_])
@@ -101,26 +97,14 @@ function instantiate(T, [public_, private_])
     return IObject.freeze(IObject.assign(instance, public_));
 }
 
-function TypeDeclaration(options)
-{
-    this.name = options.name;
-    this.invocation = options.invocation || false;
-    this.constructorDeclarations = options.constructorDeclarations || [];
-    this.prototype = options.prototype || false;
-    this.has = options.has || false;
-    
-    return IObject.freeze(this);
-}
-
 function TypeDefinition(T, declaration)
 {
-    this.name = declaration.name;
+    this.name = declaration.name || "";
 
-    this.invocation = declaration.invocation;
+    this.invocation = declaration.invocation || false;
 
     this.constructors = IObject.fromEntries(
-        declaration
-            .constructorDeclarations
+        (declaration.constructorDeclarations || [])
             .map(declaration => Constructor(T, declaration))
             .map(constructor => [constructor.name, constructor])),
 
@@ -143,7 +127,7 @@ function tryDefaultConstructor(T, args)
     return defaultConstructor ?
         defaultConstructor(...args) :
         fail(
-            `${name} has no default constructor.` +
+            `${T.name} has no default constructor.` +
             (constructors.length <= 0 ?
             "" :
             `\nAvailable constructors are:${
@@ -160,7 +144,7 @@ const failCannotBeInvokedWithNew = T =>
 
 const primitive =
     (name, has = (T, value) => typeof value === name) =>
-        define(new TypeDeclaration({ name, has }));
+        define({ name, has });
 
 type.bigint = primitive("bigint");
 type.boolean = primitive("boolean");
