@@ -7,6 +7,7 @@ const fail = require("./fail");
 const Definition = Symbol("Definition");
 const definition = T => T[Definition];
 
+const private = require("./private");
 const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
