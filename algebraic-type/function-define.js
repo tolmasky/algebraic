@@ -31,6 +31,8 @@ function fConstruct({ name, implementation, fProperties, constructible = false }
                 (IObject.setPrototypeOf(f.prototype, rest.from), f) :
             type === "prototypeOf" ?
                 IObject.setPrototypeOf(f, rest.prototypeOf) :
+            type === "onPrototype" ?
+                (IObject.assign(f.prototype, rest.onPrototype), f) :
             /* type === "property" */
             IObject.defineProperty(f, rest.name, rest), f);
 }
@@ -41,7 +43,8 @@ const property = IObject.assign(
         { type: args[0], ...args[1] },
 {
     inherits: from => property("inherits", { from }),
-    prototypeOf: prototypeOf => property("prototypeOf", { prototypeOf })
+    prototypeOf: prototypeOf => property("prototypeOf", { prototypeOf }),
+    onPrototype: onPrototype => property("onPrototype", { onPrototype }),
 });
 
 const f = toFConstruct(false);

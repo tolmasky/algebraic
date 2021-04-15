@@ -35,13 +35,19 @@ const type = constructible("type", (_, ...arguments) =>
 
     (f, property) => property.inherits(Function.prototype));
 
+type.type = type;
 type.caseof = caseof;
 
-// FIXME: Check if items in body are all constructors...
+// FIXME: Generalize this...
+type.of = type.of = value =>
+    !value || typeof value !== "object" ?
+        type[typeof value] :
+        Object.getPrototypeOf(value).constructor;
+
 const declare = (name, body, flatBody = flat.call(body)) =>
     define(
-        isSumBody(body) ? Sum (name, flatBody) :
-        isProductBody(body) ? Product (name, flatBody) :
+        isSumBody(flatBody) ? Sum (name, flatBody) :
+        isProductBody(flatBody) ? Product (name, flatBody) :
         fail (`Could not recognize type declaration.`));
 
 function parseBody(name)
@@ -67,6 +73,8 @@ const define = declaration =>
     },
     (T, property, TDefinition = new TypeDefinition(T, declaration)) =>
     [
+        declaration.onPrototype &&
+            property.onPrototype(declaration.onPrototype),
         property.prototypeOf (type.prototype),
         declaration.inherits &&
             property.inherits (declaration.inherits),
