@@ -12,35 +12,16 @@ const DIS = require("@algebraic/dense-int-set");
 const { f, constructible } = require("../function-define");
 const ConstructorDeclaration = require("../constructor-definition");
 
-const onPrototype = { caseof, [inspectSymbol]: inspectSum };
+const onPrototype = { [inspectSymbol]: inspectSum };
+const isObject = value => value && typeof value === "object";
 
 
 function Sum(name, body)
 {
     const constructors = body
         .map(({ name, body }) => toConstructorDeclaration(name, body));
+
     return { name, onPrototype, constructorDeclarations: constructors };
-/*
-    const T = Constructible(name, false, definitions);
-
-    const constructors = private(T, "constructors");
-    const CIDs = IObject
-        .fromEntries(IObject
-            .keys(constructors)
-            .map((name, index) => [name, index]));
-
-    // This can be different than initializers.length if two or more have the
-    // same name. Maybe we should fail earlier in that case though?
-    const count = IObject.keys(CIDs).length;
-    const EveryCID = [(1 << count) - 1];
-
-    private(T, "CIDs", () => CIDs);
-    private(T, "EveryCID", () => EveryCID);
-
-    T.prototype.caseof = caseof;
-    T.prototype[inspectSymbol] = inspectSum;
-
-    return T;*/
 }
 
 module.exports = Sum;
@@ -51,33 +32,40 @@ Sum.isSumBody = declaration =>
 {
     console.log(declaration);
     console.log(declaration.every(item => item instanceof SumCaseOf));
-    
+
     return declaration.every(item => item instanceof SumCaseOf);
 }
+
 const SumCaseOf = constructible ("caseof",
     (caseof, ...arguments) =>
+
+        arguments.length === 2 &&
+        isObject(arguments[0]) &&
+        isObject(arguments[1]) ?
+            instanceCaseOf(...arguments) :
+
         isTaggedCall(arguments) ?
             toCaseOf(f (
                 tagResolve(...arguments),
                 ({ name }, ...body) =>
                     toCaseOf({ name }, body))) :
-    
+
         arguments.length === 1 &&
         arguments[0] instanceof type ?
             toCaseOf(
                 { name: arguments[0].name },
                 arguments.map(T => of => T)) :
-    
+
         arguments.length >= 2 ?
             toCaseOf(
                 { name: arguments[0] },
                 arguments.slice(1)) :
-    
+
         fail ("No. (Unnamed caseof not allowed)."));
 
 Sum.caseof = SumCaseOf;
 
-SumCaseOfPrototype = Sum.caseof.prototype;
+const SumCaseOfPrototype = Sum.caseof.prototype;
 
 const toCaseOf = (target, body = []) =>
     IObject.setPrototypeOf(
@@ -116,9 +104,9 @@ function initialize(constructor, processed)
     return [false, { constructor, values }];
 }
 
-function caseof(cases)
+function instanceCaseOf(target, cases)
 {
-    const T = type.of(this);
+    const T = type.of(target);
     const { constructors, EveryCID } = type.definition(T);
 
     const hasDefault = IObject.has("default", cases);
@@ -131,10 +119,7 @@ function caseof(cases)
                 fail.type (
                     `${T.name}.caseof call has non-constructor case ${name}.`),
             DIS.Empty);
-console.log(IObject
-        .keys(cases))
-console.log(present);
-console.log(EveryCID);
+
     if (!hasDefault && !DIS.equals(present, EveryCID))
     {
         const names = IObject.keys(constructors);
@@ -147,10 +132,10 @@ console.log(EveryCID);
             `${list(missing)}, or use default.`);
     }
 
-    const target = private(this, "constructor").name;
-    const handler = cases[target] || cases.default;
+    const { name } = private(target, "constructor").name;
+    const handler = cases[name] || cases.default;
 
-    return handler(...private(this, "values"));
+    return handler(...private(target, "values"));
 }
 
 function list(items)
