@@ -29,12 +29,7 @@ module.exports = Sum;
 Sum.Sum = Sum;
 
 Sum.isSumBody = declaration =>
-{
-    console.log(declaration);
-    console.log(declaration.every(item => item instanceof SumCaseOf));
-
-    return declaration.every(item => item instanceof SumCaseOf);
-}
+    declaration.every(item => item instanceof SumCaseOf);
 
 const SumCaseOf = constructible ("caseof",
     (caseof, ...arguments) =>
