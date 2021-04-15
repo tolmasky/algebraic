@@ -2,17 +2,24 @@ const { IArray } = require("../intrinsics");
 const ConstructorDeclaration = require("../constructor-definition");
 
 
-module.exports = function Product(name, body)
+function Product(name, body)
 {
+    // FIXME: isPositional === isArray(body) ?
     const constructorDeclaration =
         ConstructorDeclaration(name, body, preprocess);
     const constructorDeclarations = [constructorDeclaration];
-    const prototype = constructorDeclaration.hasPositionalFields ?
+    const inherits = constructorDeclaration.hasPositionalFields ?
         IArray.prototype :
         false;
 
-    return { name, constructorDeclarations, prototype };
+    return { name, constructorDeclarations, inherits };
 }
+
+module.exports = Product;
+
+Product.Product = Product;
+
+Product.isProductBody = body => true;
 
 function preprocess(T, C, values)
 {

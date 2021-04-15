@@ -7,7 +7,8 @@ const fail = require("./fail");
 const Definition = Symbol("Definition");
 const definition = T => T[Definition];
 
-const Product = require("./types/product");
+const { isProductBody, Product } = require("./types/product");
+const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
 
 
@@ -34,13 +35,14 @@ const type = constructible("type", (_, ...arguments) =>
 
     (f, property) => property.inherits(Function.prototype));
 
+type.caseof = caseof;
+
 // FIXME: Check if items in body are all constructors...
-const declare = (name, body) =>
+const declare = (name, body, flatBody = flat.call(body)) =>
     define(
-        /*Sum.test(body) ? Sum(name, body) :
-        Product.test(body) ? Product(name, body) :*/
-        Product (name, flat.call(body))
-/*        fail (`Could not recognize type declaration.`)*/);
+        isSumBody(body) ? Sum (name, flatBody) :
+        isProductBody(body) ? Product (name, flatBody) :
+        fail (`Could not recognize type declaration.`));
 
 function parseBody(name)
 {
@@ -66,8 +68,8 @@ const define = declaration =>
     (T, property, TDefinition = new TypeDefinition(T, declaration)) =>
     [
         property.prototypeOf (type.prototype),
-        declaration.prototype &&
-            property.inherits (declaration.prototype),
+        declaration.inherits &&
+            property.inherits (declaration.inherits),
         property({ name: Definition, value: TDefinition }),
         ...IObject
             .entries(TDefinition.constructors)
