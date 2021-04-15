@@ -7,6 +7,7 @@ const Definition = Symbol("Definition");
 const definition = T => T[Definition];
 
 const Product = require("./types/product");
+const UseFallbackForEverField = IObject.create(null);
 
 
 const type = constructible("type", (_, ...arguments) =>
@@ -88,10 +89,10 @@ module.exports = type;
 
 function instantiate(T, [public_, private_])
 {
-    const tuple = false;
-    const instance = tuple ?
-        IObject.setPrototypeOf([], T.prototype) :
-        new T(instantiate);
+    const instance =
+        T.prototype instanceof Array ?
+            IObject.setPrototypeOf([], T.prototype) :
+            new T(instantiate);
 
     IObject
         .entries(private_ || {})
@@ -105,7 +106,7 @@ function TypeDeclaration(options)
     this.name = options.name;
     this.invocation = options.invocation || false;
     this.constructorDeclarations = options.constructorDeclarations || [];
-    this.prototoype = options.prototype || false;
+    this.prototype = options.prototype || false;
     this.has = options.has || false;
     
     return IObject.freeze(this);
@@ -140,7 +141,7 @@ function tryDefaultConstructor(T, args)
     const { defaultConstructor, constructors } = definition(T);
 
     return defaultConstructor ?
-        defautlConstructor(...args) :
+        defaultConstructor(...args) :
         fail(
             `${name} has no default constructor.` +
             (constructors.length <= 0 ?
@@ -229,6 +230,11 @@ function process(C, preprocessed)
         .fromEntries(fields
             .map(([name, field]) =>
                 [name, field.extract(C, name, flattened)]));
+}
+
+function toFields(C)
+{
+    return [];
 }
 
 
