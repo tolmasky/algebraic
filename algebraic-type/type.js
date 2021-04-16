@@ -10,8 +10,6 @@ const Definition = Symbol("Definition");
 const definition = T => T[Definition];
 
 const private = require("./private");
-const { isProductBody, Product } = require("./types/product");
-const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
 
 const isObject = value => value && typeof value === "object";
@@ -43,7 +41,6 @@ const type = constructible("type", (_, ...arguments) =>
 
 IObject.defineProperty(type, "type", { value: type });
 
-type.caseof = caseof;
 type.definition = definition;
 
 // FIXME: Generalize this...
@@ -54,7 +51,7 @@ type.of = type.of = value =>
 
 const declare = (name, body, flatBody = flat.call(body)) =>
     define(
-        isSumBody(flatBody) ? Sum (type, name, flatBody) :
+        isSumBody(flatBody) ? Sum (name, flatBody) :
         isProductBody(flatBody) ? Product (name, flatBody) :
         fail (`Could not recognize type declaration.`));
 
@@ -62,7 +59,7 @@ function parseBody(name)
 {
     return IObject.assignNonenumerable(
         (...body) => type(name, ...body),
-        { forall: (...rest) => forall(...rest) });
+        { forall: (...rest) => forall(type, definition, name, ...rest) });
 }
 
 const define = declaration =>
@@ -271,9 +268,14 @@ function annotate(annotation, T)
     fail (`Unrecognized annotation: ${annotation} on type ${T}`);
 }
 
+const { isProductBody, Product } = require("./types/product");
+const { isSumBody, Sum, caseof } = require("./types/sum");
+
+type.caseof = caseof;
+
 const Field = require("./field");
 const forall = require("./types/forall");
-const Optional = require("./types/optional")(type, caseof);
+const Optional = require("./types/optional");
 
 type.Optional = Optional;
 

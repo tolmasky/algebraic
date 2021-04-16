@@ -14,13 +14,14 @@ const { f, constructible } = require("../function-define");
 const onPrototype = { [inspectSymbol]: inspectSum };
 const isObject = value => value && typeof value === "object";
 
+const { type, of, definition } = require("../type");
 
-exports.Sum = (type, name, body) =>
+
+exports.Sum = (name, body) =>
 ({
     name,
     onPrototype,
-    constructors: body.map(declaration =>
-        toConstructorDeclaration(type, declaration))
+    constructors: body.map(toConstructorDeclaration)
 });
 
 exports.isSumBody = declaration =>
@@ -62,13 +63,13 @@ const toCaseOf = (target, body = []) =>
         IObject.assign(target, { body }),
         SumCaseOfPrototype);
 
-const toInnerT = (type, name, body) =>
+const toInnerT = (name, body) =>
     body.length === 1 &&
     typeof body[0] === "object" &&
     type(name, body[0]);
 
 const toConstructorDeclaration =
-    (type, { name, body, innerT = toInnerT(type, name, body) }) =>
+    ({ name, body, innerT = toInnerT(name, body) }) =>
 ({
     name,
     initialize,
@@ -92,8 +93,8 @@ function initialize(constructor, processed)
 
 function instanceCaseOf(target, cases)
 {
-    const T = type.of(target);
-    const { constructors, EveryCID } = type.definition(T);
+    const T = of(target);
+    const { constructors, EveryCID } = definition(T);
 
     const hasDefault = IObject.has("default", cases);
     const present = IObject
@@ -141,7 +142,7 @@ function inspectSum (depth, options)
     if (depth < -1)
         return "{ … }";
 
-    const T = type.of(this);
+    const T = of (this);
     const nextDepth = options.depth === null ? null : options.depth - 1;
     const inner = value => inspect(value, { ...options, depth: nextDepth });
     const Tname = T.name;
@@ -157,3 +158,4 @@ function inspectSum (depth, options)
     // Or maybe just use * when its ONE item with the same name...
     return `${fullyQualified}${values}`;
 };
+
