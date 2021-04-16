@@ -55,8 +55,7 @@ function Constraint(type)
 
 Constraint.prototype.has = function (value)
 {
-    return this.type.has(value);
-    return value instanceof this.type;
+    return type.has(this.type, value);
 }
 
 const Default =

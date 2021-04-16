@@ -11,6 +11,7 @@ const private = require("./private");
 const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
+const Field = require("./field");
 
 const isObject = value => value && typeof value === "object";
 const isFunction = value => typeof value === "function";
@@ -228,7 +229,7 @@ function process(C, preprocessed)
             `${C.name} is a record constructor and thus expects ` +
             `one object argument.`);
 
-    const fields = toFields(C);
+    const fields = getFields(C);
 
     if (hasPositionalFields && preprocessed.length > fields.length)
         fail (
@@ -249,10 +250,13 @@ function process(C, preprocessed)
                 [name, field.extract(C, name, flattened)]));
 }
 
-function toFields(C)
+function getFields(C)
 {
-    return [];
+    return private(C, "fields", () =>
+        C[Definition].fieldDefinitions
+            .map(([name, f]) => [name, new Field(f())]));
 }
+
 
 
 /*
