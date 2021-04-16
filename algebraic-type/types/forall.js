@@ -4,7 +4,7 @@ const private = require("../private");
 const fail = require("../fail");
 
 const { type, caseof } = require ("../type");
-console.log(type);
+
 const VariableExpression = type `VariableExpression`
 ([
     caseof `Reference`  (of => type.number),
@@ -14,7 +14,7 @@ const VariableExpression = type `VariableExpression`
         arguments   :of => type.object/*List.of(VariableExpression)*/
     })
 ]);
-console.log("yay!");
+
 const indexes = expressions => new Set(
     expressions
         .filter(VariableExpression.has)
