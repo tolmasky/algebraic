@@ -119,7 +119,7 @@ function instanceCaseOf(target, cases)
             `${list(missing)}, or use default.`);
     }
 
-    const { name } = private(target, "constructor").name;
+    const { name } = private(target, "constructor");
     const handler = cases[name] || cases.default;
 
     return handler(...private(target, "values"));

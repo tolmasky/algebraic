@@ -3,7 +3,8 @@ const toCache = require("../cache");
 const private = require("../private");
 const fail = require("../fail");
 
-const { type, caseof } = require ("../type");
+const { constructible } = require("../function-define");
+const { type, caseof, definition, has } = require ("../type");
 
 const VariableExpression = type `VariableExpression`
 ([
@@ -17,7 +18,7 @@ const VariableExpression = type `VariableExpression`
 
 const indexes = expressions => new Set(
     expressions
-        .filter(VariableExpression.has)
+        .filter(has(VariableExpression))
         .flatMap(expression => caseof(expression,
         {
             Reference: index => index,
@@ -25,13 +26,13 @@ const indexes = expressions => new Set(
         })));
 
 const hasVariableExpression = Ts =>
-    Ts.some(T => type.has(VariableExpression, T));
+    Ts.some(T => has(VariableExpression, T));
 
 
-module.exports = function forall(type, definition, name, ...rest)
-{console.log(rest);
+module.exports = function forall(name, ...rest)
+{
     if (rest.length === 0)
-        return (...rest) => forall(type, definition, name, ...rest);
+        return (...rest) => forall(name, ...rest);
 
     const [fBody] = rest;
     const variables = IArray
@@ -40,51 +41,55 @@ module.exports = function forall(type, definition, name, ...rest)
     const faT = type (name, fBody(...variables));
 
     const TF = {};
-    const of = (...Ts) =>
+    const apply = (...Ts) =>
         hasVariableExpression(Ts) ?
             VariableExpression.Of({ callee: TF, arguments: Ts }) :
             type
                 `${name}(${Ts.map(T => T.name).join(", ")})`
                 (fBody(...Ts));
 
-    const thisExpression = of (...variables);
+    const thisExpression = apply (...variables);
 
     const cache = toCache();
     const { constructors } = definition(faT);
+    const inferencingConstructors = IObject
+        .entries(constructors)
+        .map(([name, C]) =>
+            [name, toInferencingConstructor(C, apply, thisExpression)]);
 
-    console.log(thisExpression);/*
-    console.log(IObject.fromEntries(
-            IObject
-                .entries(constructors)
-                .map(([name, C]) =>
-                    [name, toInferencingConstructor(C)])));*/
 
-    return IObject.assignNonenumerable(
-        TF,
-        IObject.fromEntries(
-            IObject
-                .entries(constructors)
-                .map(([name, C]) =>
-                    [name, toInferencingConstructor(C, of, thisExpression)])),
-        { of: (...args) => cache(args, () => of(...args)) });
-
-    return TF;
+    return constructible (name, () => { fail ("need the thing!"); },
+    (T, property) =>
+    [
+        property (
+        {
+            name: "of",
+            value: (...args) => cache(args, () => apply(...args))
+        }),
+        ...IObject
+            .entries(constructors)
+            .map(([name, C]) => property
+            ({
+                name,
+                enumerable: true,
+                value: toInferencingConstructor(C, apply, thisExpression)
+            }))
+    ]);
 }
 
 // Note: we need to be able to figure out EVERY variable from a consructor, or it won't work.
 
 function toInferencingConstructor(C, fT, thisExpression)
 {
-    const { hasPositionalFields } = C;
+    const { fieldDefinitions, hasPositionalFields } = definition(C);
 
     return function (...args)
     {
         // FIXME: Cache
         console.log(C);
-        const fieldExpressions = C
-            .fieldDefinitions
+        const fieldExpressions = fieldDefinitions
             .map(([name, f]) => [name, f()])
-            .filter(([name, f]) => VariableExpression.has(f));
+            .filter(([name, f]) => has(VariableExpression, f));
 
         const usedReferences = indexes(fieldExpressions.map(([, expression]) => expression));
 
@@ -127,8 +132,8 @@ function infer(expressions, inferred, [name, T])
 
 function infer(inferred, expression, T)
 {
-    return expression.caseof
-    ({
+    return caseof(expression,
+    {
         Reference: index =>
             IObject.has(index, inferred) ?
                 inferred[index] !== T ?

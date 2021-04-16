@@ -33,7 +33,7 @@ const type = constructible("type", (_, ...arguments) =>
     // Case 3: type (string) -> ((...body) -> T)
     arguments.length === 1 ?
         parseBody(arguments[0]) :
-    
+
     // Case 4: type (string, ...body) -> T
     declare(arguments[0], arguments.slice(1)),
 
@@ -59,7 +59,7 @@ function parseBody(name)
 {
     return IObject.assignNonenumerable(
         (...body) => type(name, ...body),
-        { forall: (...rest) => forall(type, definition, name, ...rest) });
+        { forall: (...rest) => forall(name, ...rest) });
 }
 
 const define = declaration =>
@@ -175,7 +175,12 @@ type.symbol = primitive("symbol");
 type.undefined = primitive("undefined");
 type.object = primitive("object", (T, value) => value && typeof value === "object");
 
-type.has = (T, value) => definition(T).has(T, value);
+const has = (T, ...rest) =>
+    rest.length === 0 ?
+        value => has(T, value) :
+        definition(T).has(T, rest[0]);
+
+type.has = has;
 
 type.typename = T => T.name;//definition(T).name;
 
