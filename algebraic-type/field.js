@@ -11,6 +11,8 @@ function Field(options)
 {
     return  options instanceof Field ?
                 options :
+            options instanceof type ?
+                new Field({ type: options }) :
             !(this instanceof Field) ?
                 new Field(options) :
             IObject.assign(this,
@@ -27,7 +29,7 @@ module.exports = Field;
 
 Field.prototype.extract = function (forT, name, values)
 {
-    const present = IObject.has(name, values);
+    const present = has(name, values);
 
     if (!present && this.default === Default.None)
         fail.type(

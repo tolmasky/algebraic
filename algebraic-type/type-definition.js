@@ -11,7 +11,7 @@ const private = require("./private");
 const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
-const Field = require("./field");
+
 
 const isObject = value => value && typeof value === "object";
 const isFunction = value => typeof value === "function";
@@ -178,6 +178,7 @@ type.object = primitive("object", (T, value) => value && typeof value === "objec
 
 type.has = (T, value) => definition(T).has(T, value);
 
+type.typename = T => T.name;//definition(T).name;
 
 function Constructor(T, ID, declaration)
 {
@@ -263,7 +264,7 @@ function annotate(annotation, T)
         return type.optional.of(T);
 
     if (annotation === "=")
-        return defaultValue => Field({ type, defaultValue });
+        return defaultValue => Field({ type: T, defaultValue });
 
     fail (`Unrecognized annotation: ${annotation} on type ${T}`);
 }
@@ -283,3 +284,5 @@ IObject.assign(
         ["bigint", "boolean", "function", "number", "string", "symbol", "undefined"]
             .map(name => [name, primitive])));
 */
+
+const Field = require("./field");
