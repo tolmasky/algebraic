@@ -15,11 +15,12 @@ const onPrototype = { [inspectSymbol]: inspectSum };
 const isObject = value => value && typeof value === "object";
 
 
-exports.Sum = (name, body) =>
+exports.Sum = (type, name, body) =>
 ({
     name,
     onPrototype,
-    constructors: body.map(toConstructorDeclaration)
+    constructors: body.map(declaration =>
+        toConstructorDeclaration(type, declaration))
 });
 
 exports.isSumBody = declaration =>
@@ -61,12 +62,13 @@ const toCaseOf = (target, body = []) =>
         IObject.assign(target, { body }),
         SumCaseOfPrototype);
 
-const toInnerT = body =>
+const toInnerT = (type, name, body) =>
     body.length === 1 &&
     typeof body[0] === "object" &&
     type(name, body[0]);
 
-const toConstructorDeclaration = ({ name, body, innerT = toInnerT(body) }) =>
+const toConstructorDeclaration =
+    (type, { name, body, innerT = toInnerT(type, name, body) }) =>
 ({
     name,
     initialize,

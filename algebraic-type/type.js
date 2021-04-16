@@ -41,7 +41,8 @@ const type = constructible("type", (_, ...arguments) =>
 
     (f, property) => property.inherits(Function.prototype));
 
-type.type = type;
+IObject.defineProperty(type, "type", { value: type });
+
 type.caseof = caseof;
 type.definition = definition;
 
@@ -53,7 +54,7 @@ type.of = type.of = value =>
 
 const declare = (name, body, flatBody = flat.call(body)) =>
     define(
-        isSumBody(flatBody) ? Sum (name, flatBody) :
+        isSumBody(flatBody) ? Sum (type, name, flatBody) :
         isProductBody(flatBody) ? Product (name, flatBody) :
         fail (`Could not recognize type declaration.`));
 
@@ -271,8 +272,10 @@ function annotate(annotation, T)
 }
 
 const Field = require("./field");
-// const forall = require("./types/forall");
-// const Optional = require("./types/optional");
+const forall = require("./types/forall");
+const Optional = require("./types/optional")(type, caseof);
+
+type.Optional = Optional;
 
 /*
 IObject.assign(type,

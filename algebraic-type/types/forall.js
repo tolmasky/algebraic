@@ -1,34 +1,56 @@
-const { IObject, IArray } = require("./intrinsics");
-const toCache = require("./cache");
-const private = require("./private");
-const fail = require("./fail");
+const { IObject, IArray } = require("../intrinsics");
+const toCache = require("../cache");
+const private = require("../private");
+const fail = require("../fail");
+
+const { type, caseof } = require ("../type");
+console.log(type);
+const VariableExpression = type `VariableExpression`
+([
+    caseof `Reference`  (of => type.number),
+    caseof `Of`    (
+    {
+        callee      :of => type.object,
+        arguments   :of => type.object/*List.of(VariableExpression)*/
+    })
+]);
+console.log("yay!");
+const indexes = expressions => new Set(
+    expressions
+        .filter(VariableExpression.has)
+        .flatMap(expression => caseof(expression,
+        {
+            Reference: index => index,
+            Of: ({ arguments }) => [...indexes(arguments)]
+        })));
+
+const hasVariableExpression = Ts =>
+    Ts.some(T => type.has(VariableExpression, T));
+
 
 module.exports = function forall(name, ...rest)
 {
     if (rest.length === 0)
         return (...rest) => forall(name, ...rest);
 
-    const [fDefinition] = rest;
+    const [fBody] = rest;
     const variables = IArray
-        .from(fDefinition, (_, index) => VariableExpression.Reference(index));
-    const vDefinition = fDefinition(...variables);
-    const vT = data (name, vDefinition)
+        .from(fBody, (_, index) =>
+            VariableExpression.Reference(index));
+    const faT = type (name, fBody(...variables));
 
     const TF = {};
     const of = (...Ts) =>
-    {console.log(Ts);
-        const hasVariableExpression = Ts.some(VariableExpression.has);
-console.log(hasVariableExpression);
-        return hasVariableExpression ?
+        hasVariableExpression(Ts) ?
             VariableExpression.Of({ callee: TF, arguments: Ts }) :
-            data
+            type
                 `${name}(${Ts.map(T => T.name).join(", ")})`
-                ((console.log(fDefinition(...Ts)),fDefinition(...Ts)));
-    };
+                (fBody(...Ts));
+
     const thisExpression = of (...variables);
 
     const cache = toCache();
-    const constructors = private(vT, "constructors");
+    const constructors = private(faT, "constructors");
 
     console.log(thisExpression);/*
     console.log(IObject.fromEntries(
@@ -131,28 +153,7 @@ function getVariableExpressions()
             .filter(([name, f]) => isVariableExpression(f)));
 }*/
 
-const data = require("./data");
-const { caseof } = data;
-const { type } = require("./type");
 
-const VariableExpression = data `VariableExpression`
-([
-    caseof `Reference`  (of => type.number),
-    caseof `Of`    (
-    {
-        callee      :of => type.object,
-        arguments   :of => type.object/*List.of(VariableExpression)*/
-    })
-]);
-
-const indexes = expressions => new Set(
-    expressions
-        .filter(VariableExpression.has)
-        .flatMap(expression => expression.caseof(
-        {
-            Reference: index => index,
-            Of: ({ arguments }) => [...indexes(arguments)]
-        })));
 
 /*
 const indexes = expression =>

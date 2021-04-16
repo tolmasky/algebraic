@@ -87,7 +87,7 @@ const toValueString = value => highlighted `\x1b[35m` (
     JSON.stringify(value, null, 2));
 
 
-const type = require("./type-definition");
+const type = require("./type");
 
     // FIXME: UGH.
 /*    const MISSING = { };
