@@ -254,7 +254,18 @@ function getFields(C)
 {
     return private(C, "fields", () =>
         C[Definition].fieldDefinitions
-            .map(([name, f]) => [name, new Field(f())]));
+            .map(([name, f]) => [name, Field(f())]));
+}
+
+function annotate(annotation, T)
+{
+    if (annotation === "?")
+        return type.optional.of(T);
+
+    if (annotation === "=")
+        return defaultValue => Field({ type, defaultValue });
+
+    fail (`Unrecognized annotation: ${annotation} on type ${T}`);
 }
 
 

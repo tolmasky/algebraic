@@ -1,21 +1,26 @@
 const { IObject } = require("./intrinsics");
+const { has } = IObject;
+
 const f = require("./function-define");
 //const type = require("./type");
 const fail = require("./fail");
 const private = require("./private");
 
 
-function Field(value)
+function Field(options)
 {
-    this.constraint = new Constraint(value);
-
-    // FIXME: UGH.
-    const MISSING = { };
-    const defaultValue = private(value, "defaultValue", () => MISSING);
-
-    this.default = defaultValue !== MISSING ?
-        new Default.Value(defaultValue) :
-        Default.None;
+    return  options instanceof Field ?
+                options :
+            !(this instanceof Field) ?
+                new Field(options) :
+            IObject.assign(this,
+            {
+                default:
+                    has("defaultValue", options) ?
+                        new Default.Value(options.defaultValue) :
+                        Default.None,
+                constraint: new Constraint(options.type)
+            });
 }
 
 module.exports = Field;
@@ -78,4 +83,15 @@ const toValueString = value => highlighted `\x1b[35m` (
 //    typeof value !== "object" ? JSON.stringify(value, null, 2) :
 //    of(value) && getKind(of(value)) ? value + "" :
     JSON.stringify(value, null, 2));
+
+
+const type = require("./type-definition");
+
+    // FIXME: UGH.
+/*    const MISSING = { };
+    const defaultValue = private(value, "defaultValue", () => MISSING);
+
+    this.default = defaultValue !== MISSING ?
+        new Default.Value(defaultValue) :
+        Default.None;*/
 
