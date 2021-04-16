@@ -1,4 +1,4 @@
-const { type, data } = require("@algebraic/type");
+const type = require("@algebraic/type");
 
 const Extra = require("./extra");
 const Node = require("./node");
@@ -42,7 +42,7 @@ exports.TemplateElement = Node `TemplateElement`
     tail                :of =>  type.boolean `=` (false)
 });
 
-exports.TemplateElement.Value = data `TemplateElement.Value`
+exports.TemplateElement.Value = type `TemplateElement.Value`
 ({
     raw                 :of =>  type.string,
     cooked              :of =>  type.string

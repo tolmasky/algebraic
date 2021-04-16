@@ -1,8 +1,8 @@
-const { data } = require("@algebraic/type");
+const type = require("@algebraic/type");
 const { Comments } = require("./comment");
 const SourceLocation = require("./source-location");
 
-const Node = ([name]) => fields => data `${name}`
+const Node = ([name]) => fields => type `${name}`
 ({
     location    :of =>  SourceLocation `?`,
     comments    :of =>  Comments,

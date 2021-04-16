@@ -1,8 +1,8 @@
-const { type, data, List, caseof } = require("@algebraic/type");
+const { type, List, caseof } = require("@algebraic/type");
 const SourceLocation = require("./source-location");
 
 
-const SingleLineComment = data `SingleLineComment`
+const SingleLineComment = type `SingleLineComment`
 ({
     location    :of =>  SourceLocation `?`,
     value       :of =>  type.string
@@ -10,7 +10,7 @@ const SingleLineComment = data `SingleLineComment`
 
 exports.SingleLineComment = SingleLineComment;
 
-const MultiLineComment = data `MultiLineComment`
+const MultiLineComment = type `MultiLineComment`
 ({
     location    :of =>  SourceLocation `?`,
     value       :of =>  type.string
@@ -18,7 +18,7 @@ const MultiLineComment = data `MultiLineComment`
 
 exports.MultiLineComment = MultiLineComment;
 
-const Comment = data `Comment`
+const Comment = type `Comment`
 ([
     caseof (SingleLineComment),
     caseof (MultiLineComment)
@@ -26,11 +26,11 @@ const Comment = data `Comment`
 
 exports.Comment = Comment;
 
-const Comments = data `Comments`
+const Comments = type `Comments`
 ({
-    leading     :of =>  List.of(Comment) `?`,
-    inner       :of =>  List.of(Comment) `?`,
-    trailing    :of =>  List.of(Comment) `?`
+    leading     :of =>  type.object `=` ([]), // List.of(Comment) `?`,
+    inner       :of =>  type.object `=` ([]), // List.of(Comment) `?`,
+    trailing    :of =>  type.object `=` ([]), // List.of(Comment) `?`
 });
 
 exports.Comments = Comments;
