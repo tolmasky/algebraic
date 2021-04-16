@@ -1,3 +1,5 @@
+Error.stackTraceLimit = 10000;
+
 const { IObject, IArray } = require("./intrinsics");
 const { flat } = IArray.prototype;
 const { f, constructible } = require("./function-define");
@@ -11,7 +13,6 @@ const private = require("./private");
 const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 const UseFallbackForEverField = IObject.create(null);
-
 
 const isObject = value => value && typeof value === "object";
 const isFunction = value => typeof value === "function";
@@ -60,7 +61,7 @@ function parseBody(name)
 {
     return IObject.assignNonenumerable(
         (...body) => type(name, ...body),
-        { forall: (...rest) => require("./forall")(name, ...rest) });
+        { forall: (...rest) => forall(...rest) });
 }
 
 const define = declaration =>
@@ -261,7 +262,7 @@ function getFields(C)
 function annotate(annotation, T)
 {
     if (annotation === "?")
-        return type.optional.of(T);
+        return Optional.of(T);
 
     if (annotation === "=")
         return defaultValue => Field({ type: T, defaultValue });
@@ -269,7 +270,9 @@ function annotate(annotation, T)
     fail (`Unrecognized annotation: ${annotation} on type ${T}`);
 }
 
-
+const Field = require("./field");
+// const forall = require("./types/forall");
+// const Optional = require("./types/optional");
 
 /*
 IObject.assign(type,
@@ -285,4 +288,4 @@ IObject.assign(
             .map(name => [name, primitive])));
 */
 
-const Field = require("./field");
+
