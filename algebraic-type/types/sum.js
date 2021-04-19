@@ -150,7 +150,7 @@ function inspectSum (depth, options)
     const Cname = constructor.name;
 
     const fullyQualified = Tname === Cname ? `${Tname}*` : `${T.name}.${Cname}`;
-    const values = constructor.isUnaryConstructor ?
+    const values = definition(constructor).isUnaryConstructor ?
         "" :
         ` { ${private(this, "values").map(inner).join(", ")} }`;
 
