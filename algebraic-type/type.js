@@ -273,6 +273,13 @@ function annotate(annotation, T)
     fail (`Unrecognized annotation: ${annotation} on type ${T}`);
 }
 
+type.fallback = function fallback(toDefaultValue)
+{
+    return f `fallback` (
+        (f, ...args) => toDefaultValue(...args),
+        (_, property) => property.prototypeOf (fallback.prototype));
+}
+
 const { isProductBody, Product } = require("./types/product");
 const { isSumBody, Sum, caseof } = require("./types/sum");
 
@@ -283,6 +290,8 @@ const forall = require("./types/forall");
 const Optional = require("./types/optional");
 
 type.Optional = Optional;
+
+
 
 /*
 IObject.assign(type,

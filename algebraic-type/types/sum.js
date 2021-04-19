@@ -14,18 +14,25 @@ const { f, constructible } = require("../function-define");
 const onPrototype = { [inspectSymbol]: inspectSum };
 const isObject = value => value && typeof value === "object";
 
-const { type, of, definition } = require("../type");
+const { type, of, definition, fallback } = require("../type");
 
 
 exports.Sum = (name, body) =>
 ({
     name,
     onPrototype,
-    constructors: body.map(toConstructorDeclaration)
+    toDefaultValue: body
+        .reverse()
+        .find(item => item instanceof fallback) || false,
+    constructors: body
+        .filter(item => !(item instanceof fallback))
+        .map(toConstructorDeclaration)
 });
 
 exports.isSumBody = declaration =>
-    declaration.every(item => item instanceof SumCaseOf);
+    declaration.every(item =>
+        item instanceof SumCaseOf ||
+        item instanceof fallback);
 
 const SumCaseOf = constructible ("caseof",
     (caseof, ...arguments) =>

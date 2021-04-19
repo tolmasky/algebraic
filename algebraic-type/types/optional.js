@@ -1,7 +1,9 @@
-const { type, caseof } = require("../type");
+const { type, caseof, fallback } = require("../type");
 
 module.exports = type `Optional` .forall (T =>
 ([
     caseof `Some` (of => T),
-    caseof `None`
+    caseof `None`,
+
+    fallback (O => O.None)
 ]));

@@ -5,6 +5,7 @@ const f = require("./function-define");
 //const type = require("./type");
 const fail = require("./fail");
 const private = require("./private");
+const { definition } = require("./type");
 
 
 function Field(options)
@@ -20,7 +21,11 @@ function Field(options)
                 default:
                     has("defaultValue", options) ?
                         new Default.Value(options.defaultValue) :
-                        Default.None,
+                    definition(options.type).toDefaultValue ?
+                        new Default.Value(
+                            definition(options.type)
+                                .toDefaultValue(options.type)) :
+                    Default.None,
                 constraint: new Constraint(options.type)
             });
 }
