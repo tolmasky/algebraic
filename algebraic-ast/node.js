@@ -20,29 +20,31 @@ const NodeUnion = ([name]) =>
             .values(exports)
             .filter(T => filter.test(type.typename(T)))
             .map(T => of => T));
-
+*/
 Object.assign(module.exports,
 {
-
+/*
     Expression: NodeUnion `Expression` (
         /(Reference|Expression|Literal)$/,
         require("./expressions")),
     Statement: NodeUnion `Statement` (
         /(Statement|Declaration)$/,
         require("./statements")),
+*/
+    ...require("./literals"),
 
     ...require("./property-names"),
-    ...require("./expressions"),
+/*    ...require("./expressions"),
 
     ...require("./bindings"),
     ...require("./assignment-targets"),
 
     ...require("./statements"),
     ...require("./program"),
-    
-    ...require("./comment")
-});
 
+    ...require("./comment")*/
+});
+/*
 // Deal with union2.
 // Deal with array<X>.
 const isNodeOrComposite = T =>
