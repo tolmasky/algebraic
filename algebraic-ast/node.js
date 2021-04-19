@@ -5,7 +5,7 @@ const SourceLocation = require("./source-location");
 const Node = ([name]) => fields => type `${name}`
 ({
     location    :of =>  SourceLocation `?`,
-    comments    :of =>  Comments,
+    comments    :of =>  Comments `=` (Comments()),
     ...fields
 });
 

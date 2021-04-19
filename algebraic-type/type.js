@@ -267,6 +267,9 @@ function annotate(annotation, T)
     if (annotation === "?")
         return Optional.of(T);
 
+    if (annotation === "[]")
+        return List.of(T);
+
     if (annotation === "=")
         return defaultValue => Field({ type: T, defaultValue });
 
@@ -291,6 +294,9 @@ const Optional = require("./types/optional");
 
 type.Optional = Optional;
 
+const List = require("./types/list");
+
+type.List = List;
 
 
 /*

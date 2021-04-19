@@ -1,4 +1,4 @@
-const { type, List, caseof } = require("@algebraic/type");
+const { type, caseof } = require("@algebraic/type");
 const SourceLocation = require("./source-location");
 
 
@@ -28,9 +28,9 @@ exports.Comment = Comment;
 
 const Comments = type `Comments`
 ({
-    leading     :of =>  type.object `=` ([]), // List.of(Comment) `?`,
-    inner       :of =>  type.object `=` ([]), // List.of(Comment) `?`,
-    trailing    :of =>  type.object `=` ([]), // List.of(Comment) `?`
+    leading     :of =>  Comment `[]`,
+    inner       :of =>  Comment `[]`,
+    trailing    :of =>  Comment `[]`,
 });
 
 exports.Comments = Comments;
