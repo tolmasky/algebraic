@@ -1,10 +1,12 @@
 const { IArray } = require("../intrinsics");
 const isSingleObject = body => body.length === 1 && typeof body[0] === "object";
+const hasPositionProperties = body => body.length > 0 && !isSingleObject(body);
+
 
 exports.Product = (name, body) =>
 ({
     name,
-    inherits: !isSingleObject(body) && IArray.prototype,
+    inherits: hasPositionProperties(body) && IArray.prototype,
     constructors: [{ name, fields: body, preprocess }]
 });
 

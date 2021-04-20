@@ -30,6 +30,7 @@ exports.Sum = (name, body) =>
 });
 
 exports.isSumBody = declaration =>
+    declaration.length > 0 &&
     declaration.every(item =>
         item instanceof SumCaseOf ||
         item instanceof fallback);

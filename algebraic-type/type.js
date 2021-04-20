@@ -58,7 +58,7 @@ const declare = (name, body, flatBody = flat.call(body)) =>
 function parseBody(name)
 {
     return IObject.assignNonenumerable(
-        (...body) => type(name, ...body),
+        (...body) => declare(name, body),
         { forall: (...rest) => forall(name, ...rest) });
 }
 
@@ -89,7 +89,7 @@ const define = declaration =>
             .map(([name, constructor]) => property(
             {
                 name,
-                enumerable: true,
+                enumerable: false,
                 value: definition(constructor).isUnaryConstructor ?
                     constructor() :
                     constructor
@@ -141,12 +141,12 @@ function TypeDefinition(T, declaration)
 
 function tryDefaultConstructor(T, args)
 {
-    const { defaultConstructor, constructors } = definition(T);
+    const { defaultConstructor, constructors, name } = definition(T);
 
     return defaultConstructor ?
         defaultConstructor(...args) :
         fail(
-            `${T.name} has no default constructor.` +
+            `${name} has no default constructor.` +
             (constructors.length <= 0 ?
             "" :
             `\nAvailable constructors are:${
@@ -182,7 +182,7 @@ const has = (T, ...rest) =>
 
 type.has = has;
 
-type.typename = T => T.name;//definition(T).name;
+type.typename = T => definition(T).name;
 
 function Constructor(T, ID, declaration)
 {

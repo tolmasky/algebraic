@@ -31,6 +31,9 @@ Object.assign(module.exports,
         /(Statement|Declaration)$/,
         require("./statements")),
 */
+    ...require("./statements"),
+    Statement: require("./statement"),
+
     ...require("./literals"),
 
     ...require("./property-names"),
