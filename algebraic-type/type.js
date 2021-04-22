@@ -43,11 +43,14 @@ IObject.defineProperty(type, "type", { value: type });
 
 type.definition = definition;
 
+
+
 // FIXME: Generalize this...
 type.of = type.of = value =>
-    !value || typeof value !== "object" ?
-        type[typeof value] :
-        Object.getPrototypeOf(value).constructor;
+    !value ? type[typeof value] :
+    IObject.getPrototypeOf(value).constructor instanceof type ?
+        IObject.getPrototypeOf(value).constructor :
+    type[typeof value];
 
 const declare = (name, body, flatBody = flat.call(body)) =>
     define(
@@ -76,11 +79,17 @@ const define = declaration =>
                     annotate(tagResolve(...args), T) :
                 tryDefaultConstructor(T, args);
     },
-    (T, property, TDefinition = new TypeDefinition(T, declaration)) =>
+    (T, property,
+        TDefinition = new TypeDefinition(T, declaration),
+        constructors = IObject.values(TDefinition.constructors)) =>
     [
         declaration.onPrototype &&
             property.onPrototype(declaration.onPrototype),
-        property.prototypeOf (type.prototype),
+        property.prototypeOf (
+            constructors.length === 1 &&
+            definition(constructors[0]).isUnaryConstructor ?
+                IObject.setPrototypeOf(T.prototype, type.prototype) :
+                type.prototype),
         declaration.inherits &&
             property.inherits (declaration.inherits),
         property({ name: Definition, value: TDefinition }),
@@ -118,25 +127,56 @@ function TypeDefinition(T, declaration)
 
     this.invocation = declaration.invocation || false;
 
-    this.constructors = IObject.fromEntries(
-        (declaration.constructors || [])
-            .map((declaration, ID) => Constructor(T, ID, declaration))
-            .map(constructor => [constructor.name, constructor]));
+    const constructorDeclarations = declaration.constructors || [];
+    const hasSingleConstructor = constructorDeclarations.length === 1;
 
-    const count = IObject.keys(this.constructors).length;
+    const constructorEntries =
+        constructorDeclarations
+            .map((declaration, ID) =>
+                Constructor(hasSingleConstructor, T, ID, declaration))
+            .map(constructor => [constructor.name, constructor]);
+
+    this.constructors = IObject.fromEntries(constructorEntries);
+
+    const count = constructorEntries.length;
 
     this.EveryCID = [(1 << count) - 1];
 
+    const typeKeyedConstructors =
+        constructorEntries
+            .filter(([name]) => name.startsWith("."));
+
+    // FIXME: What if *both* of these are present?
     this.defaultConstructor =
         IObject.has(this.name, this.constructors) ?
             this.constructors[this.name] :
-            false,
+        typeKeyedConstructors.length > 0 ?
+            toDefaultedTypeKeyedConstructor(typeKeyedConstructors) :
+            false;
 
     this.has = declaration.has || ((T, value) => value instanceof T);
 
     this.toDefaultValue = declaration.toDefaultValue;
 
     return IObject.freeze(this);
+}
+
+function toDefaultedTypeKeyedConstructor(typeKeyedConstructors)
+{
+    return function (value)
+    {
+        const T = type.of(value);
+        const constructor = typeKeyedConstructors
+            .map(([name, C]) => [name, C, getFields(C)])
+            .find(([name, C, fields]) =>
+                fields.length === 1 &&
+                fields[0][1].constraint.type === T);
+
+        if (!constructor)
+            fail (`No matching constructor found for ` + value);
+
+        return constructor[1](value);
+    }
 }
 
 function tryDefaultConstructor(T, args)
@@ -184,7 +224,7 @@ type.has = has;
 
 type.typename = T => definition(T).name;
 
-function Constructor(T, ID, declaration)
+function Constructor(hasSingleConstructor, T, ID, declaration)
 {
     const { name, preprocess, fields } = declaration;
     const initialize = declaration.initialize || ((C, fields) => [fields]);
@@ -197,8 +237,14 @@ function Constructor(T, ID, declaration)
             `Unrecognized field declarations for constructor ${name}:` +
             JSON.stringify(fields));
 
+    const isUnaryConstructor = hasPositionalFields && fields.length === 0;
+    const isUnaryType = hasSingleConstructor && isUnaryConstructor;
+
     return f(name, (C, ...values) =>
     {
+        if (isUnaryType)
+            return T;
+
         const [result, preprocessed] = preprocess ?
             preprocess(T, C, values) :
             [false, values];
@@ -217,8 +263,7 @@ function Constructor(T, ID, declaration)
             name,
             initialize,
             hasPositionalFields,
-            isUnaryConstructor:
-                hasPositionalFields && fields.length === 0,
+            isUnaryConstructor,
             fieldDefinitions: IObject
                 .entries(hasNamedFields ? fields[0] : fields)
         } })
