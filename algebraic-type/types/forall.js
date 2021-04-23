@@ -51,11 +51,12 @@ module.exports = function forall(name, ...rest)
     const thisExpression = apply (...variables);
 
     const cache = toCache();
+    const cachedApply = (...args) => cache(args, () => apply(...args));
     const { constructors } = definition(faT);
     const inferencingConstructors = IObject
         .entries(constructors)
         .map(([name, C]) =>
-            [name, toInferencingConstructor(C, apply, thisExpression)]);
+            [name, toInferencingConstructor(C, cachedApply, thisExpression)]);
 
 
     return constructible (name, () => { fail ("need the thing!"); },
@@ -64,7 +65,7 @@ module.exports = function forall(name, ...rest)
         property (
         {
             name: "of",
-            value: (...args) => cache(args, () => apply(...args))
+            value: cachedApply
         }),
         ...IObject
             .entries(constructors)
@@ -72,7 +73,7 @@ module.exports = function forall(name, ...rest)
             ({
                 name,
                 enumerable: true,
-                value: toInferencingConstructor(C, apply, thisExpression)
+                value: toInferencingConstructor(C, cachedApply, thisExpression)
             }))
     ]);
 }
