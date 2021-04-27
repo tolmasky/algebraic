@@ -87,7 +87,7 @@ function toInferencingConstructor(C, fT, thisExpression)
     return function (...args)
     {
         // FIXME: Cache
-        console.log(C);
+//        console.log(C);
         const fieldExpressions = fieldDefinitions
             .map(([name, f]) => [name, f()])
             .filter(([name, f]) => has(VariableExpression, f));
@@ -98,7 +98,7 @@ function toInferencingConstructor(C, fT, thisExpression)
             fail(
                 `constructor "${C.name}" does not make use of enough ` +
                 `type variables to use as an inference constructor.`);
-console.log(usedReferences.size, indexes([thisExpression]).size);
+// console.log(usedReferences.size, indexes([thisExpression]).size);
         const CTs = IObject
             .entries(hasPositionalFields ? args : args[0])
             .map(([name, argument]) => [name, type.of(argument)])
@@ -113,11 +113,11 @@ console.log(usedReferences.size, indexes([thisExpression]).size);
                 {}));
 
         // It appears broken that we can pass in a 2 arg case with one arg...
-        console.log("INFERRED: ", inferred);
+//        console.log("INFERRED: ", inferred);
 
             //.reduce(([name, argument])
-console.log(fT);
-console.log(C.name);
+// console.log(fT);
+// console.log(C.name);
 
         return fT(...inferred)[C.name](...args);
     }

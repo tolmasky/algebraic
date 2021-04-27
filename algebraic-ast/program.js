@@ -1,4 +1,4 @@
-const type = require("@algebraic/type");
+const { type, caseof } = require("@algebraic/type");
 const Node = require("./node");
 const Extra = require("./extra");
 
@@ -11,7 +11,7 @@ exports.Directive = Node `Directive`
 exports.DirectiveLiteral = Node `DirectiveLiteral`
 ({
     value               :of =>  type.string,
-    extra               :of =>  Extra(string) `?`
+    extra               :of =>  Extra.of(type.string) `?`
 });
 
 exports.InterpreterDirective = Node `InterpreterDirective`
@@ -22,26 +22,34 @@ exports.InterpreterDirective = Node `InterpreterDirective`
 exports.Script = Node `Script`
 ({
     // FIXME: needs "alway"s
-    sourceType          :of =>  type.string `()=` ("script"),
+    sourceType          :of =>  type.string,// `()=` ("script"),
 
-    body                :of =>  type.array (Node.Statement),
-    directives          :of =>  type.array(Node.Directive) `=` ([]),
+    body                :of =>  Node.Statement `[]`,
+    directives          :of =>  Node.Directive `[]`,
     interpreter         :of =>  Node.InterpreterDirective `?`,
     sourceFile          :of =>  type.string `?`
 });
+
+exports.ModuleItem = type `ModuleItem`
+([
+    caseof `.ImportDeclaration` (of => Node.ImportDeclaration),
+    caseof `.ExportDeclaration` (of => Node.ExportDeclaration),
+    caseof `.Statement` (of => Node.Statement)
+]);
 
 exports.Module = Node `Module`
 ({
-    sourceType          :of =>  type.string `()=` ("module"),
+    sourceType          :of =>  type.string,// `()=` ("module"),
 
-    body                :of =>  type.array (type.union (/*Node.ImportDeclaration,
-                                    Node.ExportDeclaration,*/
-                                    Node.Statement)),
-    directives          :of =>  type.array(Node.Directive) `=` ([]),
+    body                :of =>  Node.ModuleItem `[]`,
+    directives          :of =>  Node.Directive `[]`,
     interpreter         :of =>  Node.InterpreterDirective `?`,
     sourceFile          :of =>  type.string `?`
 });
 
-exports.Program = type.union `Program` (
-    of                  => Node.Module,
-    of                  => Node.Script );
+exports.Program = type `Program`
+([
+    caseof `.Module` (of => Node.Module),
+    caseof `.Script` (of => Node.Script)
+]);
+

@@ -2,15 +2,23 @@ const type = require("@algebraic/type");
 const { Comments } = require("./comment");
 const SourceLocation = require("./source-location");
 
+
+/*const Node = type `Node` .forall (T =>
+({
+    location    :of =>  SourceLocation `?`,
+    comments    :of =>  Comments `=` (Comments()),
+    contents    :of =>  T
+}));
+*/
 const Node = ([name]) => fields => type `${name}`
 ({
     location    :of =>  SourceLocation `?`,
     comments    :of =>  Comments `=` (Comments()),
     ...fields
 });
-
+/*
 Node.Node = Node;
-
+*/
 module.exports = Node;
 
 /*
@@ -33,18 +41,20 @@ Object.assign(module.exports,
 */
     ...require("./statements"),
     Statement: require("./statement"),
+    ...require("./statement-list"),
 
     ...require("./literals"),
+    Expression: require("./expression"),
 
     ...require("./property-names"),
-/*    ...require("./expressions"),
-
+    ...require("./expressions"),
+/*
     ...require("./bindings"),
     ...require("./assignment-targets"),
 
-    ...require("./statements"),
+    ...require("./statements"),*/
     ...require("./program"),
-
+/*
     ...require("./comment")*/
 });
 /*
