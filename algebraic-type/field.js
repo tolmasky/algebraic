@@ -14,6 +14,13 @@ function Field(options)
                 options :
             options instanceof type ?
                 new Field({ type: options }) :
+            // FIXME?
+            typeof options === "function" ?
+                IObject.assign(this,
+                {
+                    default: Default.None,
+                    constraint: { type: require("./type").number, has: options }
+                }) :
             !(this instanceof Field) ?
                 new Field(options) :
             IObject.assign(this,

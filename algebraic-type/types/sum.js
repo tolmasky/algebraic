@@ -15,6 +15,7 @@ const onPrototype = { [inspectSymbol]: inspectSum };
 const isObject = value => value && typeof value === "object";
 
 const { type, of, definition, fallback } = require("../type");
+const caseof = require("./caseof");
 
 
 exports.Sum = (name, body) =>
@@ -32,9 +33,9 @@ exports.Sum = (name, body) =>
 exports.isSumBody = declaration =>
     declaration.length > 0 &&
     declaration.every(item =>
-        item instanceof SumCaseOf ||
+        item instanceof caseof && item.name !== false ||
         item instanceof fallback);
-
+/*
 const SumCaseOf = constructible ("caseof",
     (caseof, ...arguments) =>
 
@@ -70,7 +71,7 @@ const toCaseOf = (target, body = []) =>
     IObject.setPrototypeOf(
         IObject.assign(target, { body }),
         SumCaseOfPrototype);
-
+*/
 const toInnerT = (name, body) =>
     body.length === 1 &&
     typeof body[0] === "object" &&

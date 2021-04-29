@@ -15,6 +15,8 @@ const UseFallbackForEverField = IObject.create(null);
 const isObject = value => value && typeof value === "object";
 const isFunction = value => typeof value === "function";
 
+const ISet = require("./iset");
+
 
 const type = constructible("type", (_, ...arguments) =>
 
@@ -43,6 +45,7 @@ IObject.defineProperty(type, "type", { value: type });
 
 type.definition = definition;
 
+type.members = T => definition(T).members;
 
 
 // FIXME: Generalize this...
@@ -54,6 +57,7 @@ type.of = type.of = value =>
 
 const declare = (name, body, flatBody = flat.call(body)) =>
     define(
+        isUnionBody(flatBody) ? Union(name, flatBody) :
         isSumBody(flatBody) ? Sum (name, flatBody) :
         isProductBody(flatBody) ? Product (name, flatBody) :
         fail (`Could not recognize type declaration.`));
@@ -157,6 +161,8 @@ function TypeDefinition(T, declaration)
     this.has = declaration.has || ((T, value) => value instanceof T);
 
     this.toDefaultValue = declaration.toDefaultValue;
+
+    this.members = ISet(declaration.fMembers || []);
 
     return IObject.freeze(this);
 }
@@ -329,9 +335,10 @@ type.fallback = function fallback(toDefaultValue)
 }
 
 const { isProductBody, Product } = require("./types/product");
-const { isSumBody, Sum, caseof } = require("./types/sum");
+const { isSumBody, Sum } = require("./types/sum");
+const { isUnionBody, Union } = require("./types/union");
 
-type.caseof = caseof;
+type.caseof = require("./types/caseof");
 
 const Field = require("./field");
 const forall = require("./types/forall");
@@ -342,7 +349,6 @@ type.Optional = Optional;
 const List = require("./types/list");
 
 type.List = List;
-
 
 /*
 IObject.assign(type,
